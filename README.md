@@ -1,12 +1,28 @@
-# Qix - Phaser 3 Typescript Implementation
+# Peekachoo
 
-I enjoyed this game in my childhood and wanted to learn how to create a game for a browser. This is a work in progress.
+A Qix-style territory capture game built with Phaser 3 and TypeScript. Claim territory to reveal the hidden Pikachu image!
+
+## Gameplay
+
+- Use arrow keys to move the player around the game area
+- Venture into unclaimed territory and return to the boundary to claim it
+- Avoid the Qix (red lines) and Sparkies (red dots) enemies
+- Reveal 60% or more of the hidden image to pass each level
+
+## Features
+
+- Classic Qix gameplay mechanics
+- Hidden image reveal system - claimed territories show the Pikachu image
+- Multiple levels with increasing difficulty
+- Sparkies that patrol the boundary lines
+- Qix enemies that move within the unclaimed area
 
 ## Install
 
 ```
 npm install
 ```
+
 ## Run Dev
 
 ```
@@ -23,7 +39,13 @@ npm run dev
 npm run deploy
 ```
 
+## Tech Stack
+
+- Phaser 3
+- TypeScript
+- Webpack
+
 ## Credits
 
-Starter project used:
+Based on starter project:
 https://github.com/troyedwardsjr/phaser3-typescript-webpack
