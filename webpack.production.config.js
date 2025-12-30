@@ -57,8 +57,8 @@ module.exports = {
     rules: [
       {
         test: /\.ts$/,
-        loaders: ['babel-loader', 'awesome-typescript-loader'],
-        include: path.join(__dirname, 'src'),
+        use: 'ts-loader',
+        exclude: /node_modules/,
       },
       { 
         test: [/\.vert$/, /\.frag$/], 

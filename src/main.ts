@@ -3,7 +3,7 @@ import 'phaser';
 import QixScene from "./scenes/qix-scene";
 
 const gameWidth = 800;
-const gameHeight = 560;
+const gameHeight = 650;
 const infoHeight = 30;
 const debugTextAreaHeight = 0;
 const margin = 10;

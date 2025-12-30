@@ -51,6 +51,7 @@ module.exports = {
         new BrowserSyncPlugin({
             host: process.env.IP || 'localhost',
             port: process.env.PORT || 3000,
+            ui: false,
             server: {
                 baseDir: ['./', './build']
             }
@@ -60,8 +61,8 @@ module.exports = {
         rules: [
             {
                 test: /\.ts$/,
-                loaders: ['babel-loader', 'awesome-typescript-loader'],
-                include: path.join(__dirname, 'src'),
+                use: 'ts-loader',
+                exclude: /node_modules/,
             },
             {
                 test: [/\.vert$/, /\.frag$/],

@@ -102,6 +102,35 @@ export class ImageOverlay {
     }
 
     /**
+     * Reveal the entire image (no clipping) - used when level is complete
+     */
+    revealFullImage(): void {
+        if (!this.imageLoaded) return;
+
+        const width = config.width as number;
+        const height = customConfig.frameHeight + customConfig.margin * 2;
+
+        // Clear the canvas
+        this.ctx.clearRect(0, 0, width, height);
+
+        // Calculate image scaling to cover the play area
+        const scale = Math.max(width / this.image.width, height / this.image.height);
+        const scaledWidth = this.image.width * scale;
+        const scaledHeight = this.image.height * scale;
+        const offsetX = (width - scaledWidth) / 2;
+        const offsetY = (height - scaledHeight) / 2;
+
+        // Draw the full image without any clipping
+        this.ctx.drawImage(this.image, offsetX, offsetY, scaledWidth, scaledHeight);
+
+        // Draw a border around the play area
+        this.ctx.strokeStyle = '#FFFF00';
+        this.ctx.lineWidth = 3;
+        this.ctx.strokeRect(customConfig.margin, customConfig.margin, 
+            width - customConfig.margin * 2, customConfig.frameHeight);
+    }
+
+    /**
      * Redraw the entire overlay with all claimed polygons
      */
     private redraw(): void {

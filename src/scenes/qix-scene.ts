@@ -108,20 +108,26 @@ class QixScene extends Phaser.Scene {
         this.pauseControl.pauseForWin(time);
         this.cameras.main.shake(300, .005);
         
-        // Hide overlay so text is visible
-        ImageOverlay.getInstance().hide();
-        let winText = this.createWinText(`Sweet!!\nLevel ${this.levels.currentLevel} passed.`, "#000000");
+        // First, reveal the full image so player can see it
+        ImageOverlay.getInstance().revealFullImage();
+        let winText = this.createWinText(`Level ${this.levels.currentLevel} Complete!`, "#000000");
 
         const _this = this;
+        
+        // Show full image for a moment
         setTimeout(function () {
             winText.destroy();
-            _this.levels.nextLevel();
-            winText = _this.createWinText(`On to level ${_this.levels.currentLevel}`, "#000000");
+            
+            // Hide overlay so text is visible
+            ImageOverlay.getInstance().hide();
+            winText = _this.createWinText(`Sweet!!\nOn to level ${_this.levels.currentLevel + 1}`, "#000000");
 
             setTimeout(function () {
+                winText.destroy();
+                _this.levels.nextLevel();
                 _this.scene.restart({});
             }, customConfig.levelWinPauseMs / 2);
-        }, customConfig.levelWinPauseMs / 2);
+        }, customConfig.levelWinPauseMs);
     }
 
     createWinText(message: string, color: string): Text {

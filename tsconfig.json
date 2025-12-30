@@ -4,7 +4,8 @@
     "module": "commonjs",
     "sourceMap": true,
     "experimentalDecorators": true,
-    "inlineSources": true
+    "inlineSources": true,
+    "skipLibCheck": true
   },
   "files": [
     "src/phaser.d.ts",
