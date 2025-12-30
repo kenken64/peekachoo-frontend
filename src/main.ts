@@ -1,5 +1,6 @@
 import 'phaser';
 
+import LoginScene from "./scenes/login-scene";
 import QixScene from "./scenes/qix-scene";
 
 const gameWidth = 800;
@@ -21,6 +22,7 @@ export const config:GameConfig = {
     resolution: 1,
     backgroundColor: "#555",
     scene: [
+        LoginScene,
         QixScene
     ],
     banner: false
