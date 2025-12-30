@@ -21,5 +21,8 @@ export class Levels {
         this.scene.player.hasMoved = false;
         this.scene.sparkies.reset();
         this.scene.qixes.reset();
+        
+        // Update the image for the next level if playing a custom game
+        this.scene.advanceLevel();
     }
 }

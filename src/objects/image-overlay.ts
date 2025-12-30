@@ -13,6 +13,7 @@ export class ImageOverlay {
     private image: HTMLImageElement;
     private imageLoaded: boolean = false;
     private polygons: ExtPolygon[] = [];
+    private currentImageSrc: string = 'assets/1.jpeg';
 
     private constructor() {
         // Create the overlay canvas - only cover the play area, not the info bar or message area
@@ -27,11 +28,12 @@ export class ImageOverlay {
 
         // Load the image
         this.image = new Image();
+        this.image.crossOrigin = 'anonymous'; // Allow loading from external URLs
         this.image.onload = () => {
             this.imageLoaded = true;
             this.redraw();
         };
-        this.image.src = 'assets/1.jpeg';
+        this.image.src = this.currentImageSrc;
 
         // Position the canvas over the Phaser game after a short delay
         setTimeout(() => this.positionCanvas(), 100);
@@ -45,6 +47,37 @@ export class ImageOverlay {
             ImageOverlay.instance = new ImageOverlay();
         }
         return ImageOverlay.instance;
+    }
+
+    /**
+     * Set a new image to be revealed
+     */
+    setImage(imageSrc: string): void {
+        if (imageSrc === this.currentImageSrc && this.imageLoaded) {
+            return; // Already loaded
+        }
+        
+        this.currentImageSrc = imageSrc;
+        this.imageLoaded = false;
+        this.image = new Image();
+        this.image.crossOrigin = 'anonymous';
+        this.image.onload = () => {
+            this.imageLoaded = true;
+            this.redraw();
+        };
+        this.image.onerror = () => {
+            console.error('Failed to load image:', imageSrc);
+            // Fallback to default image
+            this.image.src = 'assets/1.jpeg';
+        };
+        this.image.src = imageSrc;
+    }
+
+    /**
+     * Get the current image source
+     */
+    getImageSrc(): string {
+        return this.currentImageSrc;
     }
 
     private positionCanvas(): void {

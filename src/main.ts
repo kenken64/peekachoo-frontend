@@ -1,7 +1,13 @@
 import 'phaser';
 
 import LoginScene from "./scenes/login-scene";
+import { MenuScene } from "./scenes/menu-scene";
+import { GameCreateScene } from "./scenes/game-create-scene";
 import QixScene from "./scenes/qix-scene";
+
+// Clear old localStorage data (we now use sessionStorage for per-tab sessions)
+localStorage.removeItem('peekachoo_token');
+localStorage.removeItem('peekachoo_user');
 
 const gameWidth = 800;
 const gameHeight = 650;
@@ -23,6 +29,8 @@ export const config:GameConfig = {
     backgroundColor: "#555",
     scene: [
         LoginScene,
+        MenuScene,
+        GameCreateScene,
         QixScene
     ],
     banner: false
@@ -54,6 +62,16 @@ export const customConfig:GameCustomConfig = {
 };
 
 export const game = new Phaser.Game(config);
+
+// Store initial values for reset
+const initialQixSpeed = customConfig.qixSpeed;
+const initialQixTick = customConfig.qixTick;
+
+// Reset customConfig to initial values (called when starting a new game)
+export function resetGameConfig() {
+    customConfig.qixSpeed = initialQixSpeed;
+    customConfig.qixTick = initialQixTick;
+}
 
 export interface GameCustomConfig {
     debug: boolean;

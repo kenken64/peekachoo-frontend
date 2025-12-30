@@ -14,30 +14,38 @@ interface AuthResponse {
     user: User;
 }
 
-// Store token in localStorage
+// Store token in sessionStorage (unique per tab/window, so multiple users can play simultaneously)
 export function setToken(token: string): void {
-    localStorage.setItem('peekachoo_token', token);
+    console.log('[Auth] Setting token:', token.substring(0, 20) + '...');
+    sessionStorage.setItem('peekachoo_token', token);
 }
 
 export function getToken(): string | null {
-    return localStorage.getItem('peekachoo_token');
+    const token = sessionStorage.getItem('peekachoo_token');
+    console.log('[Auth] Getting token:', token ? token.substring(0, 20) + '...' : 'null');
+    return token;
 }
 
 export function removeToken(): void {
-    localStorage.removeItem('peekachoo_token');
+    console.log('[Auth] Removing token');
+    sessionStorage.removeItem('peekachoo_token');
 }
 
 export function setUser(user: User): void {
-    localStorage.setItem('peekachoo_user', JSON.stringify(user));
+    console.log('[Auth] Setting user:', user.username);
+    sessionStorage.setItem('peekachoo_user', JSON.stringify(user));
 }
 
 export function getUser(): User | null {
-    const userStr = localStorage.getItem('peekachoo_user');
-    return userStr ? JSON.parse(userStr) : null;
+    const userStr = sessionStorage.getItem('peekachoo_user');
+    const user = userStr ? JSON.parse(userStr) : null;
+    console.log('[Auth] Getting user:', user?.username || 'null');
+    return user;
 }
 
 export function removeUser(): void {
-    localStorage.removeItem('peekachoo_user');
+    console.log('[Auth] Removing user');
+    sessionStorage.removeItem('peekachoo_user');
 }
 
 export function isLoggedIn(): boolean {
@@ -45,6 +53,8 @@ export function isLoggedIn(): boolean {
 }
 
 export function logout(): void {
+    console.log('[Auth] LOGOUT called! Stack trace:');
+    console.trace();
     removeToken();
     removeUser();
 }

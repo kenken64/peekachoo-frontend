@@ -20,9 +20,31 @@ export class AllPoints {
 
     calculateNewClockwisePolygonPoints(points: ExtPoint[]): ExtPoint[] {
         const newPoints = this.calculateNewPolygonPointsNormal(points);
-        const newPolygon = new Polygon(newPoints.map(point => point.point));
-
         const newInversePoints = this.calculateNewPolygonPointsInverse(points);
+
+        // Guard against invalid polygon points (need at least 3 points to form a polygon)
+        if (newPoints.length < 3 && newInversePoints.length < 3) {
+            console.warn('Both newPoints and newInversePoints have fewer than 3 points, returning empty array');
+            return [];
+        }
+
+        // If one set has invalid points, use the other
+        if (newPoints.length < 3) {
+            console.warn('newPoints has fewer than 3 points, using newInversePoints');
+            let newClockwisePoints = GeomUtils.makeClockwisePoints(newInversePoints);
+            newClockwisePoints.splice(newClockwisePoints.length - 1, 1);
+            return newClockwisePoints;
+        }
+
+        if (newInversePoints.length < 3) {
+            console.warn('newInversePoints has fewer than 3 points, using newPoints');
+            let newClockwisePoints = GeomUtils.makeClockwisePoints(newPoints);
+            newClockwisePoints.splice(newClockwisePoints.length - 1, 1);
+            return newClockwisePoints;
+        }
+
+        // Both sets are valid, choose the smaller area
+        const newPolygon = new Polygon(newPoints.map(point => point.point));
         const newInversePolygon = new Polygon(newInversePoints.map(point => point.point));
 
         // TODO: when enemy added, choose area that enemy is not in...
@@ -120,6 +142,20 @@ export class AllPoints {
      * @returns {ExtPoint[]}
      */
     flattenPoints(points: ExtPoint[]): ExtPoint[] {
+        // Guard against empty or invalid arrays
+        if (!points || points.length < 2) {
+            console.warn('flattenPoints received invalid points array:', points);
+            return points || [];
+        }
+
+        // Filter out any undefined points
+        points = points.filter(p => p !== undefined && p !== null);
+
+        if (points.length < 2) {
+            console.warn('flattenPoints has less than 2 valid points after filtering');
+            return points;
+        }
+
         let pts: ExtPoint[] = [];
 
         pts.push(points[0]);
@@ -133,7 +169,8 @@ export class AllPoints {
         pts.push(points[points.length - 1]);
 
         // Check if first/last point (same point) should be removed
-        if (pts[0].isBetweenTwoPointsInclusive(pts[pts.length - 2], pts[1])) {
+        // Guard against pts having fewer than 2 elements
+        if (pts.length >= 3 && pts[0].isBetweenTwoPointsInclusive(pts[pts.length - 2], pts[1])) {
             pts.splice(pts.length - 1, 1);
             pts.splice(0, 1);
             pts.push(pts[0]);

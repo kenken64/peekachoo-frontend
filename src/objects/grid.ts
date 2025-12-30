@@ -93,6 +93,14 @@ export class Grid {
         }
 
         const newPolygonPoints = this.allPoints.calculateNewClockwisePolygonPoints(this.currentLines.points);
+
+        // Guard against invalid polygon points
+        if (!newPolygonPoints || newPolygonPoints.length < 3) {
+            console.warn('Invalid polygon points calculated, resetting current lines');
+            this.currentLines.reset();
+            return;
+        }
+
         this.filledPolygons.drawFilledPolygon(newPolygonPoints);
         this.allPoints.updateNewInnerPoints(newPolygonPoints);
 

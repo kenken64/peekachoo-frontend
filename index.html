@@ -3,25 +3,37 @@
 
 <head>
   <meta charset="UTF-8">
-  <title>Qix</title>
+  <title>Peekachoo</title>
   <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
   <meta name="HandheldFriendly" content="True">
   <meta name="MobileOptimized" content="320">
   <meta http-equiv="cleartype" content="on">
   <meta name="format-detection" content="telephone=no">
   <link rel="icon" href="data:,">
+
+  <!-- Google Fonts - Press Start 2P (required for NES.css) -->
+  <link href="https://fonts.googleapis.com/css?family=Press+Start+2P" rel="stylesheet">
+
+  <!-- NES.css -->
+  <link href="node_modules/nes.css/css/nes.min.css" rel="stylesheet">
+
   <style>
-    html,
+    html {
+      font-family: 'Press Start 2P', cursive;
+    }
+
     body {
       margin-top: 1rem;
       padding: 0;
-      background-color: #333;
+      background-color: #212529;
       text-align: center;
     }
+
     #content {
       display: inline-block;
       position: relative;
     }
+
     #debugTextArea {
       display: none;
     }
