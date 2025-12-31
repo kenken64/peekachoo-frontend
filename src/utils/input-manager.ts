@@ -1,12 +1,5 @@
 import { VirtualCursorKeys } from '../objects/virtual-dpad';
 
-export interface CombinedCursorKeys {
-    left: { isDown: boolean };
-    right: { isDown: boolean };
-    up: { isDown: boolean };
-    down: { isDown: boolean };
-}
-
 export class InputManager {
     /**
      * Detect if the current device is mobile based on screen width or touch capability
@@ -20,20 +13,38 @@ export class InputManager {
     /**
      * Combine keyboard and virtual cursor inputs
      * Uses OR logic: if either input says a direction is down, it's down
+     * Returns the keyboard cursors object with updated isDown values
      */
     static combine(
         keyboard: CursorKeys,
         virtual?: VirtualCursorKeys
-    ): CombinedCursorKeys {
+    ): CursorKeys {
         if (!virtual) {
             return keyboard;
         }
 
-        return {
-            left: { isDown: keyboard.left.isDown || virtual.left.isDown },
-            right: { isDown: keyboard.right.isDown || virtual.right.isDown },
-            up: { isDown: keyboard.up.isDown || virtual.up.isDown },
-            down: { isDown: keyboard.down.isDown || virtual.down.isDown }
+        // Create a proxy-like object that wraps the keyboard cursors
+        // but overrides isDown with combined values
+        const combined = {
+            ...keyboard,
+            left: {
+                ...keyboard.left,
+                isDown: keyboard.left.isDown || virtual.left.isDown
+            },
+            right: {
+                ...keyboard.right,
+                isDown: keyboard.right.isDown || virtual.right.isDown
+            },
+            up: {
+                ...keyboard.up,
+                isDown: keyboard.up.isDown || virtual.up.isDown
+            },
+            down: {
+                ...keyboard.down,
+                isDown: keyboard.down.isDown || virtual.down.isDown
+            }
         };
+
+        return combined as CursorKeys;
     }
 }

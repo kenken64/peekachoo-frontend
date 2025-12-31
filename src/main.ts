@@ -9,6 +9,8 @@ import QixScene from "./scenes/qix-scene";
 localStorage.removeItem('peekachoo_token');
 localStorage.removeItem('peekachoo_user');
 
+const gameWidth = 800;
+const gameHeight = 650;
 const infoHeight = 30;
 const debugTextAreaHeight = 0;
 const margin = 10;
@@ -21,12 +23,8 @@ export const config:GameConfig = {
     canvas: canvas,
     context: context as CanvasRenderingContext2D,
     parent: 'content',
-    scale: {
-        mode: Phaser.Scale.FIT,
-        autoCenter: Phaser.Scale.CENTER_BOTH,
-        width: 800,
-        height: 650,
-    },
+    width: gameWidth,
+    height: gameHeight,
     resolution: 1,
     backgroundColor: "#555",
     scene: [
@@ -74,6 +72,45 @@ export function resetGameConfig() {
     customConfig.qixSpeed = initialQixSpeed;
     customConfig.qixTick = initialQixTick;
 }
+
+// Responsive canvas scaling for mobile (Phaser 3.10 compatible)
+function resizeCanvas() {
+    const content = document.getElementById('content');
+    if (!content || !canvas) return;
+
+    const windowWidth = window.innerWidth;
+    const windowHeight = window.innerHeight;
+    const gameRatio = gameWidth / gameHeight;
+    const windowRatio = windowWidth / windowHeight;
+
+    let scale = 1;
+
+    // Only scale on mobile/tablet (< 768px width)
+    if (windowWidth < 768) {
+        if (windowRatio < gameRatio) {
+            // Window is narrower than game
+            scale = windowWidth / gameWidth;
+        } else {
+            // Window is taller than game
+            scale = windowHeight / gameHeight;
+        }
+
+        // Apply CSS transform to scale the canvas
+        canvas.style.transformOrigin = 'top left';
+        canvas.style.transform = `scale(${scale})`;
+        content.style.width = `${gameWidth * scale}px`;
+        content.style.height = `${gameHeight * scale}px`;
+    } else {
+        // Desktop - no scaling
+        canvas.style.transform = 'none';
+        content.style.width = 'auto';
+        content.style.height = 'auto';
+    }
+}
+
+// Initial resize and add resize listener
+window.addEventListener('load', resizeCanvas);
+window.addEventListener('resize', resizeCanvas);
 
 export interface GameCustomConfig {
     debug: boolean;
