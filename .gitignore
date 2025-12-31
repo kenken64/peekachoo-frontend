@@ -7,6 +7,7 @@ out/
 *.iml
 *.log
 .env
+nes.min.css
 src_old
 *.old.js
 phaserTilemapfix

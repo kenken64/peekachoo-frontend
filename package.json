@@ -5,9 +5,11 @@
   "author": "troyedwardsjr",
   "main": "index.js",
   "scripts": {
-    "start": "webpack",
-    "dev": "webpack",
+    "start": "npm run copy-css && webpack",
+    "dev": "npm run copy-css && webpack",
     "deploy": "webpack --config webpack.production.config.js",
+    "copy-css": "node -e \"require('fs').copyFileSync('node_modules/nes.css/css/nes.min.css', 'nes.min.css')\"",
+    "postinstall": "npm run copy-css",
     "lint": "eslint ./src/**/**.js",
     "test": "mocha -r test/test-setup.ts test/*.spec.ts --source-maps"
   },
