@@ -10,7 +10,9 @@
     "deploy": "webpack --config webpack.production.config.js",
     "copy-css": "node -e \"require('fs').copyFileSync('node_modules/nes.css/css/nes.min.css', 'nes.min.css')\"",
     "postinstall": "npm run copy-css",
-    "lint": "eslint ./src/**/**.js",
+    "lint": "npx tsc --noEmit",
+    "typecheck": "npx tsc --noEmit",
+    "build": "npm run copy-css && webpack",
     "test": "mocha -r test/test-setup.ts test/*.spec.ts --source-maps"
   },
   "license": "MIT",

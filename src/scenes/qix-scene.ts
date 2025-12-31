@@ -18,6 +18,9 @@ import * as AuthService from "../services/auth-service";
 import { GameService, Game, GameLevel } from "../services/game-service";
 import { VirtualDpad } from "../objects/virtual-dpad";
 import { InputManager } from "../utils/input-manager";
+import { sessionStore } from "../stores/session-store";
+import { ScoreSubmissionResult } from "../services/leaderboard-service";
+import { websocketService } from "../services/websocket-service";
 
 interface GameSceneData {
     gameId?: string;
@@ -56,6 +59,17 @@ class QixScene extends Phaser.Scene {
         if (data?.levelIndex === undefined) {
             resetGameConfig();
             this.levels = new Levels(this);
+            // Start a new session for score tracking
+            this.initSession();
+        }
+    }
+
+    private async initSession() {
+        try {
+            await sessionStore.startSession(this.gameId);
+            console.log('[QixScene] Session started:', sessionStore.getSessionId());
+        } catch (error) {
+            console.error('[QixScene] Failed to start session:', error);
         }
     }
 
@@ -90,6 +104,18 @@ class QixScene extends Phaser.Scene {
 
         // Set the first level image if custom game
         this.updateLevelImage();
+
+        // Start tracking current level for scoring
+        this.startLevelTracking();
+    }
+
+    private startLevelTracking() {
+        const currentLevel = this.customGame?.levels[this.currentLevelIndex];
+        sessionStore.startLevel(
+            this.levels.currentLevel,
+            currentLevel?.pokemonId,
+            currentLevel?.pokemonName
+        );
     }
 
     private async loadCustomGame() {
@@ -149,16 +175,275 @@ class QixScene extends Phaser.Scene {
         return this.customGame !== null;
     }
 
+    private injectResponsiveStyles(): void {
+        // Only inject once
+        if (document.getElementById('qix-scene-responsive-styles')) {
+            return;
+        }
+
+        const style = document.createElement('style');
+        style.id = 'qix-scene-responsive-styles';
+        style.textContent = `
+            /* Default state - hide icons, show text */
+            .qix-header-btn .btn-icon {
+                display: none;
+            }
+            .qix-header-btn .btn-text {
+                display: inline;
+            }
+
+            /* Mobile Responsive Styles for QixScene */
+            @media (max-width: 768px) {
+                #qix-header {
+                    height: 36px !important;
+                    padding: 0 10px !important;
+                }
+
+                .qix-header-left,
+                .qix-header-right {
+                    gap: 8px !important;
+                }
+
+                .qix-header-btn {
+                    padding: 4px 10px !important;
+                    font-size: 11px !important;
+                }
+
+                .qix-username {
+                    font-size: 12px !important;
+                }
+
+                /* How to Play Modal */
+                #how-to-play-modal .modal-content,
+                #how-to-play-modal > div > div {
+                    padding: 20px !important;
+                    max-width: 450px !important;
+                }
+
+                #how-to-play-modal h2 {
+                    font-size: 22px !important;
+                }
+
+                #how-to-play-modal h3 {
+                    font-size: 14px !important;
+                    margin-bottom: 8px !important;
+                }
+
+                #how-to-play-modal ul,
+                #how-to-play-modal p {
+                    font-size: 12px !important;
+                    line-height: 1.5 !important;
+                }
+
+                #how-to-play-modal button {
+                    padding: 10px 20px !important;
+                    font-size: 14px !important;
+                }
+
+                /* Quiz Dialog */
+                #quiz-container .nes-container {
+                    padding: 20px !important;
+                    max-width: 500px !important;
+                }
+
+                #quiz-container .title {
+                    font-size: 14px !important;
+                }
+
+                #quiz-container img {
+                    width: 120px !important;
+                    height: 120px !important;
+                    margin: 15px auto !important;
+                }
+
+                #quiz-container p {
+                    font-size: 11px !important;
+                    margin: 15px 0 !important;
+                }
+
+                #quiz-container .nes-btn {
+                    font-size: 9px !important;
+                    padding: 10px !important;
+                }
+
+                /* Quiz feedback balloon */
+                .nes-balloon {
+                    font-size: 12px !important;
+                    padding: 10px 15px !important;
+                }
+            }
+
+            @media (max-width: 480px) {
+                #qix-header {
+                    height: 32px !important;
+                    padding: 0 8px !important;
+                }
+
+                .qix-header-left,
+                .qix-header-right {
+                    gap: 5px !important;
+                }
+
+                /* Show icons, hide text on small screens */
+                .qix-header-btn .btn-icon {
+                    display: inline !important;
+                }
+                .qix-header-btn .btn-text {
+                    display: none !important;
+                }
+
+                .qix-header-btn {
+                    padding: 4px 8px !important;
+                    font-size: 14px !important;
+                    min-width: 32px !important;
+                }
+
+                .qix-username {
+                    font-size: 10px !important;
+                    max-width: 80px;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    white-space: nowrap;
+                }
+
+                /* How to Play Modal */
+                #how-to-play-modal .modal-content,
+                #how-to-play-modal > div > div {
+                    padding: 15px !important;
+                    max-width: 90% !important;
+                    max-height: 85vh !important;
+                }
+
+                #how-to-play-modal h2 {
+                    font-size: 18px !important;
+                }
+
+                #how-to-play-modal h3 {
+                    font-size: 12px !important;
+                }
+
+                #how-to-play-modal ul,
+                #how-to-play-modal p {
+                    font-size: 10px !important;
+                    line-height: 1.4 !important;
+                    margin-bottom: 12px !important;
+                }
+
+                #how-to-play-modal li {
+                    margin-bottom: 4px !important;
+                }
+
+                #how-to-play-modal button {
+                    padding: 8px 16px !important;
+                    font-size: 12px !important;
+                }
+
+                /* Quiz Dialog */
+                #quiz-container .nes-container {
+                    padding: 15px !important;
+                    max-width: 95% !important;
+                }
+
+                #quiz-container .title {
+                    font-size: 12px !important;
+                }
+
+                #quiz-container img {
+                    width: 100px !important;
+                    height: 100px !important;
+                    margin: 10px auto !important;
+                }
+
+                #quiz-container p {
+                    font-size: 10px !important;
+                    margin: 10px 0 !important;
+                }
+
+                #quiz-container > div > div > div {
+                    gap: 10px !important;
+                }
+
+                #quiz-container .nes-btn {
+                    font-size: 8px !important;
+                    padding: 8px !important;
+                }
+
+                /* Quiz feedback balloon */
+                .nes-balloon {
+                    font-size: 10px !important;
+                    padding: 8px 12px !important;
+                    max-width: 80% !important;
+                }
+            }
+
+            @media (max-width: 360px) {
+                #qix-header {
+                    height: 30px !important;
+                    padding: 0 5px !important;
+                }
+
+                .qix-header-btn {
+                    padding: 3px 6px !important;
+                    font-size: 12px !important;
+                    min-width: 28px !important;
+                }
+
+                .qix-username {
+                    font-size: 9px !important;
+                    max-width: 60px;
+                }
+
+                /* How to Play Modal */
+                #how-to-play-modal h2 {
+                    font-size: 16px !important;
+                }
+
+                #how-to-play-modal h3 {
+                    font-size: 11px !important;
+                }
+
+                #how-to-play-modal ul,
+                #how-to-play-modal p {
+                    font-size: 9px !important;
+                }
+
+                /* Quiz Dialog */
+                #quiz-container img {
+                    width: 80px !important;
+                    height: 80px !important;
+                }
+
+                #quiz-container .title {
+                    font-size: 10px !important;
+                }
+
+                #quiz-container p {
+                    font-size: 9px !important;
+                }
+
+                #quiz-container .nes-btn {
+                    font-size: 7px !important;
+                    padding: 6px !important;
+                }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
     private createHeader(): void {
         // Remove existing header if present
         if (this.headerContainer) {
             this.headerContainer.remove();
         }
 
+        // Inject responsive styles for QixScene
+        this.injectResponsiveStyles();
+
         const user = AuthService.getUser();
         const username = user?.username || 'Guest';
 
         this.headerContainer = document.createElement('div');
+        this.headerContainer.id = 'qix-header';
         this.headerContainer.style.cssText = `
             position: absolute;
             top: 0;
@@ -177,6 +462,7 @@ class QixScene extends Phaser.Scene {
 
         // Left side: Back button and username
         const leftDiv = document.createElement('div');
+        leftDiv.className = 'qix-header-left';
         leftDiv.style.cssText = `
             display: flex;
             align-items: center;
@@ -185,7 +471,8 @@ class QixScene extends Phaser.Scene {
 
         // Back to menu button
         const backBtn = document.createElement('button');
-        backBtn.textContent = '← Menu';
+        backBtn.className = 'qix-header-btn qix-back-btn';
+        backBtn.innerHTML = '<span class="btn-text">← Menu</span><span class="btn-icon">←</span>';
         backBtn.style.cssText = `
             padding: 6px 12px;
             font-size: 12px;
@@ -209,6 +496,7 @@ class QixScene extends Phaser.Scene {
 
         // Username display
         const usernameDiv = document.createElement('div');
+        usernameDiv.className = 'qix-username';
         usernameDiv.style.cssText = `
             color: #CCAAFF;
             font-family: Arial, sans-serif;
@@ -222,6 +510,7 @@ class QixScene extends Phaser.Scene {
 
         // Right side container for help and logout
         const rightDiv = document.createElement('div');
+        rightDiv.className = 'qix-header-right';
         rightDiv.style.cssText = `
             display: flex;
             align-items: center;
@@ -230,7 +519,8 @@ class QixScene extends Phaser.Scene {
 
         // How to Play button
         const helpBtn = document.createElement('button');
-        helpBtn.textContent = '❓ How to Play';
+        helpBtn.className = 'qix-header-btn qix-help-btn';
+        helpBtn.innerHTML = '<span class="btn-text">❓ How to Play</span><span class="btn-icon">❓</span>';
         helpBtn.style.cssText = `
             padding: 6px 12px;
             font-size: 12px;
@@ -254,7 +544,8 @@ class QixScene extends Phaser.Scene {
 
         // Logout button
         const logoutBtn = document.createElement('button');
-        logoutBtn.textContent = 'Logout';
+        logoutBtn.className = 'qix-header-btn qix-logout-btn';
+        logoutBtn.innerHTML = '<span class="btn-text">Logout</span><span class="btn-icon">⬅</span>';
         logoutBtn.style.cssText = `
             padding: 6px 16px;
             font-size: 12px;
@@ -409,12 +700,32 @@ class QixScene extends Phaser.Scene {
         });
     }
 
-    private goToMenu(): void {
+    private async goToMenu(): Promise<void> {
+        // End the current session
+        if (sessionStore.hasActiveSession()) {
+            try {
+                await sessionStore.endSession();
+            } catch (error) {
+                console.error('[QixScene] Failed to end session:', error);
+            }
+        }
         this.cleanupHeader();
         this.scene.start('MenuScene');
     }
 
-    private handleLogout(): void {
+    private async handleLogout(): Promise<void> {
+        // End session before logging out
+        if (sessionStore.hasActiveSession()) {
+            try {
+                await sessionStore.endSession();
+            } catch (error) {
+                console.error('[QixScene] Failed to end session:', error);
+            }
+        }
+
+        // Disconnect WebSocket
+        websocketService.disconnect();
+
         AuthService.logout();
         this.cleanupHeader();
         // Reset the image overlay
@@ -498,7 +809,10 @@ class QixScene extends Phaser.Scene {
         this.cameras.main.shake(300, .005);
         this.pauseControl.pauseForWin(time);
         this.cameras.main.shake(300, .005);
-        
+
+        // Record death for score tracking
+        sessionStore.recordDeath();
+
         // Hide overlay so text is visible
         ImageOverlay.getInstance().hide();
         let winText = this.createWinText(`Ouch!!!.`, "#000000");
@@ -519,14 +833,31 @@ class QixScene extends Phaser.Scene {
         return (this.grid.filledPolygons.percentArea() >= this.levels.coverageTarget);
     }
 
-    options = { fontFamily: 'Courier', fontSize: '30px', color: '#FFFF00', align: 'center',
-        radiusX: '10px', radiusY: '10px',
-        padding: { x: 10, y: 10 }
-    };
+    private getTextOptions() {
+        const screenWidth = window.innerWidth;
+        const isMobile = screenWidth <= 480;
+        const isTablet = screenWidth <= 768 && screenWidth > 480;
+        const fontSize = isMobile ? '18px' : isTablet ? '24px' : '30px';
+        const padding = isMobile ? { x: 6, y: 6 } : { x: 10, y: 10 };
+
+        return {
+            fontFamily: 'Courier',
+            fontSize,
+            color: '#FFFF00',
+            align: 'center',
+            radiusX: '10px',
+            radiusY: '10px',
+            padding
+        };
+    }
 
     passLevel(time: number) {
         this.pauseControl.pauseForWin(time);
         this.cameras.main.shake(300, .005);
+
+        // Update territory percentage for score calculation
+        const territoryPercentage = this.grid.filledPolygons.percentArea();
+        sessionStore.updateTerritory(territoryPercentage);
 
         // First, reveal the full image so player can see it
         ImageOverlay.getInstance().revealFullImage();
@@ -649,6 +980,9 @@ class QixScene extends Phaser.Scene {
     private handleQuizAnswer(selectedAnswer: string, correctAnswer: string, isLastLevel: boolean, quizContainer: HTMLDivElement) {
         const isCorrect = selectedAnswer.toLowerCase() === correctAnswer.toLowerCase();
 
+        // Record quiz attempt
+        sessionStore.recordQuizAttempt();
+
         // Show feedback
         const feedback = document.createElement('div');
         feedback.className = `nes-balloon from-left ${isCorrect ? 'is-success' : 'is-error'}`;
@@ -669,10 +1003,118 @@ class QixScene extends Phaser.Scene {
             if (isCorrect) {
                 // Remove quiz and proceed
                 quizContainer.remove();
-                this.proceedToNextLevel(isLastLevel);
+                // Submit score for completed level
+                this.submitLevelScore(isLastLevel);
             }
             // If wrong, keep quiz open for another attempt
         }, 2000);
+    }
+
+    private async submitLevelScore(isLastLevel: boolean) {
+        try {
+            const result = await sessionStore.completeLevel();
+            if (result) {
+                console.log('[QixScene] Score submitted:', result.breakdown.totalScore);
+                // Show score breakdown toast
+                this.showScoreToast(result);
+            }
+        } catch (error) {
+            console.error('[QixScene] Failed to submit score:', error);
+        }
+
+        // Proceed to next level after score submission
+        this.proceedToNextLevel(isLastLevel);
+    }
+
+    private showScoreToast(result: ScoreSubmissionResult) {
+        const toast = document.createElement('div');
+        toast.className = 'nes-container is-dark score-toast';
+        toast.style.cssText = `
+            position: fixed;
+            top: 60px;
+            right: 20px;
+            z-index: 3000;
+            padding: 15px;
+            font-size: 10px;
+            animation: slideIn 0.3s ease-out;
+            max-width: 280px;
+        `;
+
+        // Add responsive styles
+        const responsiveStyle = document.createElement('style');
+        responsiveStyle.id = 'score-toast-responsive';
+        if (!document.getElementById('score-toast-responsive')) {
+            responsiveStyle.textContent = `
+                @media (max-width: 480px) {
+                    .score-toast {
+                        top: 50px !important;
+                        right: 10px !important;
+                        left: 10px !important;
+                        max-width: none !important;
+                        padding: 10px !important;
+                        font-size: 9px !important;
+                    }
+                }
+            `;
+            document.head.appendChild(responsiveStyle);
+        }
+
+        const { breakdown, rankings, achievements, pokemon } = result;
+        let achievementsHtml = '';
+        if (achievements.unlocked.length > 0) {
+            achievementsHtml = `
+                <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #444;">
+                    <div style="color: #ffd700;">Achievement Unlocked!</div>
+                    ${achievements.unlocked.map(a => `<div>${a.icon} ${a.name}</div>`).join('')}
+                </div>
+            `;
+        }
+
+        let rankChangeHtml = '';
+        if (rankings.rankChange !== 0) {
+            const direction = rankings.rankChange > 0 ? '↑' : '↓';
+            const color = rankings.rankChange > 0 ? '#92cc41' : '#e76e55';
+            rankChangeHtml = `<span style="color: ${color};">${direction}${Math.abs(rankings.rankChange)}</span>`;
+        }
+
+        toast.innerHTML = `
+            <div style="color: #92cc41; font-size: 14px; margin-bottom: 8px;">
+                +${breakdown.totalScore.toLocaleString()} pts
+            </div>
+            <div style="color: #888; font-size: 9px;">
+                Territory: ${breakdown.territoryScore} | Time: +${breakdown.timeBonus} | Lives: +${breakdown.lifeBonus}
+            </div>
+            ${breakdown.streakBonus > 0 ? `<div style="color: #ffd700;">Streak Bonus: +${breakdown.streakBonus}</div>` : ''}
+            ${rankings.isNewPersonalBest ? '<div style="color: #92cc41;">New Personal Best!</div>' : ''}
+            <div style="margin-top: 5px;">Rank: #${rankings.globalRank} ${rankChangeHtml}</div>
+            ${pokemon.isNewReveal ? `<div style="color: #ffd700;">New Pokemon: ${pokemon.pokemonName}!</div>` : ''}
+            ${achievementsHtml}
+        `;
+
+        document.body.appendChild(toast);
+
+        // Add animation styles
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+            @keyframes slideOut {
+                from { transform: translateX(0); opacity: 1; }
+                to { transform: translateX(100%); opacity: 0; }
+            }
+        `;
+        document.head.appendChild(style);
+
+        // Remove toast after 4 seconds
+        setTimeout(() => {
+            toast.style.animation = 'slideOut 0.3s ease-in forwards';
+            setTimeout(() => {
+                toast.remove();
+                style.remove();
+            }, 300);
+        }, 4000);
     }
 
     private proceedToNextLevel(isLastLevel: boolean) {
@@ -699,82 +1141,129 @@ class QixScene extends Phaser.Scene {
         }
     }
 
-    private showGameComplete(): void {
+    private async showGameComplete(): Promise<void> {
+        // End the session and get final stats
+        let finalScore = sessionStore.getTotalScore();
+        let levelsCompleted = sessionStore.getLevelsCompleted();
+
+        if (sessionStore.hasActiveSession()) {
+            try {
+                await sessionStore.endSession();
+            } catch (error) {
+                console.error('[QixScene] Failed to end session:', error);
+            }
+        }
+
         // Hide the game overlay
         ImageOverlay.getInstance().hide();
-        
+
+        // Determine if mobile for responsive sizing
+        const screenWidth = window.innerWidth;
+        const isMobile = screenWidth <= 480;
+        const isTablet = screenWidth <= 768 && screenWidth > 480;
+
+        // Responsive font sizes
+        const fontSizes = {
+            congrats: isMobile ? '22px' : isTablet ? '28px' : '36px',
+            message: isMobile ? '14px' : isTablet ? '18px' : '24px',
+            levels: isMobile ? '12px' : isTablet ? '16px' : '20px',
+            score: isMobile ? '14px' : isTablet ? '18px' : '22px',
+            button: isMobile ? '12px' : isTablet ? '14px' : '18px'
+        };
+
+        // Responsive spacing
+        const spacing = {
+            congratsY: isMobile ? -70 : isTablet ? -85 : -100,
+            messageY: isMobile ? -30 : isTablet ? -35 : -40,
+            levelsY: 0,
+            scoreY: isMobile ? 30 : isTablet ? 35 : 40,
+            buttonY: isMobile ? 65 : isTablet ? 75 : 90
+        };
+
+        // Responsive button size
+        const buttonWidth = isMobile ? 150 : isTablet ? 175 : 200;
+        const buttonHeight = isMobile ? 38 : isTablet ? 44 : 50;
+
         // Create dark overlay
         const overlay = this.add.graphics();
         overlay.fillStyle(0x000000, 0.8);
         overlay.fillRect(0, 0, config.width as number, customConfig.frameHeight as number);
         overlay.setDepth(999);
-        
+
         // Congratulations text
         const centerX = (config.width as number) / 2;
         const centerY = (customConfig.frameHeight as number) / 2;
-        
-        const congratsText = this.add.text(centerX, centerY - 80, '🎉 Congratulations! 🎉', {
+
+        const congratsText = this.add.text(centerX, centerY + spacing.congratsY, '🎉 Congratulations! 🎉', {
             fontFamily: 'Arial',
-            fontSize: '36px',
+            fontSize: fontSizes.congrats,
             color: '#FFD700',
             align: 'center'
         });
         congratsText.setOrigin(0.5);
         congratsText.setDepth(1000);
-        
+
         const gameName = this.customGame?.name || 'the game';
-        const messageText = this.add.text(centerX, centerY - 20, `You completed ${gameName}!`, {
+        const messageText = this.add.text(centerX, centerY + spacing.messageY, `You completed ${gameName}!`, {
             fontFamily: 'Arial',
-            fontSize: '24px',
+            fontSize: fontSizes.message,
             color: '#FFFFFF',
             align: 'center'
         });
         messageText.setOrigin(0.5);
         messageText.setDepth(1000);
-        
-        const levelsText = this.add.text(centerX, centerY + 20, `${this.customGame?.levels.length || 0} Pokémon revealed!`, {
+
+        const levelsText = this.add.text(centerX, centerY + spacing.levelsY, `${this.customGame?.levels.length || levelsCompleted} Pokémon revealed!`, {
             fontFamily: 'Arial',
-            fontSize: '20px',
+            fontSize: fontSizes.levels,
             color: '#CCAAFF',
             align: 'center'
         });
         levelsText.setOrigin(0.5);
         levelsText.setDepth(1000);
-        
+
+        // Show final score
+        const scoreText = this.add.text(centerX, centerY + spacing.scoreY, `Final Score: ${finalScore.toLocaleString()}`, {
+            fontFamily: 'Arial',
+            fontSize: fontSizes.score,
+            color: '#92cc41',
+            align: 'center'
+        });
+        scoreText.setOrigin(0.5);
+        scoreText.setDepth(1000);
+
         // Create return to menu button using Graphics (Phaser 3.10 compatible)
-        const buttonWidth = 200;
-        const buttonHeight = 50;
         const buttonX = centerX - buttonWidth / 2;
-        const buttonY = centerY + 60;
-        
+        const buttonY = centerY + spacing.buttonY;
+
         const buttonBg = this.add.graphics();
         buttonBg.fillStyle(0x4CAF50, 1);
         buttonBg.fillRect(buttonX, buttonY, buttonWidth, buttonHeight);
         buttonBg.setDepth(1000);
         buttonBg.setInteractive(new Phaser.Geom.Rectangle(buttonX, buttonY, buttonWidth, buttonHeight), Phaser.Geom.Rectangle.Contains);
-        
+
         const buttonText = this.add.text(centerX, buttonY + buttonHeight / 2, 'Return to Menu', {
             fontFamily: 'Arial',
-            fontSize: '18px',
+            fontSize: fontSizes.button,
             color: '#FFFFFF',
             align: 'center'
         });
         buttonText.setOrigin(0.5);
         buttonText.setDepth(1001);
-        
+
         // Hover effects
         buttonBg.on('pointerover', () => {
             buttonBg.clear();
             buttonBg.fillStyle(0x66BB6A, 1);
             buttonBg.fillRect(buttonX, buttonY, buttonWidth, buttonHeight);
         });
-        
+
         buttonBg.on('pointerout', () => {
             buttonBg.clear();
             buttonBg.fillStyle(0x4CAF50, 1);
             buttonBg.fillRect(buttonX, buttonY, buttonWidth, buttonHeight);
         });
-        
+
         buttonBg.on('pointerdown', () => {
             this.cleanupHeader();
             this.scene.start('MenuScene');
@@ -782,9 +1271,11 @@ class QixScene extends Phaser.Scene {
     }
 
     createWinText(message: string, color: string): Text {
-        const x = ((config.width as number) / 3);
-        const y = ((customConfig.frameHeight as number) / 2) - 35;
-        let winText = this.add.text(x, y, message, this.options);
+        const screenWidth = window.innerWidth;
+        const isMobile = screenWidth <= 480;
+        const x = isMobile ? ((config.width as number) / 4) : ((config.width as number) / 3);
+        const y = ((customConfig.frameHeight as number) / 2) - (isMobile ? 25 : 35);
+        let winText = this.add.text(x, y, message, this.getTextOptions());
         winText.setShadow(3, 3, color, 2, true, true);
         winText.setDepth(1000);
         return winText;

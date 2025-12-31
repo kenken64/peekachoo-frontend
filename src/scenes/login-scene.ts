@@ -1,5 +1,7 @@
 import 'phaser';
 import * as AuthService from '../services/auth-service';
+import { websocketService } from '../services/websocket-service';
+import { notificationManager } from '../services/notification-manager';
 
 export default class LoginScene extends Phaser.Scene {
     private usernameInput!: HTMLInputElement;
@@ -99,31 +101,78 @@ export default class LoginScene extends Phaser.Scene {
             /* Mobile Responsive Styles */
             @media (max-width: 767px) {
                 .nes-container.is-dark.with-title {
-                    width: 90vw !important;
-                    max-width: 500px !important;
-                    padding: 10px !important;
-                    top: 45% !important;
-                    max-height: 85vh !important;
-                    overflow-y: auto !important;
+                    width: 85% !important;
+                    max-width: 400px !important;
+                    padding: 15px !important;
+                    top: 50% !important;
+                    left: 50% !important;
+                    transform: translate(-50%, -50%) !important;
+                    max-height: none !important;
+                    overflow-y: visible !important;
                 }
 
                 .nes-container.is-dark.with-title .title {
-                    padding: 5px 0 !important;
-                    margin-bottom: 5px !important;
+                    padding: 8px 0 !important;
+                    margin-bottom: 8px !important;
                 }
 
                 .nes-container.is-dark.with-title img[alt="PEEKACHOO"] {
-                    width: 80% !important;
+                    width: 100% !important;
+                    max-width: 320px !important;
+                    margin: 0 auto !important;
+                }
+
+                .nes-container.is-dark.with-title p {
+                    margin-bottom: 12px !important;
+                    font-size: 10px !important;
+                }
+
+                .nes-container.is-dark.with-title .nes-field {
+                    margin-bottom: 15px !important;
+                }
+
+                .nes-container.is-dark.with-title .nes-input {
+                    font-size: 14px !important;
+                    padding: 10px !important;
+                }
+
+                .nes-container.is-dark.with-title .nes-btn {
+                    font-size: 11px !important;
+                    padding: 10px 16px !important;
+                }
+
+                .nes-container.is-dark.with-title label {
+                    font-size: 11px !important;
+                }
+
+                .nes-container.is-dark.with-title #login-error-message {
+                    min-height: 18px !important;
+                    margin-bottom: 12px !important;
+                    font-size: 8px !important;
+                }
+
+                .pikachu-bg {
+                    width: 80px !important;
+                    height: 80px !important;
+                    opacity: 0.3 !important;
+                }
+            }
+
+            @media (max-width: 480px) {
+                .nes-container.is-dark.with-title {
+                    width: 90% !important;
+                    max-width: 350px !important;
+                    padding: 12px !important;
+                }
+
+                .nes-container.is-dark.with-title img[alt="PEEKACHOO"] {
+                    width: 100% !important;
                     max-width: 280px !important;
                 }
 
                 .nes-container.is-dark.with-title p {
-                    margin-bottom: 10px !important;
                     font-size: 9px !important;
-                }
-
-                .nes-container.is-dark.with-title .nes-field {
-                    margin-bottom: 12px !important;
+                    margin-bottom: 10px !important;
                 }
 
                 .nes-container.is-dark.with-title .nes-input {
@@ -133,65 +182,42 @@ export default class LoginScene extends Phaser.Scene {
 
                 .nes-container.is-dark.with-title .nes-btn {
                     font-size: 10px !important;
-                    padding: 8px 12px !important;
-                }
-
-                .nes-container.is-dark.with-title label {
-                    font-size: 10px !important;
-                }
-
-                .nes-container.is-dark.with-title #login-error-message {
-                    min-height: 15px !important;
-                    margin-bottom: 10px !important;
-                    font-size: 7px !important;
+                    padding: 8px 14px !important;
                 }
 
                 .pikachu-bg {
-                    width: 100px !important;
-                    height: 100px !important;
-                }
-            }
-
-            @media (max-width: 480px) {
-                .nes-container.is-dark.with-title {
-                    width: 95vw !important;
-                    padding: 8px !important;
-                    top: 40% !important;
-                    max-height: 80vh !important;
-                }
-
-                .nes-container.is-dark.with-title img[alt="PEEKACHOO"] {
-                    width: 85% !important;
-                    max-width: 250px !important;
-                }
-
-                .nes-container.is-dark.with-title .nes-btn {
-                    font-size: 9px !important;
-                    padding: 6px 10px !important;
-                }
-
-                .pikachu-bg {
-                    width: 80px !important;
-                    height: 80px !important;
-                    opacity: 0.4 !important;
+                    width: 60px !important;
+                    height: 60px !important;
+                    opacity: 0.2 !important;
                 }
             }
 
             @media (max-width: 360px) {
                 .nes-container.is-dark.with-title {
-                    padding: 6px !important;
-                    top: 35% !important;
+                    width: 92% !important;
+                    max-width: 300px !important;
+                    padding: 10px !important;
                 }
 
                 .nes-container.is-dark.with-title img[alt="PEEKACHOO"] {
-                    width: 90% !important;
-                    max-width: 220px !important;
+                    max-width: 240px !important;
+                }
+
+                .nes-container.is-dark.with-title .title {
+                    padding: 5px 0 !important;
+                }
+
+                .nes-container.is-dark.with-title p {
+                    font-size: 8px !important;
                 }
 
                 .nes-container.is-dark.with-title .nes-btn {
-                    font-size: 8px !important;
-                    padding: 5px 8px !important;
-                    min-width: 60px !important;
+                    font-size: 9px !important;
+                    padding: 6px 12px !important;
+                }
+
+                .nes-container.is-dark.with-title label {
+                    font-size: 10px !important;
                 }
 
                 .pikachu-bg {
@@ -374,6 +400,11 @@ export default class LoginScene extends Phaser.Scene {
             this.showStatus('Creating passkey...', false);
             await AuthService.register(username);
             this.showStatus('Registration successful!', false);
+
+            // Initialize WebSocket and notifications
+            notificationManager.initialize();
+            websocketService.connect();
+
             this.cleanup();
             this.scene.start('MenuScene');
         } catch (error: any) {
@@ -401,6 +432,11 @@ export default class LoginScene extends Phaser.Scene {
             this.showStatus('Authenticating...', false);
             await AuthService.login(username);
             this.showStatus('Login successful!', false);
+
+            // Initialize WebSocket and notifications
+            notificationManager.initialize();
+            websocketService.connect();
+
             this.cleanup();
             this.scene.start('MenuScene');
         } catch (error: any) {
@@ -418,6 +454,10 @@ export default class LoginScene extends Phaser.Scene {
 
         const user = await AuthService.getCurrentUser();
         if (user) {
+            // Initialize WebSocket and notifications for returning session
+            notificationManager.initialize();
+            websocketService.connect();
+
             this.scene.start('MenuScene');
         } else {
             // Token invalid, show login form

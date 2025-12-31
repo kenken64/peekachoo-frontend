@@ -21,15 +21,20 @@
   <script src="env-config.js" onerror="console.log('env-config.js not found, using build-time config')"></script>
 
   <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
+
     html {
       font-family: 'Press Start 2P', cursive;
     }
 
     body {
-      margin-top: 1rem;
-      padding: 0;
       background-color: #212529;
-      text-align: center;
+      min-height: 100vh;
+      overflow-x: hidden;
     }
 
     #content {
@@ -39,6 +44,39 @@
 
     #debugTextArea {
       display: none;
+    }
+
+    /* Desktop layout - centered */
+    @media (min-width: 768px) {
+      body {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+    }
+
+    /* Mobile/Tablet layout - centered with scaling */
+    @media (max-width: 767px) {
+      body {
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        padding: 0;
+        margin: 0;
+        min-height: 100vh;
+        min-height: -webkit-fill-available;
+      }
+
+      html {
+        height: -webkit-fill-available;
+      }
+
+      #content {
+        display: block;
+        margin: 0 auto;
+        padding: 0;
+        overflow: hidden;
+      }
     }
   </style>
 </head>

@@ -4,6 +4,8 @@ import LoginScene from "./scenes/login-scene";
 import { MenuScene } from "./scenes/menu-scene";
 import { GameCreateScene } from "./scenes/game-create-scene";
 import QixScene from "./scenes/qix-scene";
+import { LeaderboardScene } from "./scenes/leaderboard-scene";
+import { StatsScene } from "./scenes/stats-scene";
 
 // Clear old localStorage data (we now use sessionStorage for per-tab sessions)
 localStorage.removeItem('peekachoo_token');
@@ -31,7 +33,9 @@ export const config:GameConfig = {
         LoginScene,
         MenuScene,
         GameCreateScene,
-        QixScene
+        QixScene,
+        LeaderboardScene,
+        StatsScene
     ],
     banner: false
 };
@@ -88,9 +92,20 @@ function resizeCanvas() {
 
     // Only scale on mobile/tablet (< 768px width)
     if (windowWidth < 768) {
-        // Use full window width for scale calculation
-        const scale = windowWidth / gameWidth;
-        console.log(`Mobile detected, scale=${scale}`);
+        // Calculate scale to fit width
+        const scaleX = windowWidth / gameWidth;
+        // Also consider height to avoid vertical overflow
+        const scaleY = windowHeight / gameHeight;
+        // Use the smaller scale to ensure it fits both dimensions
+        const scale = Math.min(scaleX, scaleY * 0.95); // 0.95 for some padding
+        console.log(`Mobile detected, scaleX=${scaleX}, scaleY=${scaleY}, scale=${scale}`);
+
+        const scaledWidth = gameWidth * scale;
+        const scaledHeight = gameHeight * scale;
+
+        // Calculate centering offset if scaled canvas is smaller than viewport
+        const offsetX = Math.max(0, (windowWidth - scaledWidth) / 2);
+        const offsetY = Math.max(0, (windowHeight - scaledHeight) / 2);
 
         // Remove ALL borders and outlines
         canvas.style.border = 'none';
@@ -100,28 +115,28 @@ function resizeCanvas() {
         content.style.outline = 'none';
         content.style.boxShadow = 'none';
 
-        // Apply CSS transform to scale the canvas to full width
+        // Apply CSS transform to scale the canvas
         canvas.style.width = `${gameWidth}px`;
         canvas.style.height = `${gameHeight}px`;
         canvas.style.transformOrigin = 'top left';
         canvas.style.transform = `scale(${scale})`;
         canvas.style.display = 'block';
-        canvas.style.position = 'relative';
+        canvas.style.position = 'absolute';
         canvas.style.margin = '0';
         canvas.style.padding = '0';
         canvas.style.left = '0';
         canvas.style.top = '0';
 
-        // Set content container to match
-        content.style.width = '100vw';
+        // Set content container to match scaled size and center it
+        content.style.width = `${scaledWidth}px`;
         content.style.maxWidth = '100vw';
-        content.style.height = `${gameHeight * scale}px`;
-        content.style.margin = '0';
+        content.style.height = `${scaledHeight}px`;
+        content.style.margin = `${offsetY}px auto 0 auto`;
         content.style.padding = '0';
         content.style.position = 'relative';
         content.style.overflow = 'hidden';
 
-        console.log(`Canvas scaled to ${gameWidth * scale}x${gameHeight * scale}`);
+        console.log(`Canvas scaled to ${scaledWidth}x${scaledHeight}, offset: ${offsetX}, ${offsetY}`);
     } else {
         console.log('Desktop mode, no scaling');
         // Desktop - no scaling
