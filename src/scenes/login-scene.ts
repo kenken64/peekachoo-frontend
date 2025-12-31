@@ -197,6 +197,19 @@ export default class LoginScene extends Phaser.Scene {
         fieldContainer.appendChild(this.usernameInput);
         this.formContainer.appendChild(fieldContainer);
 
+        // Error message container
+        const errorContainer = document.createElement('div');
+        errorContainer.id = 'login-error-message';
+        errorContainer.style.cssText = `
+            min-height: 20px;
+            margin-bottom: 15px;
+            text-align: center;
+            font-size: 8px;
+            color: #e76e55;
+            word-wrap: break-word;
+        `;
+        this.formContainer.appendChild(errorContainer);
+
         // Button container
         const buttonContainer = document.createElement('div');
         buttonContainer.style.cssText = `
@@ -310,6 +323,14 @@ export default class LoginScene extends Phaser.Scene {
     }
 
     private showStatus(message: string, isError: boolean): void {
+        // Update DOM error message container
+        const errorContainer = document.getElementById('login-error-message');
+        if (errorContainer) {
+            errorContainer.textContent = message;
+            errorContainer.style.color = isError ? '#e76e55' : '#92cc41';
+        }
+
+        // Also update Phaser text for consistency
         if (this.statusText) {
             this.statusText.setText(message);
             this.statusText.setColor(isError ? '#e76e55' : '#92cc41');
