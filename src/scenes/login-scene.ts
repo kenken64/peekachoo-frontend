@@ -93,7 +93,7 @@ export default class LoginScene extends Phaser.Scene {
                 pointer-events: none;
                 image-rendering: pixelated;
                 filter: drop-shadow(0 0 10px rgba(255, 193, 7, 0.3));
-                z-index: 1;
+                z-index: 2000;
             }
         `;
         document.head.appendChild(style);
@@ -135,22 +135,35 @@ export default class LoginScene extends Phaser.Scene {
             left: 50%;
             top: 50%;
             transform: translate(-50%, -50%);
-            width: 400px;
+            width: 500px;
             z-index: 1000;
             background-color: rgba(33, 37, 41, 0.95);
             box-shadow: 0 0 30px rgba(146, 204, 65, 0.3);
         `;
 
-        // Title
-        const title = document.createElement('p');
-        title.className = 'title';
-        title.textContent = 'PEEKACHOO';
-        title.style.cssText = `
-            color: #92cc41;
-            font-size: 20px;
+        // Logo
+        const logoContainer = document.createElement('div');
+        logoContainer.className = 'title';
+        logoContainer.style.cssText = `
             text-align: center;
+            padding: 10px 0;
+            background: transparent !important;
         `;
-        this.formContainer.appendChild(title);
+
+        const logo = document.createElement('img');
+        logo.src = 'assets/logo.png';
+        logo.alt = 'PEEKACHOO';
+        logo.style.cssText = `
+            width: 450px;
+            height: auto;
+            image-rendering: auto;
+            filter: drop-shadow(0 0 15px rgba(146, 204, 65, 0.6));
+            margin: 0 auto;
+            display: block;
+        `;
+
+        logoContainer.appendChild(logo);
+        this.formContainer.appendChild(logoContainer);
 
         // Subtitle
         const subtitle = document.createElement('p');
