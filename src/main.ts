@@ -80,39 +80,45 @@ function resizeCanvas() {
 
     const windowWidth = window.innerWidth;
     const windowHeight = window.innerHeight;
-    const gameRatio = gameWidth / gameHeight;
-    const windowRatio = windowWidth / windowHeight;
-
-    let scale = 1;
 
     // Only scale on mobile/tablet (< 768px width)
     if (windowWidth < 768) {
-        // Calculate scale to fit width, with some padding
-        const padding = 0;
-        const availableWidth = windowWidth - padding;
-        const availableHeight = windowHeight - padding;
-
-        const scaleX = availableWidth / gameWidth;
-        const scaleY = availableHeight / gameHeight;
+        // Calculate scale to fit width
+        const scaleX = windowWidth / gameWidth;
+        const scaleY = windowHeight / gameHeight;
 
         // Use the smaller scale to ensure everything fits
-        scale = Math.min(scaleX, scaleY, 1);
+        const scale = Math.min(scaleX, scaleY);
+
+        // Set canvas size to original dimensions (Phaser handles this)
+        canvas.width = gameWidth;
+        canvas.height = gameHeight;
 
         // Apply CSS transform to scale the canvas
-        canvas.style.transformOrigin = 'top center';
+        canvas.style.transformOrigin = '0 0';
         canvas.style.transform = `scale(${scale})`;
-        canvas.style.margin = '0 auto';
+        canvas.style.position = 'absolute';
+        canvas.style.left = '50%';
+        canvas.style.top = '0';
+        canvas.style.marginLeft = `-${(gameWidth * scale) / 2}px`;
+
+        // Set content container size to match scaled canvas
         content.style.width = `${gameWidth * scale}px`;
         content.style.height = `${gameHeight * scale}px`;
         content.style.margin = '0 auto';
+        content.style.position = 'relative';
     } else {
         // Desktop - no scaling
         canvas.style.transform = 'none';
         canvas.style.transformOrigin = '';
-        canvas.style.margin = '';
+        canvas.style.position = '';
+        canvas.style.left = '';
+        canvas.style.top = '';
+        canvas.style.marginLeft = '';
         content.style.width = 'auto';
         content.style.height = 'auto';
         content.style.margin = '';
+        content.style.position = 'relative';
     }
 }
 
