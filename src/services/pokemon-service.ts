@@ -1,4 +1,5 @@
 import * as AuthService from './auth-service';
+import { config } from '../config';
 
 export interface Pokemon {
     id: number;
@@ -13,7 +14,7 @@ export interface Pokemon {
 }
 
 export class PokemonService {
-    private static API_URL = `${process.env.API_URL}/pokemon`;
+    private static API_URL = `${config.apiUrl}/pokemon`;
 
     static async syncPokemon(syncAll: boolean = false, limit: number = 50): Promise<any> {
         const token = AuthService.getToken();

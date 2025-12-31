@@ -1,6 +1,7 @@
 import { getToken } from './auth-service';
+import { config } from '../config';
 
-const API_URL = process.env.API_URL as string;
+const API_URL = config.apiUrl;
 
 export interface QuizQuestion {
     question: string;

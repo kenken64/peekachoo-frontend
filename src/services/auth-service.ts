@@ -1,6 +1,7 @@
 // Auth Service for Passkey (WebAuthn) Authentication
+import { config } from '../config';
 
-const API_BASE = `${process.env.API_URL}/auth`;
+const API_BASE = `${config.apiUrl}/auth`;
 
 interface User {
     id: string;

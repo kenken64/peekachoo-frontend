@@ -1,5 +1,6 @@
 import * as AuthService from './auth-service';
 import { Pokemon } from './pokemon-service';
+import { config } from '../config';
 
 export interface GameLevel {
     levelNumber: number;
@@ -22,7 +23,7 @@ export interface Game {
 }
 
 export class GameService {
-    private static API_URL = `${process.env.API_URL}/games`;
+    private static API_URL = `${config.apiUrl}/games`;
 
     static async createGame(name: string, description: string, levels: GameLevel[]): Promise<Game> {
         const token = AuthService.getToken();
