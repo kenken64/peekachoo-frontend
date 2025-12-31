@@ -443,6 +443,16 @@ class QixScene extends Phaser.Scene {
             this.virtualDpad.destroy();
             this.virtualDpad = null;
         }
+
+        // Reset the image overlay when leaving the scene
+        ImageOverlay.getInstance().reset();
+        ImageOverlay.getInstance().hide();
+
+        // Reset padding when leaving game scene
+        const gameContainer = document.getElementById('content');
+        if (gameContainer) {
+            gameContainer.style.paddingTop = '0';
+        }
     }
 
     update(time: number, delta: number) {

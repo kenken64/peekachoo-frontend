@@ -1,6 +1,7 @@
 import 'phaser';
 import * as AuthService from '../services/auth-service';
 import { GameService, Game } from '../services/game-service';
+import { ImageOverlay } from '../objects/image-overlay';
 
 export class MenuScene extends Phaser.Scene {
     private domContainer: HTMLDivElement | null = null;
@@ -447,6 +448,9 @@ export class MenuScene extends Phaser.Scene {
     private logout() {
         AuthService.logout();
         this.cleanup();
+        // Ensure game overlay is hidden when logging out
+        ImageOverlay.getInstance().reset();
+        ImageOverlay.getInstance().hide();
         this.scene.start('LoginScene');
     }
 
