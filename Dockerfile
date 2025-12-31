@@ -25,6 +25,12 @@ FROM nginx:alpine
 # Copy built files from builder stage
 COPY --from=builder /app/build /usr/share/nginx/html
 
+# Copy assets folder
+COPY --from=builder /app/assets /usr/share/nginx/html/assets
+
+# Copy NES.css from node_modules
+COPY --from=builder /app/node_modules/nes.css/css/nes.min.css /usr/share/nginx/html/nes.min.css
+
 # Copy custom nginx config
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
