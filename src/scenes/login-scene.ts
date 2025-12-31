@@ -59,8 +59,73 @@ export default class LoginScene extends Phaser.Scene {
         }).setOrigin(0.5);
     }
 
+    private createPikachuBackground(): void {
+        const gameContainer = document.getElementById('content');
+        if (!gameContainer) return;
+
+        // Add CSS animation styles
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes float {
+                0%, 100% { transform: translateY(0px) translateX(0px); }
+                25% { transform: translateY(-20px) translateX(10px); }
+                50% { transform: translateY(-10px) translateX(-10px); }
+                75% { transform: translateY(-15px) translateX(5px); }
+            }
+            @keyframes float-reverse {
+                0%, 100% { transform: translateY(0px) translateX(0px) scaleX(-1); }
+                25% { transform: translateY(-15px) translateX(-10px) scaleX(-1); }
+                50% { transform: translateY(-20px) translateX(10px) scaleX(-1); }
+                75% { transform: translateY(-10px) translateX(-5px) scaleX(-1); }
+            }
+            @keyframes pulse {
+                0%, 100% { opacity: 0.6; }
+                50% { opacity: 0.9; }
+            }
+            .pikachu-bg {
+                position: absolute;
+                width: 150px;
+                height: 150px;
+                background-image: url('https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/25.png');
+                background-size: contain;
+                background-repeat: no-repeat;
+                background-position: center;
+                pointer-events: none;
+                image-rendering: pixelated;
+                filter: drop-shadow(0 0 10px rgba(255, 193, 7, 0.3));
+                z-index: 1;
+            }
+        `;
+        document.head.appendChild(style);
+
+        // Create multiple Pikachus at different positions
+        const positions = [
+            { left: '10%', top: '15%', animation: 'float 4s ease-in-out infinite', delay: '0s', opacity: '0.6' },
+            { left: '80%', top: '20%', animation: 'float-reverse 5s ease-in-out infinite', delay: '1s', opacity: '0.7' },
+            { left: '15%', top: '70%', animation: 'float 6s ease-in-out infinite', delay: '2s', opacity: '0.5' },
+            { left: '75%', top: '75%', animation: 'float-reverse 4.5s ease-in-out infinite', delay: '0.5s', opacity: '0.6' },
+            { left: '50%', top: '10%', animation: 'float 5.5s ease-in-out infinite', delay: '1.5s', opacity: '0.4' }
+        ];
+
+        positions.forEach((pos, index) => {
+            const pikachu = document.createElement('div');
+            pikachu.className = 'pikachu-bg';
+            pikachu.style.cssText = `
+                left: ${pos.left};
+                top: ${pos.top};
+                animation: ${pos.animation}, pulse 3s ease-in-out infinite;
+                animation-delay: ${pos.delay};
+                opacity: ${pos.opacity};
+            `;
+            gameContainer.appendChild(pikachu);
+        });
+    }
+
     private createLoginForm(): void {
         const { width, height } = this.cameras.main;
+
+        // Create animated Pikachu background
+        this.createPikachuBackground();
 
         // Create container div
         this.formContainer = document.createElement('div');
@@ -72,7 +137,8 @@ export default class LoginScene extends Phaser.Scene {
             transform: translate(-50%, -50%);
             width: 400px;
             z-index: 1000;
-            background-color: #212529;
+            background-color: rgba(33, 37, 41, 0.95);
+            box-shadow: 0 0 30px rgba(146, 204, 65, 0.3);
         `;
 
         // Title
@@ -241,6 +307,9 @@ export default class LoginScene extends Phaser.Scene {
         if (this.formContainer && this.formContainer.parentNode) {
             this.formContainer.parentNode.removeChild(this.formContainer);
         }
+        // Remove Pikachu background elements
+        const pikachus = document.querySelectorAll('.pikachu-bg');
+        pikachus.forEach(pikachu => pikachu.remove());
     }
 
     shutdown(): void {

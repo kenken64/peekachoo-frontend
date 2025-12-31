@@ -6,6 +6,7 @@ out/
 .idea/
 *.iml
 *.log
+.env
 src_old
 *.old.js
 phaserTilemapfix

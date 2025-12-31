@@ -7,6 +7,7 @@ import {Info} from "../objects/info";
 import {Debug} from "../objects/debug";
 import {config, customConfig, resetGameConfig} from "../main";
 import {Levels} from "../objects/levels";
+import {QuizService, QuizQuestion} from "../services/quiz-service";
 import TimerEvent = Phaser.Time.TimerEvent;
 import Scene = Phaser.Scene;
 import {Sparkies} from "../objects/sparkies";
@@ -496,43 +497,176 @@ class QixScene extends Phaser.Scene {
     passLevel(time: number) {
         this.pauseControl.pauseForWin(time);
         this.cameras.main.shake(300, .005);
-        
+
         // First, reveal the full image so player can see it
         ImageOverlay.getInstance().revealFullImage();
         let winText = this.createWinText(`Level ${this.levels.currentLevel} Complete!`, "#000000");
 
         const _this = this;
-        
+
         // Check if this is the last level in a custom game
-        const isLastCustomLevel = this.customGame && 
+        const isLastCustomLevel = this.customGame &&
             (this.currentLevelIndex >= this.customGame.levels.length - 1);
-        
-        // Show full image for a moment
+
+        // Show full image for a moment, then show quiz
         setTimeout(function () {
             winText.destroy();
-            
-            // Hide overlay so text is visible
-            ImageOverlay.getInstance().hide();
-            
-            if (isLastCustomLevel) {
-                // Game complete! Show congratulations
-                _this.showGameComplete();
-            } else {
-                winText = _this.createWinText(`Sweet!!\nOn to level ${_this.levels.currentLevel + 1}`, "#000000");
 
-                setTimeout(function () {
-                    winText.destroy();
-                    _this.levels.nextLevel();
-                    // Pass game data to next level
-                    // Note: currentLevelIndex already incremented by nextLevel() -> advanceLevel()
-                    _this.scene.restart({
-                        gameId: _this.gameId,
-                        customGame: _this.customGame,
-                        levelIndex: _this.currentLevelIndex
-                    });
-                }, customConfig.levelWinPauseMs / 2);
-            }
+            // Show the quiz dialog
+            _this.showQuizDialog(isLastCustomLevel);
         }, customConfig.levelWinPauseMs);
+    }
+
+    private async showQuizDialog(isLastLevel: boolean) {
+        // Get current Pokemon info
+        const currentPokemon = this.customGame ?
+            this.customGame.levels[this.currentLevelIndex] :
+            { pokemonName: 'Mystery Pokemon', pokemonSprite: ImageOverlay.getInstance().getCurrentImageUrl() };
+
+        try {
+            // Generate quiz question
+            const allPokemonNames = this.customGame ?
+                this.customGame.levels.map(l => l.pokemonName) :
+                [];
+
+            const quiz = await QuizService.generateQuiz(
+                currentPokemon.pokemonName,
+                currentPokemon.pokemonSprite,
+                allPokemonNames
+            );
+
+            // Create quiz UI
+            this.createQuizUI(quiz, isLastLevel);
+        } catch (error) {
+            console.error('Failed to generate quiz:', error);
+            // If quiz fails, just proceed to next level
+            this.proceedToNextLevel(isLastLevel);
+        }
+    }
+
+    private createQuizUI(quiz: QuizQuestion, isLastLevel: boolean) {
+        // Create DOM container for quiz
+        const quizContainer = document.createElement('div');
+        quizContainer.id = 'quiz-container';
+        quizContainer.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        `;
+
+        const quizBox = document.createElement('div');
+        quizBox.className = 'nes-container is-dark with-title';
+        quizBox.style.cssText = `
+            max-width: 600px;
+            width: 90%;
+            padding: 30px;
+        `;
+
+        const title = document.createElement('p');
+        title.className = 'title';
+        title.textContent = 'QUIZ TIME!';
+        title.style.cssText = 'color: #92cc41; font-size: 16px; text-align: center;';
+        quizBox.appendChild(title);
+
+        // Show Pokemon image
+        const pokemonImg = document.createElement('img');
+        pokemonImg.src = quiz.spriteUrl;
+        pokemonImg.style.cssText = `
+            display: block;
+            margin: 20px auto;
+            width: 150px;
+            height: 150px;
+            image-rendering: pixelated;
+        `;
+        quizBox.appendChild(pokemonImg);
+
+        // Question
+        const question = document.createElement('p');
+        question.textContent = quiz.question;
+        question.style.cssText = 'font-size: 12px; text-align: center; margin: 20px 0; color: #fff;';
+        quizBox.appendChild(question);
+
+        // Choices
+        const choicesContainer = document.createElement('div');
+        choicesContainer.style.cssText = 'display: flex; flex-direction: column; gap: 15px; margin: 20px 0;';
+
+        quiz.choices.forEach((choice, index) => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'nes-btn';
+            btn.textContent = choice.toUpperCase();
+            btn.style.cssText = 'width: 100%; font-size: 10px; text-transform: capitalize;';
+
+            btn.addEventListener('click', () => {
+                this.handleQuizAnswer(choice, quiz.correctAnswer, isLastLevel, quizContainer);
+            });
+
+            choicesContainer.appendChild(btn);
+        });
+
+        quizBox.appendChild(choicesContainer);
+        quizContainer.appendChild(quizBox);
+        document.body.appendChild(quizContainer);
+    }
+
+    private handleQuizAnswer(selectedAnswer: string, correctAnswer: string, isLastLevel: boolean, quizContainer: HTMLDivElement) {
+        const isCorrect = selectedAnswer.toLowerCase() === correctAnswer.toLowerCase();
+
+        // Show feedback
+        const feedback = document.createElement('div');
+        feedback.className = `nes-balloon from-left ${isCorrect ? 'is-success' : 'is-error'}`;
+        feedback.style.cssText = `
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 3000;
+            font-size: 14px;
+        `;
+        feedback.innerHTML = `<p>${isCorrect ? '✓ Correct! Well done!' : '✗ Wrong answer! Try again!'}</p>`;
+        document.body.appendChild(feedback);
+
+        setTimeout(() => {
+            feedback.remove();
+
+            if (isCorrect) {
+                // Remove quiz and proceed
+                quizContainer.remove();
+                this.proceedToNextLevel(isLastLevel);
+            }
+            // If wrong, keep quiz open for another attempt
+        }, 2000);
+    }
+
+    private proceedToNextLevel(isLastLevel: boolean) {
+        // Hide overlay so text is visible
+        ImageOverlay.getInstance().hide();
+
+        if (isLastLevel) {
+            // Game complete! Show congratulations
+            this.showGameComplete();
+        } else {
+            const winText = this.createWinText(`Sweet!!\nOn to level ${this.levels.currentLevel + 1}`, "#000000");
+
+            setTimeout(() => {
+                winText.destroy();
+                this.levels.nextLevel();
+                // Pass game data to next level
+                // Note: currentLevelIndex already incremented by nextLevel() -> advanceLevel()
+                this.scene.restart({
+                    gameId: this.gameId,
+                    customGame: this.customGame,
+                    levelIndex: this.currentLevelIndex
+                });
+            }, customConfig.levelWinPauseMs / 2);
+        }
     }
 
     private showGameComplete(): void {

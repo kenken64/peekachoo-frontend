@@ -13,9 +13,9 @@ export interface Pokemon {
 }
 
 export class PokemonService {
-    private static API_URL = 'http://localhost:3000/api/pokemon';
+    private static API_URL = `${process.env.API_URL}/pokemon`;
 
-    static async syncPokemon(limit: number = 50): Promise<any> {
+    static async syncPokemon(syncAll: boolean = false, limit: number = 50): Promise<any> {
         const token = AuthService.getToken();
         const response = await fetch(`${this.API_URL}/sync`, {
             method: 'POST',
@@ -23,7 +23,7 @@ export class PokemonService {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`
             },
-            body: JSON.stringify({ limit })
+            body: JSON.stringify({ syncAll, limit })
         });
         return response.json();
     }

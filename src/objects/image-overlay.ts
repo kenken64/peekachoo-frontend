@@ -80,6 +80,13 @@ export class ImageOverlay {
         return this.currentImageSrc;
     }
 
+    /**
+     * Get the current image URL (alias for getImageSrc)
+     */
+    getCurrentImageUrl(): string {
+        return this.currentImageSrc;
+    }
+
     private positionCanvas(): void {
         const contentDiv = document.getElementById('content');
         if (contentDiv) {

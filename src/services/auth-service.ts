@@ -1,6 +1,6 @@
 // Auth Service for Passkey (WebAuthn) Authentication
 
-const API_BASE = 'http://localhost:3000/api/auth';
+const API_BASE = `${process.env.API_URL}/auth`;
 
 interface User {
     id: string;

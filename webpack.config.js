@@ -2,6 +2,7 @@ var path = require('path');
 var webpack = require('webpack');
 var HtmlWebpackPlugin = require('html-webpack-plugin');
 var BrowserSyncPlugin = require('browser-sync-webpack-plugin');
+require('dotenv').config();
 
 // Phaser webpack config
 var phaserModule = path.join(__dirname, '/node_modules/phaser/');
@@ -9,8 +10,9 @@ var phaser = path.join(phaserModule, 'src/phaser.js');
 
 var definePlugin = new webpack.DefinePlugin({
     __DEV__: JSON.stringify(JSON.parse(process.env.BUILD_DEV || 'true')),
-    WEBGL_RENDERER: true, 
-    CANVAS_RENDERER: true 
+    WEBGL_RENDERER: true,
+    CANVAS_RENDERER: true,
+    'process.env.API_URL': JSON.stringify(process.env.VITE_API_URL || 'http://localhost:3000/api')
 });
 
 module.exports = {

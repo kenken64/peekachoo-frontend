@@ -22,7 +22,7 @@ export interface Game {
 }
 
 export class GameService {
-    private static API_URL = 'http://localhost:3000/api/games';
+    private static API_URL = `${process.env.API_URL}/games`;
 
     static async createGame(name: string, description: string, levels: GameLevel[]): Promise<Game> {
         const token = AuthService.getToken();

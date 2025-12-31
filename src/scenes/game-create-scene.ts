@@ -388,13 +388,13 @@ export class GameCreateScene extends Phaser.Scene {
         const syncBtn = document.getElementById('gc-sync-btn') as HTMLButtonElement;
         if (syncBtn) {
             syncBtn.disabled = true;
-            syncBtn.textContent = '⏳ Syncing...';
+            syncBtn.textContent = '⏳ Syncing all Pokemon...';
         }
 
         try {
-            const result = await PokemonService.syncPokemon(100);
+            const result = await PokemonService.syncPokemon(true); // syncAll = true
             if (result.success) {
-                this.showToast(`Synced ${result.data.inserted} Pokemon!`, 'success');
+                this.showToast(`Synced ${result.data.total} Pokemon!`, 'success');
             } else {
                 this.showToast('Sync failed: ' + result.error, 'error');
             }
