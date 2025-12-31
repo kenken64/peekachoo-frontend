@@ -76,15 +76,29 @@ export function resetGameConfig() {
 // Responsive canvas scaling for mobile (Phaser 3.10 compatible)
 function resizeCanvas() {
     const content = document.getElementById('content');
-    if (!content || !canvas) return;
+    if (!content || !canvas) {
+        console.log('resizeCanvas: content or canvas not found');
+        return;
+    }
 
     const windowWidth = window.innerWidth;
     const windowHeight = window.innerHeight;
+
+    console.log(`resizeCanvas: windowWidth=${windowWidth}, windowHeight=${windowHeight}`);
 
     // Only scale on mobile/tablet (< 768px width)
     if (windowWidth < 768) {
         // Use full window width for scale calculation
         const scale = windowWidth / gameWidth;
+        console.log(`Mobile detected, scale=${scale}`);
+
+        // Remove ALL borders and outlines
+        canvas.style.border = 'none';
+        canvas.style.outline = 'none';
+        canvas.style.boxShadow = 'none';
+        content.style.border = 'none';
+        content.style.outline = 'none';
+        content.style.boxShadow = 'none';
 
         // Apply CSS transform to scale the canvas to full width
         canvas.style.width = `${gameWidth}px`;
@@ -94,18 +108,26 @@ function resizeCanvas() {
         canvas.style.display = 'block';
         canvas.style.position = 'relative';
         canvas.style.margin = '0';
+        canvas.style.padding = '0';
         canvas.style.left = '0';
         canvas.style.top = '0';
 
         // Set content container to match
         content.style.width = '100vw';
+        content.style.maxWidth = '100vw';
         content.style.height = `${gameHeight * scale}px`;
         content.style.margin = '0';
         content.style.padding = '0';
         content.style.position = 'relative';
         content.style.overflow = 'hidden';
+
+        console.log(`Canvas scaled to ${gameWidth * scale}x${gameHeight * scale}`);
     } else {
+        console.log('Desktop mode, no scaling');
         // Desktop - no scaling
+        canvas.style.border = '';
+        canvas.style.outline = '';
+        canvas.style.boxShadow = '';
         canvas.style.width = '';
         canvas.style.height = '';
         canvas.style.transform = 'none';
@@ -113,8 +135,12 @@ function resizeCanvas() {
         canvas.style.display = '';
         canvas.style.position = '';
         canvas.style.margin = '';
+        canvas.style.padding = '';
         canvas.style.left = '';
         canvas.style.top = '';
+        content.style.border = '';
+        content.style.outline = '';
+        content.style.boxShadow = '';
         content.style.width = '';
         content.style.height = '';
         content.style.margin = '';
@@ -124,14 +150,28 @@ function resizeCanvas() {
     }
 }
 
-// Run resize after a short delay to ensure Phaser is ready
+// Run resize multiple times to ensure it takes effect
+console.log('Setting up resize handlers...');
 setTimeout(() => {
+    console.log('Running initial resize (100ms)');
     resizeCanvas();
 }, 100);
+setTimeout(() => {
+    console.log('Running second resize (500ms)');
+    resizeCanvas();
+}, 500);
+setTimeout(() => {
+    console.log('Running third resize (1000ms)');
+    resizeCanvas();
+}, 1000);
 
 // Add resize listeners
-window.addEventListener('resize', resizeCanvas);
+window.addEventListener('resize', () => {
+    console.log('Window resize event');
+    resizeCanvas();
+});
 window.addEventListener('orientationchange', () => {
+    console.log('Orientation change event');
     setTimeout(resizeCanvas, 200);
 });
 
