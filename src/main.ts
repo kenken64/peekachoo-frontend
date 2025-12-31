@@ -9,8 +9,6 @@ import QixScene from "./scenes/qix-scene";
 localStorage.removeItem('peekachoo_token');
 localStorage.removeItem('peekachoo_user');
 
-const gameWidth = 800;
-const gameHeight = 650;
 const infoHeight = 30;
 const debugTextAreaHeight = 0;
 const margin = 10;
@@ -23,8 +21,12 @@ export const config:GameConfig = {
     canvas: canvas,
     context: context as CanvasRenderingContext2D,
     parent: 'content',
-    width: gameWidth,
-    height: gameHeight,
+    scale: {
+        mode: Phaser.Scale.FIT,
+        autoCenter: Phaser.Scale.CENTER_BOTH,
+        width: 800,
+        height: 650,
+    },
     resolution: 1,
     backgroundColor: "#555",
     scene: [

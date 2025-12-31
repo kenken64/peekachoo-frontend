@@ -40,6 +40,34 @@
     #debugTextArea {
       display: none;
     }
+
+    /* Mobile Responsive Styles */
+    @media (max-width: 767px) {
+      body {
+        margin: 0;
+        padding: 0;
+        overflow-x: hidden;
+      }
+
+      #content {
+        width: 100vw !important;
+        margin: 0 !important;
+      }
+
+      /* Touch-friendly buttons globally */
+      .nes-btn {
+        min-height: 44px;
+        min-width: 44px;
+        padding: 10px 15px;
+      }
+    }
+
+    /* Hide virtual D-pad on desktop */
+    @media (min-width: 768px) {
+      #virtual-dpad {
+        display: none !important;
+      }
+    }
   </style>
 </head>
 

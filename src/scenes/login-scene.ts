@@ -95,6 +95,55 @@ export default class LoginScene extends Phaser.Scene {
                 filter: drop-shadow(0 0 10px rgba(255, 193, 7, 0.3));
                 z-index: 2000;
             }
+
+            /* Mobile Responsive Styles */
+            @media (max-width: 767px) {
+                .nes-container.is-dark.with-title {
+                    width: 90vw !important;
+                    max-width: 500px !important;
+                    padding: 15px !important;
+                }
+
+                .nes-container.is-dark.with-title img[alt="PEEKACHOO"] {
+                    width: 90% !important;
+                    max-width: 350px !important;
+                }
+
+                .nes-container.is-dark.with-title .nes-input {
+                    font-size: 14px !important;
+                }
+
+                .nes-container.is-dark.with-title .nes-btn {
+                    font-size: 12px !important;
+                    padding: 10px 15px !important;
+                }
+
+                .nes-container.is-dark.with-title label {
+                    font-size: 12px !important;
+                }
+
+                .pikachu-bg {
+                    width: 100px !important;
+                    height: 100px !important;
+                }
+            }
+
+            @media (max-width: 480px) {
+                .nes-container.is-dark.with-title {
+                    width: 95vw !important;
+                    padding: 12px !important;
+                }
+
+                .nes-container.is-dark.with-title img[alt="PEEKACHOO"] {
+                    width: 95% !important;
+                }
+
+                .pikachu-bg {
+                    width: 80px !important;
+                    height: 80px !important;
+                    opacity: 0.4 !important;
+                }
+            }
         `;
         document.head.appendChild(style);
 

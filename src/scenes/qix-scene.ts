@@ -16,6 +16,8 @@ import {Qixes} from "../objects/qixes";
 import {ImageOverlay} from "../objects/image-overlay";
 import * as AuthService from "../services/auth-service";
 import { GameService, Game, GameLevel } from "../services/game-service";
+import { VirtualDpad } from "../objects/virtual-dpad";
+import { InputManager } from "../utils/input-manager";
 
 interface GameSceneData {
     gameId?: string;
@@ -37,6 +39,7 @@ class QixScene extends Phaser.Scene {
     private gameId: string | null = null;
     private customGame: Game | null = null;
     private currentLevelIndex: number = 0;
+    private virtualDpad: VirtualDpad | null = null;
 
     constructor() {
         super({
@@ -61,16 +64,22 @@ class QixScene extends Phaser.Scene {
 
     create() {
         this.createHeader();
-        
+
         // Initialize pauseControl first to avoid undefined errors in update()
         this.pauseControl = new PauseControl();
-        
+
         // Load custom game if gameId provided and not already loaded from restart
         if (this.gameId && !this.customGame) {
             this.loadCustomGame();
         }
-        
+
         this.cursors = this.input.keyboard.createCursorKeys();
+
+        // Add virtual D-pad for mobile devices
+        if (InputManager.isMobile()) {
+            this.virtualDpad = new VirtualDpad(this);
+        }
+
         this.grid = new Grid(this);
         this.player = new Player(this, customConfig.margin, customConfig.margin);
         this.info = new Info(this);
@@ -428,6 +437,12 @@ class QixScene extends Phaser.Scene {
 
     shutdown(): void {
         this.cleanupHeader();
+
+        // Clean up virtual D-pad if it exists
+        if (this.virtualDpad) {
+            this.virtualDpad.destroy();
+            this.virtualDpad = null;
+        }
     }
 
     update(time: number, delta: number) {
@@ -435,16 +450,21 @@ class QixScene extends Phaser.Scene {
         if (!this.pauseControl || !this.grid || !this.player) {
             return;
         }
-        
+
         if (this.pauseControl.isPaused(time)) {
             return;
         }
 
-        if (this.grid.isIllegalMove(this.player, this.cursors)) {
+        // Combine keyboard and virtual D-pad inputs
+        const activeCursors = this.virtualDpad
+            ? InputManager.combine(this.cursors, this.virtualDpad.getCursors())
+            : this.cursors;
+
+        if (this.grid.isIllegalMove(this.player, activeCursors)) {
             return;
         }
 
-        this.player.move(this.cursors);
+        this.player.move(activeCursors);
         this.sparkies.update();
         this.qixes.update();
         this.grid.update(this.player);
