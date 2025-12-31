@@ -83,51 +83,56 @@ function resizeCanvas() {
 
     // Only scale on mobile/tablet (< 768px width)
     if (windowWidth < 768) {
-        // Calculate scale to fit width
-        const scaleX = windowWidth / gameWidth;
-        const scaleY = windowHeight / gameHeight;
+        // Use full window width for scale calculation
+        const scale = windowWidth / gameWidth;
 
-        // Use the smaller scale to ensure everything fits
-        const scale = Math.min(scaleX, scaleY);
-
-        // Set canvas size to original dimensions (Phaser handles this)
-        canvas.width = gameWidth;
-        canvas.height = gameHeight;
-
-        // Apply CSS transform to scale the canvas
-        canvas.style.transformOrigin = '0 0';
+        // Apply CSS transform to scale the canvas to full width
+        canvas.style.width = `${gameWidth}px`;
+        canvas.style.height = `${gameHeight}px`;
+        canvas.style.transformOrigin = 'top left';
         canvas.style.transform = `scale(${scale})`;
-        canvas.style.position = 'absolute';
-        canvas.style.left = '50%';
+        canvas.style.display = 'block';
+        canvas.style.position = 'relative';
+        canvas.style.margin = '0';
+        canvas.style.left = '0';
         canvas.style.top = '0';
-        canvas.style.marginLeft = `-${(gameWidth * scale) / 2}px`;
 
-        // Set content container size to match scaled canvas
-        content.style.width = `${gameWidth * scale}px`;
+        // Set content container to match
+        content.style.width = '100vw';
         content.style.height = `${gameHeight * scale}px`;
-        content.style.margin = '0 auto';
+        content.style.margin = '0';
+        content.style.padding = '0';
         content.style.position = 'relative';
+        content.style.overflow = 'hidden';
     } else {
         // Desktop - no scaling
+        canvas.style.width = '';
+        canvas.style.height = '';
         canvas.style.transform = 'none';
         canvas.style.transformOrigin = '';
+        canvas.style.display = '';
         canvas.style.position = '';
+        canvas.style.margin = '';
         canvas.style.left = '';
         canvas.style.top = '';
-        canvas.style.marginLeft = '';
-        content.style.width = 'auto';
-        content.style.height = 'auto';
+        content.style.width = '';
+        content.style.height = '';
         content.style.margin = '';
+        content.style.padding = '';
         content.style.position = 'relative';
+        content.style.overflow = '';
     }
 }
 
-// Initial resize and add resize listener
-window.addEventListener('load', resizeCanvas);
+// Run resize after a short delay to ensure Phaser is ready
+setTimeout(() => {
+    resizeCanvas();
+}, 100);
+
+// Add resize listeners
 window.addEventListener('resize', resizeCanvas);
-// Also resize when orientation changes
 window.addEventListener('orientationchange', () => {
-    setTimeout(resizeCanvas, 100);
+    setTimeout(resizeCanvas, 200);
 });
 
 export interface GameCustomConfig {
