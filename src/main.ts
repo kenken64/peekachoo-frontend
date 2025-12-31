@@ -87,30 +87,42 @@ function resizeCanvas() {
 
     // Only scale on mobile/tablet (< 768px width)
     if (windowWidth < 768) {
-        if (windowRatio < gameRatio) {
-            // Window is narrower than game
-            scale = windowWidth / gameWidth;
-        } else {
-            // Window is taller than game
-            scale = windowHeight / gameHeight;
-        }
+        // Calculate scale to fit width, with some padding
+        const padding = 0;
+        const availableWidth = windowWidth - padding;
+        const availableHeight = windowHeight - padding;
+
+        const scaleX = availableWidth / gameWidth;
+        const scaleY = availableHeight / gameHeight;
+
+        // Use the smaller scale to ensure everything fits
+        scale = Math.min(scaleX, scaleY, 1);
 
         // Apply CSS transform to scale the canvas
-        canvas.style.transformOrigin = 'top left';
+        canvas.style.transformOrigin = 'top center';
         canvas.style.transform = `scale(${scale})`;
+        canvas.style.margin = '0 auto';
         content.style.width = `${gameWidth * scale}px`;
         content.style.height = `${gameHeight * scale}px`;
+        content.style.margin = '0 auto';
     } else {
         // Desktop - no scaling
         canvas.style.transform = 'none';
+        canvas.style.transformOrigin = '';
+        canvas.style.margin = '';
         content.style.width = 'auto';
         content.style.height = 'auto';
+        content.style.margin = '';
     }
 }
 
 // Initial resize and add resize listener
 window.addEventListener('load', resizeCanvas);
 window.addEventListener('resize', resizeCanvas);
+// Also resize when orientation changes
+window.addEventListener('orientationchange', () => {
+    setTimeout(resizeCanvas, 100);
+});
 
 export interface GameCustomConfig {
     debug: boolean;

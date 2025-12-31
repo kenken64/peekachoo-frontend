@@ -101,25 +101,49 @@ export default class LoginScene extends Phaser.Scene {
                 .nes-container.is-dark.with-title {
                     width: 90vw !important;
                     max-width: 500px !important;
-                    padding: 15px !important;
+                    padding: 10px !important;
+                    top: 45% !important;
+                    max-height: 85vh !important;
+                    overflow-y: auto !important;
+                }
+
+                .nes-container.is-dark.with-title .title {
+                    padding: 5px 0 !important;
+                    margin-bottom: 5px !important;
                 }
 
                 .nes-container.is-dark.with-title img[alt="PEEKACHOO"] {
-                    width: 90% !important;
-                    max-width: 350px !important;
+                    width: 80% !important;
+                    max-width: 280px !important;
+                }
+
+                .nes-container.is-dark.with-title p {
+                    margin-bottom: 10px !important;
+                    font-size: 9px !important;
+                }
+
+                .nes-container.is-dark.with-title .nes-field {
+                    margin-bottom: 12px !important;
                 }
 
                 .nes-container.is-dark.with-title .nes-input {
-                    font-size: 14px !important;
+                    font-size: 12px !important;
+                    padding: 8px !important;
                 }
 
                 .nes-container.is-dark.with-title .nes-btn {
-                    font-size: 12px !important;
-                    padding: 10px 15px !important;
+                    font-size: 10px !important;
+                    padding: 8px 12px !important;
                 }
 
                 .nes-container.is-dark.with-title label {
-                    font-size: 12px !important;
+                    font-size: 10px !important;
+                }
+
+                .nes-container.is-dark.with-title #login-error-message {
+                    min-height: 15px !important;
+                    margin-bottom: 10px !important;
+                    font-size: 7px !important;
                 }
 
                 .pikachu-bg {
@@ -131,17 +155,47 @@ export default class LoginScene extends Phaser.Scene {
             @media (max-width: 480px) {
                 .nes-container.is-dark.with-title {
                     width: 95vw !important;
-                    padding: 12px !important;
+                    padding: 8px !important;
+                    top: 40% !important;
+                    max-height: 80vh !important;
                 }
 
                 .nes-container.is-dark.with-title img[alt="PEEKACHOO"] {
-                    width: 95% !important;
+                    width: 85% !important;
+                    max-width: 250px !important;
+                }
+
+                .nes-container.is-dark.with-title .nes-btn {
+                    font-size: 9px !important;
+                    padding: 6px 10px !important;
                 }
 
                 .pikachu-bg {
                     width: 80px !important;
                     height: 80px !important;
                     opacity: 0.4 !important;
+                }
+            }
+
+            @media (max-width: 360px) {
+                .nes-container.is-dark.with-title {
+                    padding: 6px !important;
+                    top: 35% !important;
+                }
+
+                .nes-container.is-dark.with-title img[alt="PEEKACHOO"] {
+                    width: 90% !important;
+                    max-width: 220px !important;
+                }
+
+                .nes-container.is-dark.with-title .nes-btn {
+                    font-size: 8px !important;
+                    padding: 5px 8px !important;
+                    min-width: 60px !important;
+                }
+
+                .pikachu-bg {
+                    display: none !important;
                 }
             }
         `;
