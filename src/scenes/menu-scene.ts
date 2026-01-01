@@ -724,7 +724,7 @@ export class MenuScene extends Phaser.Scene {
             <div class="nes-container is-dark with-title donation-popup-content">
                 <p class="title" style="color: #f7d51d;">Donation</p>
                 <img src="assets/donation.png" alt="Donation QR Code" onerror="this.alt='QR Code not found'">
-                <p class="donation-popup-text">Kindly donate if you want improvement for the game</p>
+                <p class="donation-popup-text">Kindly donate if you want improvement for the game<br><br>Contact me at <a href="mailto:bunnyppl@gmail.com" style="color: #92cc41;">bunnyppl@gmail.com</a></p>
                 <button type="button" class="nes-btn is-primary donation-popup-close">Close</button>
             </div>
         `;
