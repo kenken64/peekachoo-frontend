@@ -11,6 +11,7 @@ import QixScene from "../scenes/qix-scene";
 import {Direction} from "./direction";
 import {ExtPolygon} from "./ext-polygon";
 import {GeomUtils} from "../utils/geom-utils";
+import { logger } from "../config";
 
 export class Qix {
 
@@ -107,7 +108,7 @@ export class Qix {
             count++;
 
             if (count > 360) {
-                console.info('Houston we have a problem - not sure how to make the qix move again...');
+                logger.info('Houston we have a problem - not sure how to make the qix move again...');
                 // Instead of pausing, try to find a safe spot or just reverse direction
                 this.directionDegrees = (this.directionDegrees + 180) % 360;
                 break;

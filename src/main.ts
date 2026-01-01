@@ -6,6 +6,7 @@ import { GameCreateScene } from "./scenes/game-create-scene";
 import QixScene from "./scenes/qix-scene";
 import { LeaderboardScene } from "./scenes/leaderboard-scene";
 import { StatsScene } from "./scenes/stats-scene";
+import { logger } from "./config";
 
 // Clear old localStorage data (we now use sessionStorage for per-tab sessions)
 localStorage.removeItem('peekachoo_token');
@@ -81,14 +82,14 @@ export function resetGameConfig() {
 function resizeCanvas() {
     const content = document.getElementById('content');
     if (!content || !canvas) {
-        console.log('resizeCanvas: content or canvas not found');
+        logger.log('resizeCanvas: content or canvas not found');
         return;
     }
 
     const windowWidth = window.innerWidth;
     const windowHeight = window.innerHeight;
 
-    console.log(`resizeCanvas: windowWidth=${windowWidth}, windowHeight=${windowHeight}`);
+    logger.log(`resizeCanvas: windowWidth=${windowWidth}, windowHeight=${windowHeight}`);
 
     // Only scale on mobile/tablet (< 768px width)
     if (windowWidth < 768) {
@@ -98,7 +99,7 @@ function resizeCanvas() {
         const scaleY = windowHeight / gameHeight;
         // Use the smaller scale to ensure it fits both dimensions
         const scale = Math.min(scaleX, scaleY * 0.95); // 0.95 for some padding
-        console.log(`Mobile detected, scaleX=${scaleX}, scaleY=${scaleY}, scale=${scale}`);
+        logger.log(`Mobile detected, scaleX=${scaleX}, scaleY=${scaleY}, scale=${scale}`);
 
         const scaledWidth = gameWidth * scale;
         const scaledHeight = gameHeight * scale;
@@ -136,9 +137,9 @@ function resizeCanvas() {
         content.style.position = 'relative';
         content.style.overflow = 'hidden';
 
-        console.log(`Canvas scaled to ${scaledWidth}x${scaledHeight}, offset: ${offsetX}, ${offsetY}`);
+        logger.log(`Canvas scaled to ${scaledWidth}x${scaledHeight}, offset: ${offsetX}, ${offsetY}`);
     } else {
-        console.log('Desktop mode, no scaling');
+        logger.log('Desktop mode, no scaling');
         // Desktop - no scaling
         canvas.style.border = '';
         canvas.style.outline = '';
@@ -166,27 +167,27 @@ function resizeCanvas() {
 }
 
 // Run resize multiple times to ensure it takes effect
-console.log('Setting up resize handlers...');
+logger.log('Setting up resize handlers...');
 setTimeout(() => {
-    console.log('Running initial resize (100ms)');
+    logger.log('Running initial resize (100ms)');
     resizeCanvas();
 }, 100);
 setTimeout(() => {
-    console.log('Running second resize (500ms)');
+    logger.log('Running second resize (500ms)');
     resizeCanvas();
 }, 500);
 setTimeout(() => {
-    console.log('Running third resize (1000ms)');
+    logger.log('Running third resize (1000ms)');
     resizeCanvas();
 }, 1000);
 
 // Add resize listeners
 window.addEventListener('resize', () => {
-    console.log('Window resize event');
+    logger.log('Window resize event');
     resizeCanvas();
 });
 window.addEventListener('orientationchange', () => {
-    console.log('Orientation change event');
+    logger.log('Orientation change event');
     setTimeout(resizeCanvas, 200);
 });
 

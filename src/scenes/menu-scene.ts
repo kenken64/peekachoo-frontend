@@ -3,6 +3,7 @@ import * as AuthService from '../services/auth-service';
 import { GameService, Game } from '../services/game-service';
 import { ImageOverlay } from '../objects/image-overlay';
 import { websocketService } from '../services/websocket-service';
+import { logger } from '../config';
 
 export class MenuScene extends Phaser.Scene {
     private domContainer: HTMLDivElement | null = null;
@@ -22,7 +23,7 @@ export class MenuScene extends Phaser.Scene {
         // Debug: Log current user info
         const currentUser = AuthService.getUser();
         const currentToken = AuthService.getToken();
-        console.log('[MenuScene] Creating menu for user:', currentUser?.username, 'Token:', currentToken?.substring(0, 20) + '...');
+        logger.log('[MenuScene] Creating menu for user:', currentUser?.username, 'Token:', currentToken?.substring(0, 20) + '...');
 
         this.createDOMUI();
         this.loadGames();
@@ -475,13 +476,13 @@ export class MenuScene extends Phaser.Scene {
 
     private async loadGames() {
         try {
-            console.log('[MenuScene] Loading games with token:', AuthService.getToken()?.substring(0, 20) + '...');
+            logger.log('[MenuScene] Loading games with token:', AuthService.getToken()?.substring(0, 20) + '...');
             const [myGames, publishedGames] = await Promise.all([
                 GameService.getMyGames(),
                 GameService.getPublishedGames()
             ]);
 
-            console.log('[MenuScene] Loaded', myGames.length, 'my games,', publishedGames.length, 'published games');
+            logger.log('[MenuScene] Loaded', myGames.length, 'my games,', publishedGames.length, 'published games');
 
             this.myGames = myGames;
             this.publishedGames = publishedGames;
@@ -489,7 +490,7 @@ export class MenuScene extends Phaser.Scene {
             this.renderMyGames();
             this.renderPublishedGames();
         } catch (error: any) {
-            console.error('[MenuScene] Failed to load games:', error);
+            logger.error('[MenuScene] Failed to load games:', error);
         }
     }
 

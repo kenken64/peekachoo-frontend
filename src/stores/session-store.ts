@@ -1,4 +1,5 @@
 import { LeaderboardService, ScoreSubmissionResult } from '../services/leaderboard-service';
+import { logger } from '../config';
 
 /**
  * Level tracking data during gameplay
@@ -66,10 +67,10 @@ class SessionStore {
                 currentLevelData: null,
             };
 
-            console.log('[SessionStore] Session started:', sessionId);
+            logger.log('[SessionStore] Session started:', sessionId);
             return sessionId;
         } catch (error) {
-            console.error('[SessionStore] Failed to start session:', error);
+            logger.error('[SessionStore] Failed to start session:', error);
             // Fallback to local session ID if server is unavailable
             const fallbackId = `local-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
             this.session = {
@@ -91,7 +92,7 @@ class SessionStore {
      */
     startLevel(level: number, pokemonId?: number, pokemonName?: string): void {
         if (!this.session) {
-            console.warn('[SessionStore] No active session, cannot start level');
+            logger.warn('[SessionStore] No active session, cannot start level');
             return;
         }
 
@@ -107,7 +108,7 @@ class SessionStore {
             pokemonName,
         };
 
-        console.log('[SessionStore] Level started:', level);
+        logger.log('[SessionStore] Level started:', level);
     }
 
     /**
@@ -128,7 +129,7 @@ class SessionStore {
             this.session.currentLevelData.livesRemaining--;
             // Reset streak on death
             this.session.currentStreak = 0;
-            console.log('[SessionStore] Death recorded, lives remaining:', this.session.currentLevelData.livesRemaining);
+            logger.log('[SessionStore] Death recorded, lives remaining:', this.session.currentLevelData.livesRemaining);
         }
     }
 
@@ -161,14 +162,14 @@ class SessionStore {
      * Complete the current level and submit score
      */
     async completeLevel(): Promise<ScoreSubmissionResult | null> {
-        console.log('[SessionStore] completeLevel called, session:', {
+        logger.log('[SessionStore] completeLevel called, session:', {
             hasSession: !!this.session,
             sessionId: this.session?.sessionId,
             currentLevelData: this.session?.currentLevelData
         });
 
         if (!this.session?.currentLevelData) {
-            console.warn('[SessionStore] No active level to complete - currentLevelData is null');
+            logger.warn('[SessionStore] No active level to complete - currentLevelData is null');
             return null;
         }
 
@@ -208,7 +209,7 @@ class SessionStore {
             this.session.currentStreak = result.session.currentStreak;
             this.session.currentLevelData = null;
 
-            console.log('[SessionStore] Level completed:', {
+            logger.log('[SessionStore] Level completed:', {
                 level: levelData.level,
                 score: result.breakdown.totalScore,
                 totalScore: this.session.totalScore,
@@ -216,7 +217,7 @@ class SessionStore {
 
             return result;
         } catch (error) {
-            console.error('[SessionStore] Failed to submit score:', error);
+            logger.error('[SessionStore] Failed to submit score:', error);
             // Still track locally even if submission fails
             this.session.levelsCompleted.push(levelData);
             this.session.currentLevelData = null;
@@ -235,13 +236,13 @@ class SessionStore {
         try {
             await LeaderboardService.endSession(this.session.sessionId);
         } catch (error) {
-            console.error('[SessionStore] Failed to end session on server:', error);
+            logger.error('[SessionStore] Failed to end session on server:', error);
         }
 
         const session = this.session;
         this.session = null;
 
-        console.log('[SessionStore] Session ended:', {
+        logger.log('[SessionStore] Session ended:', {
             totalScore: session.totalScore,
             levelsCompleted: session.levelsCompleted.length,
         });

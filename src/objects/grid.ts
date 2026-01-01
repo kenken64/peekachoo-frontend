@@ -12,6 +12,7 @@ import {ExtRectangle} from "./ext-rectangle";
 import {CurrentLines} from "./current-lines";
 import {AllPoints} from "./all-points";
 import {Sparkies} from "./sparkies";
+import { logger } from "../config";
 
 export class Grid {
     static FRAME_HEIGHT_PERCENT: number = .7;
@@ -96,7 +97,7 @@ export class Grid {
 
         // Guard against invalid polygon points
         if (!newPolygonPoints || newPolygonPoints.length < 3) {
-            console.warn('Invalid polygon points calculated, resetting current lines');
+            logger.warn('Invalid polygon points calculated, resetting current lines');
             this.currentLines.reset();
             return;
         }

@@ -6,6 +6,7 @@ import {
     StreakMilestoneEvent,
     LeaderboardUpdateEvent
 } from './websocket-service';
+import { logger } from '../config';
 
 /**
  * Notification types
@@ -41,7 +42,7 @@ class NotificationManager {
         this.setupWebSocketListeners();
         this.initialized = true;
 
-        console.log('[NotificationManager] Initialized');
+        logger.log('[NotificationManager] Initialized');
     }
 
     /**

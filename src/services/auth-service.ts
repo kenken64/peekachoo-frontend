@@ -1,5 +1,5 @@
 // Auth Service for Passkey (WebAuthn) Authentication
-import { config } from '../config';
+import { config, logger } from '../config';
 
 const API_BASE = `${config.apiUrl}/auth`;
 
@@ -17,35 +17,35 @@ interface AuthResponse {
 
 // Store token in sessionStorage (unique per tab/window, so multiple users can play simultaneously)
 export function setToken(token: string): void {
-    console.log('[Auth] Setting token:', token.substring(0, 20) + '...');
+    logger.log('[Auth] Setting token:', token.substring(0, 20) + '...');
     sessionStorage.setItem('peekachoo_token', token);
 }
 
 export function getToken(): string | null {
     const token = sessionStorage.getItem('peekachoo_token');
-    console.log('[Auth] Getting token:', token ? token.substring(0, 20) + '...' : 'null');
+    logger.log('[Auth] Getting token:', token ? token.substring(0, 20) + '...' : 'null');
     return token;
 }
 
 export function removeToken(): void {
-    console.log('[Auth] Removing token');
+    logger.log('[Auth] Removing token');
     sessionStorage.removeItem('peekachoo_token');
 }
 
 export function setUser(user: User): void {
-    console.log('[Auth] Setting user:', user.username);
+    logger.log('[Auth] Setting user:', user.username);
     sessionStorage.setItem('peekachoo_user', JSON.stringify(user));
 }
 
 export function getUser(): User | null {
     const userStr = sessionStorage.getItem('peekachoo_user');
     const user = userStr ? JSON.parse(userStr) : null;
-    console.log('[Auth] Getting user:', user?.username || 'null');
+    logger.log('[Auth] Getting user:', user?.username || 'null');
     return user;
 }
 
 export function removeUser(): void {
-    console.log('[Auth] Removing user');
+    logger.log('[Auth] Removing user');
     sessionStorage.removeItem('peekachoo_user');
 }
 
@@ -54,8 +54,7 @@ export function isLoggedIn(): boolean {
 }
 
 export function logout(): void {
-    console.log('[Auth] LOGOUT called! Stack trace:');
-    console.trace();
+    logger.log('[Auth] LOGOUT called!');
     removeToken();
     removeUser();
 }

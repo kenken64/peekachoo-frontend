@@ -8,6 +8,7 @@ import Polygon = Phaser.Geom.Polygon;
 import Line = Phaser.Geom.Line;
 import {GeomUtils} from "../utils/geom-utils";
 import {Debug} from "./debug";
+import { logger } from "../config";
 
 export class AllPoints {
     scene: QixScene;
@@ -24,20 +25,20 @@ export class AllPoints {
 
         // Guard against invalid polygon points (need at least 3 points to form a polygon)
         if (newPoints.length < 3 && newInversePoints.length < 3) {
-            console.warn('Both newPoints and newInversePoints have fewer than 3 points, returning empty array');
+            logger.warn('Both newPoints and newInversePoints have fewer than 3 points, returning empty array');
             return [];
         }
 
         // If one set has invalid points, use the other
         if (newPoints.length < 3) {
-            console.warn('newPoints has fewer than 3 points, using newInversePoints');
+            logger.warn('newPoints has fewer than 3 points, using newInversePoints');
             let newClockwisePoints = GeomUtils.makeClockwisePoints(newInversePoints);
             newClockwisePoints.splice(newClockwisePoints.length - 1, 1);
             return newClockwisePoints;
         }
 
         if (newInversePoints.length < 3) {
-            console.warn('newInversePoints has fewer than 3 points, using newPoints');
+            logger.warn('newInversePoints has fewer than 3 points, using newPoints');
             let newClockwisePoints = GeomUtils.makeClockwisePoints(newPoints);
             newClockwisePoints.splice(newClockwisePoints.length - 1, 1);
             return newClockwisePoints;
@@ -144,7 +145,7 @@ export class AllPoints {
     flattenPoints(points: ExtPoint[]): ExtPoint[] {
         // Guard against empty or invalid arrays
         if (!points || points.length < 2) {
-            console.warn('flattenPoints received invalid points array:', points);
+            logger.warn('flattenPoints received invalid points array:', points);
             return points || [];
         }
 
@@ -152,7 +153,7 @@ export class AllPoints {
         points = points.filter(p => p !== undefined && p !== null);
 
         if (points.length < 2) {
-            console.warn('flattenPoints has less than 2 valid points after filtering');
+            logger.warn('flattenPoints has less than 2 valid points after filtering');
             return points;
         }
 

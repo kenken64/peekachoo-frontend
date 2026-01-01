@@ -21,6 +21,7 @@ import { InputManager } from "../utils/input-manager";
 import { sessionStore } from "../stores/session-store";
 import { ScoreSubmissionResult } from "../services/leaderboard-service";
 import { websocketService } from "../services/websocket-service";
+import { logger } from "../config";
 
 interface GameSceneData {
     gameId?: string;
@@ -74,9 +75,9 @@ class QixScene extends Phaser.Scene {
     private async doInitSession() {
         try {
             await sessionStore.startSession(this.gameId);
-            console.log('[QixScene] Session started:', sessionStore.getSessionId());
+            logger.log('[QixScene] Session started:', sessionStore.getSessionId());
         } catch (error) {
-            console.error('[QixScene] Failed to start session:', error);
+            logger.error('[QixScene] Failed to start session:', error);
         }
     }
 
@@ -126,7 +127,7 @@ class QixScene extends Phaser.Scene {
         }
 
         const currentLevel = this.customGame?.levels[this.currentLevelIndex];
-        console.log('[QixScene] Starting level tracking with Pokemon:', {
+        logger.log('[QixScene] Starting level tracking with Pokemon:', {
             level: this.levels.currentLevel,
             pokemonId: currentLevel?.pokemonId,
             pokemonName: currentLevel?.pokemonName
@@ -137,7 +138,7 @@ class QixScene extends Phaser.Scene {
             currentLevel?.pokemonId,
             currentLevel?.pokemonName
         );
-        console.log('[QixScene] Level tracking started for level:', this.levels.currentLevel);
+        logger.log('[QixScene] Level tracking started for level:', this.levels.currentLevel);
     }
 
     private async loadCustomGame() {
@@ -151,7 +152,7 @@ class QixScene extends Phaser.Scene {
                 GameService.incrementPlayCount(this.gameId!).catch(() => {});
             }
         } catch (error) {
-            console.error('Failed to load custom game:', error);
+            logger.error('Failed to load custom game:', error);
         }
     }
 
@@ -728,7 +729,7 @@ class QixScene extends Phaser.Scene {
             try {
                 await sessionStore.endSession();
             } catch (error) {
-                console.error('[QixScene] Failed to end session:', error);
+                logger.error('[QixScene] Failed to end session:', error);
             }
         }
         this.cleanupHeader();
@@ -741,7 +742,7 @@ class QixScene extends Phaser.Scene {
             try {
                 await sessionStore.endSession();
             } catch (error) {
-                console.error('[QixScene] Failed to end session:', error);
+                logger.error('[QixScene] Failed to end session:', error);
             }
         }
 
@@ -921,7 +922,7 @@ class QixScene extends Phaser.Scene {
             // Create quiz UI
             this.createQuizUI(quiz, isLastLevel);
         } catch (error) {
-            console.error('Failed to generate quiz:', error);
+            logger.error('Failed to generate quiz:', error);
             // If quiz fails, just proceed to next level
             this.proceedToNextLevel(isLastLevel);
         }
@@ -1000,14 +1001,14 @@ class QixScene extends Phaser.Scene {
     }
 
     private handleQuizAnswer(selectedAnswer: string, correctAnswer: string, isLastLevel: boolean, quizContainer: HTMLDivElement) {
-        console.log('[QixScene] Quiz answer check:', {
+        logger.log('[QixScene] Quiz answer check:', {
             selectedAnswer,
             correctAnswer,
             selectedLower: selectedAnswer.toLowerCase(),
             correctLower: correctAnswer.toLowerCase()
         });
         const isCorrect = selectedAnswer.toLowerCase() === correctAnswer.toLowerCase();
-        console.log('[QixScene] Is correct:', isCorrect);
+        logger.log('[QixScene] Is correct:', isCorrect);
 
         // Record quiz attempt
         sessionStore.recordQuizAttempt();
@@ -1040,20 +1041,20 @@ class QixScene extends Phaser.Scene {
     }
 
     private async submitLevelScore(isLastLevel: boolean) {
-        console.log('[QixScene] submitLevelScore called, isLastLevel:', isLastLevel);
+        logger.log('[QixScene] submitLevelScore called, isLastLevel:', isLastLevel);
         try {
-            console.log('[QixScene] Calling sessionStore.completeLevel()...');
+            logger.log('[QixScene] Calling sessionStore.completeLevel()...');
             const result = await sessionStore.completeLevel();
-            console.log('[QixScene] completeLevel result:', result);
+            logger.log('[QixScene] completeLevel result:', result);
             if (result) {
-                console.log('[QixScene] Score submitted:', result.breakdown.totalScore);
+                logger.log('[QixScene] Score submitted:', result.breakdown.totalScore);
                 // Show score breakdown toast
                 this.showScoreToast(result);
             } else {
-                console.warn('[QixScene] completeLevel returned null/undefined');
+                logger.warn('[QixScene] completeLevel returned null/undefined');
             }
         } catch (error) {
-            console.error('[QixScene] Failed to submit score:', error);
+            logger.error('[QixScene] Failed to submit score:', error);
         }
 
         // Proceed to next level after score submission
@@ -1184,7 +1185,7 @@ class QixScene extends Phaser.Scene {
             try {
                 await sessionStore.endSession();
             } catch (error) {
-                console.error('[QixScene] Failed to end session:', error);
+                logger.error('[QixScene] Failed to end session:', error);
             }
         }
 
