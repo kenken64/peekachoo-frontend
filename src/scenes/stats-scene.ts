@@ -11,6 +11,16 @@ export class StatsScene extends Phaser.Scene {
     private currentTab: StatsTab = 'overview';
     private loading: boolean = false;
 
+    // Pagination state for history
+    private historyPage: number = 0;
+    private historyTotalPages: number = 1;
+    private historyPageSize: number = 30;
+
+    // Pagination state for collection
+    private collectionPage: number = 0;
+    private collectionTotalPages: number = 1;
+    private collectionPageSize: number = 30;
+
     constructor() {
         super({ key: 'StatsScene' });
     }
@@ -38,12 +48,18 @@ export class StatsScene extends Phaser.Scene {
                     color: white;
                     overflow-y: auto;
                     z-index: 2000;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
                 }
 
                 .stats-panel {
                     max-width: 800px;
-                    margin: 40px auto;
+                    width: 100%;
+                    margin-top: 40px;
+                    margin-bottom: 40px;
                     padding: 20px;
+                    box-sizing: border-box;
                 }
 
                 .stats-header {
@@ -385,6 +401,32 @@ export class StatsScene extends Phaser.Scene {
                     right: 4px;
                     font-size: 8px;
                     color: #666;
+                }
+
+                /* Pagination Styles */
+                .stats-pagination {
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    gap: 20px;
+                    margin-top: 20px;
+                    padding: 15px 0;
+                }
+
+                .stats-page-btn {
+                    padding: 8px 16px;
+                    font-size: 10px;
+                    cursor: pointer;
+                }
+
+                .stats-page-btn:disabled {
+                    opacity: 0.5;
+                    cursor: not-allowed;
+                }
+
+                .stats-page-info {
+                    font-size: 10px;
+                    color: #888;
                 }
 
                 /* Mobile Responsive Styles */
@@ -812,9 +854,14 @@ export class StatsScene extends Phaser.Scene {
         container.innerHTML = '<div class="stats-loading">Loading history...</div>';
 
         try {
-            const result = await StatsService.getGameHistory({ limit: 20 });
+            const result = await StatsService.getGameHistory({
+                limit: this.historyPageSize,
+                offset: this.historyPage * this.historyPageSize
+            });
 
-            if (result.history.length === 0) {
+            this.historyTotalPages = Math.max(1, Math.ceil(result.pagination.total / this.historyPageSize));
+
+            if (result.history.length === 0 && this.historyPage === 0) {
                 container.innerHTML = '<div class="stats-error">No games played yet</div>';
                 return;
             }
@@ -823,10 +870,33 @@ export class StatsScene extends Phaser.Scene {
                 <div class="history-list">
                     ${result.history.map(game => this.renderHistoryItem(game)).join('')}
                 </div>
+                <div class="stats-pagination">
+                    <button class="nes-btn stats-page-btn" id="history-prev" ${this.historyPage === 0 ? 'disabled' : ''}>< PREV</button>
+                    <span class="stats-page-info">Page ${this.historyPage + 1} of ${this.historyTotalPages}</span>
+                    <button class="nes-btn stats-page-btn" id="history-next" ${this.historyPage >= this.historyTotalPages - 1 ? 'disabled' : ''}>NEXT ></button>
+                </div>
             `;
+
+            // Add pagination event listeners
+            document.getElementById('history-prev')?.addEventListener('click', () => this.prevHistoryPage());
+            document.getElementById('history-next')?.addEventListener('click', () => this.nextHistoryPage());
         } catch (error) {
             console.error('[StatsScene] Failed to load history:', error);
             container.innerHTML = '<div class="stats-error">Failed to load history</div>';
+        }
+    }
+
+    private prevHistoryPage() {
+        if (this.historyPage > 0) {
+            this.historyPage--;
+            this.renderHistory();
+        }
+    }
+
+    private nextHistoryPage() {
+        if (this.historyPage < this.historyTotalPages - 1) {
+            this.historyPage++;
+            this.renderHistory();
         }
     }
 
@@ -860,7 +930,28 @@ export class StatsScene extends Phaser.Scene {
         container.innerHTML = '<div class="stats-loading">Loading collection...</div>';
 
         try {
-            const result = await StatsService.getCollection({ filter: 'all', sortBy: 'id' });
+            const result = await StatsService.getCollection({
+                filter: 'all',
+                sortBy: 'id',
+                limit: this.collectionPageSize,
+                offset: this.collectionPage * this.collectionPageSize
+            });
+
+            this.collectionTotalPages = Math.max(1, Math.ceil(result.summary.total / this.collectionPageSize));
+
+            const startNum = this.collectionPage * this.collectionPageSize + 1;
+            const endNum = Math.min((this.collectionPage + 1) * this.collectionPageSize, result.summary.total);
+
+            // Show recently revealed section on first page
+            const recentlyRevealedSection = this.collectionPage === 0 && result.recentlyRevealed?.length > 0 ? `
+                <div style="margin-bottom: 20px;">
+                    <div style="font-size: 11px; color: #92cc41; margin-bottom: 10px;">Recently Revealed</div>
+                    <div class="collection-grid" style="margin-bottom: 15px;">
+                        ${result.recentlyRevealed.map(p => this.renderCollectionItem({ ...p, isRevealed: true })).join('')}
+                    </div>
+                    <div style="border-bottom: 1px solid #333; margin-bottom: 15px;"></div>
+                </div>
+            ` : '';
 
             container.innerHTML = `
                 <div class="collection-summary">
@@ -874,13 +965,43 @@ export class StatsScene extends Phaser.Scene {
                     </div>
                 </div>
 
+                ${recentlyRevealedSection}
+
+                <div style="font-size: 10px; color: #888; margin-bottom: 10px; text-align: center;">
+                    Showing #${startNum} - #${endNum}
+                </div>
+
                 <div class="collection-grid">
-                    ${result.pokemon.slice(0, 151).map(p => this.renderCollectionItem(p)).join('')}
+                    ${result.pokemon.map(p => this.renderCollectionItem(p)).join('')}
+                </div>
+
+                <div class="stats-pagination">
+                    <button class="nes-btn stats-page-btn" id="collection-prev" ${this.collectionPage === 0 ? 'disabled' : ''}>< PREV</button>
+                    <span class="stats-page-info">Page ${this.collectionPage + 1} of ${this.collectionTotalPages}</span>
+                    <button class="nes-btn stats-page-btn" id="collection-next" ${this.collectionPage >= this.collectionTotalPages - 1 ? 'disabled' : ''}>NEXT ></button>
                 </div>
             `;
+
+            // Add pagination event listeners
+            document.getElementById('collection-prev')?.addEventListener('click', () => this.prevCollectionPage());
+            document.getElementById('collection-next')?.addEventListener('click', () => this.nextCollectionPage());
         } catch (error) {
             console.error('[StatsScene] Failed to load collection:', error);
             container.innerHTML = '<div class="stats-error">Failed to load collection</div>';
+        }
+    }
+
+    private prevCollectionPage() {
+        if (this.collectionPage > 0) {
+            this.collectionPage--;
+            this.renderCollection();
+        }
+    }
+
+    private nextCollectionPage() {
+        if (this.collectionPage < this.collectionTotalPages - 1) {
+            this.collectionPage++;
+            this.renderCollection();
         }
     }
 
@@ -927,7 +1048,7 @@ export class StatsScene extends Phaser.Scene {
 
     private close() {
         this.cleanup();
-        this.scene.stop('StatsScene');
+        this.scene.start('MenuScene');
     }
 
     private cleanup() {

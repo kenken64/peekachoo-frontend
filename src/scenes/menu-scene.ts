@@ -420,6 +420,7 @@ export class MenuScene extends Phaser.Scene {
                 <h1>🎮 PEEKACHOO</h1>
                 <div class="menu-user-info">
                     <span class="menu-username">👤 ${user?.username || 'Player'}</span>
+                    <button type="button" class="nes-btn is-warning" id="menu-donation" style="font-size: 8px;">Donation</button>
                     <button type="button" class="nes-btn is-error" id="menu-logout" style="font-size: 8px;">Logout</button>
                 </div>
             </div>
@@ -469,6 +470,7 @@ export class MenuScene extends Phaser.Scene {
         document.getElementById('menu-create')?.addEventListener('click', () => this.createGame());
         document.getElementById('menu-leaderboard')?.addEventListener('click', () => this.openLeaderboard());
         document.getElementById('menu-stats')?.addEventListener('click', () => this.openStats());
+        document.getElementById('menu-donation')?.addEventListener('click', () => this.showDonationPopup());
     }
 
     private async loadGames() {
@@ -526,6 +528,11 @@ export class MenuScene extends Phaser.Scene {
             ? `<span class="nes-badge ${game.isPublished ? 'is-primary' : 'is-dark'}" style="font-size: 8px;"><span class="${game.isPublished ? 'is-primary' : 'is-dark'}">${game.isPublished ? 'Published' : 'Draft'}</span></span>`
             : '';
 
+        // Show active players count if any (for owner's published games)
+        const activePlayers = isOwner && game.isPublished && game.activePlayerCount && game.activePlayerCount > 0
+            ? `<span style="color: #92cc41; margin-left: 10px;">🎮 ${game.activePlayerCount} playing</span>`
+            : '';
+
         const ownerActions = isOwner ? `
             <div class="menu-game-actions">
                 <button type="button" class="nes-btn is-success menu-game-btn" data-action="play" data-game-id="${game.id}">Play</button>
@@ -537,7 +544,7 @@ export class MenuScene extends Phaser.Scene {
 
         return `
             <div class="nes-container is-dark menu-game-card" data-game-id="${game.id}" data-is-owner="${isOwner}">
-                <div class="menu-game-title">${game.name} ${statusBadge}</div>
+                <div class="menu-game-title">${game.name} ${statusBadge}${activePlayers}</div>
                 <div class="menu-game-desc">${game.description || 'No description'}</div>
                 <div class="menu-game-levels">${levelPreviews}</div>
                 <div class="menu-game-meta">
@@ -658,6 +665,91 @@ export class MenuScene extends Phaser.Scene {
     private openStats() {
         this.cleanup();
         this.scene.start('StatsScene');
+    }
+
+    private showDonationPopup() {
+        // Create overlay
+        const overlay = document.createElement('div');
+        overlay.id = 'donation-popup-overlay';
+        overlay.innerHTML = `
+            <style>
+                #donation-popup-overlay {
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background: rgba(0,0,0,0.85);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    z-index: 5000;
+                    cursor: pointer;
+                }
+                .donation-popup-content {
+                    cursor: default;
+                    text-align: center;
+                    padding: 30px;
+                    max-width: 90%;
+                }
+                .donation-popup-content img {
+                    width: 250px;
+                    height: 250px;
+                    margin: 20px auto;
+                    display: block;
+                    image-rendering: pixelated;
+                    border: 4px solid #92cc41;
+                }
+                .donation-popup-text {
+                    font-size: 12px;
+                    color: #fff;
+                    margin: 20px 0;
+                    line-height: 1.8;
+                }
+                .donation-popup-close {
+                    font-size: 10px;
+                    margin-top: 20px;
+                }
+                @media (max-width: 480px) {
+                    .donation-popup-content img {
+                        width: 200px;
+                        height: 200px;
+                    }
+                    .donation-popup-text {
+                        font-size: 10px;
+                    }
+                }
+            </style>
+            <div class="nes-container is-dark with-title donation-popup-content">
+                <p class="title" style="color: #f7d51d;">Donation</p>
+                <img src="assets/donation.png" alt="Donation QR Code" onerror="this.alt='QR Code not found'">
+                <p class="donation-popup-text">Kindly donate if you want improvement for the game</p>
+                <button type="button" class="nes-btn is-primary donation-popup-close">Close</button>
+            </div>
+        `;
+
+        // Close on overlay click
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) {
+                overlay.remove();
+            }
+        });
+
+        // Close on button click
+        overlay.querySelector('.donation-popup-close')?.addEventListener('click', () => {
+            overlay.remove();
+        });
+
+        // Close on Escape key
+        const escHandler = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                overlay.remove();
+                document.removeEventListener('keydown', escHandler);
+            }
+        };
+        document.addEventListener('keydown', escHandler);
+
+        document.body.appendChild(overlay);
     }
 
     private logout() {

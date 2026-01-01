@@ -161,8 +161,14 @@ class SessionStore {
      * Complete the current level and submit score
      */
     async completeLevel(): Promise<ScoreSubmissionResult | null> {
+        console.log('[SessionStore] completeLevel called, session:', {
+            hasSession: !!this.session,
+            sessionId: this.session?.sessionId,
+            currentLevelData: this.session?.currentLevelData
+        });
+
         if (!this.session?.currentLevelData) {
-            console.warn('[SessionStore] No active level to complete');
+            console.warn('[SessionStore] No active level to complete - currentLevelData is null');
             return null;
         }
 
@@ -177,12 +183,17 @@ class SessionStore {
         }
 
         try {
+            // Convert territory percentage from 0-100 to 0-1 for backend
+            const territoryAsDecimal = levelData.territoryPercentage > 1
+                ? levelData.territoryPercentage / 100
+                : levelData.territoryPercentage;
+
             // Submit score to server
             const result = await LeaderboardService.submitScore({
                 gameId: this.session.gameId,
                 sessionId: this.session.sessionId,
                 level: levelData.level,
-                territoryPercentage: levelData.territoryPercentage,
+                territoryPercentage: territoryAsDecimal,
                 timeTakenSeconds,
                 livesRemaining: levelData.livesRemaining,
                 quizAttempts: levelData.quizAttempts || 1,

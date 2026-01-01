@@ -184,12 +184,16 @@ export class StatsService {
         filter?: 'all' | 'revealed' | 'hidden';
         sortBy?: 'id' | 'name' | 'revealed_at' | 'times_revealed';
         order?: 'asc' | 'desc';
+        limit?: number;
+        offset?: number;
     } = {}): Promise<CollectionResponse> {
         const token = AuthService.getToken();
         const queryParams = new URLSearchParams();
         if (params.filter) queryParams.set('filter', params.filter);
         if (params.sortBy) queryParams.set('sortBy', params.sortBy);
         if (params.order) queryParams.set('order', params.order);
+        if (params.limit) queryParams.set('limit', params.limit.toString());
+        if (params.offset) queryParams.set('offset', params.offset.toString());
 
         const response = await fetch(`${this.API_URL}/collection?${queryParams.toString()}`, {
             headers: {

@@ -64,7 +64,14 @@ class QixScene extends Phaser.Scene {
         }
     }
 
-    private async initSession() {
+    private sessionReady: Promise<void> | null = null;
+    private gameDataReady: Promise<void> | null = null;
+
+    private initSession() {
+        this.sessionReady = this.doInitSession();
+    }
+
+    private async doInitSession() {
         try {
             await sessionStore.startSession(this.gameId);
             console.log('[QixScene] Session started:', sessionStore.getSessionId());
@@ -84,7 +91,7 @@ class QixScene extends Phaser.Scene {
 
         // Load custom game if gameId provided and not already loaded from restart
         if (this.gameId && !this.customGame) {
-            this.loadCustomGame();
+            this.gameDataReady = this.loadCustomGame();
         }
 
         this.cursors = this.input.keyboard.createCursorKeys();
@@ -109,13 +116,28 @@ class QixScene extends Phaser.Scene {
         this.startLevelTracking();
     }
 
-    private startLevelTracking() {
+    private async startLevelTracking() {
+        // Wait for session and game data to be ready before tracking level
+        if (this.sessionReady) {
+            await this.sessionReady;
+        }
+        if (this.gameDataReady) {
+            await this.gameDataReady;
+        }
+
         const currentLevel = this.customGame?.levels[this.currentLevelIndex];
+        console.log('[QixScene] Starting level tracking with Pokemon:', {
+            level: this.levels.currentLevel,
+            pokemonId: currentLevel?.pokemonId,
+            pokemonName: currentLevel?.pokemonName
+        });
+
         sessionStore.startLevel(
             this.levels.currentLevel,
             currentLevel?.pokemonId,
             currentLevel?.pokemonName
         );
+        console.log('[QixScene] Level tracking started for level:', this.levels.currentLevel);
     }
 
     private async loadCustomGame() {
@@ -978,7 +1000,14 @@ class QixScene extends Phaser.Scene {
     }
 
     private handleQuizAnswer(selectedAnswer: string, correctAnswer: string, isLastLevel: boolean, quizContainer: HTMLDivElement) {
+        console.log('[QixScene] Quiz answer check:', {
+            selectedAnswer,
+            correctAnswer,
+            selectedLower: selectedAnswer.toLowerCase(),
+            correctLower: correctAnswer.toLowerCase()
+        });
         const isCorrect = selectedAnswer.toLowerCase() === correctAnswer.toLowerCase();
+        console.log('[QixScene] Is correct:', isCorrect);
 
         // Record quiz attempt
         sessionStore.recordQuizAttempt();
@@ -1011,12 +1040,17 @@ class QixScene extends Phaser.Scene {
     }
 
     private async submitLevelScore(isLastLevel: boolean) {
+        console.log('[QixScene] submitLevelScore called, isLastLevel:', isLastLevel);
         try {
+            console.log('[QixScene] Calling sessionStore.completeLevel()...');
             const result = await sessionStore.completeLevel();
+            console.log('[QixScene] completeLevel result:', result);
             if (result) {
                 console.log('[QixScene] Score submitted:', result.breakdown.totalScore);
                 // Show score breakdown toast
                 this.showScoreToast(result);
+            } else {
+                console.warn('[QixScene] completeLevel returned null/undefined');
             }
         } catch (error) {
             console.error('[QixScene] Failed to submit score:', error);

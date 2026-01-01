@@ -8,7 +8,7 @@ export class LeaderboardScene extends Phaser.Scene {
     private loading: boolean = false;
     private currentPage: number = 0;
     private totalPages: number = 1;
-    private pageSize: number = 20;
+    private pageSize: number = 30;
 
     constructor() {
         super({ key: 'LeaderboardScene' });
@@ -36,12 +36,18 @@ export class LeaderboardScene extends Phaser.Scene {
                     color: white;
                     overflow-y: auto;
                     z-index: 2000;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
                 }
 
                 .leaderboard-panel {
                     max-width: 700px;
-                    margin: 40px auto;
+                    width: 100%;
+                    margin-top: 40px;
+                    margin-bottom: 40px;
                     padding: 20px;
+                    box-sizing: border-box;
                 }
 
                 .leaderboard-header {
@@ -568,7 +574,7 @@ export class LeaderboardScene extends Phaser.Scene {
 
     private close() {
         this.cleanup();
-        this.scene.stop('LeaderboardScene');
+        this.scene.start('MenuScene');
     }
 
     private cleanup() {

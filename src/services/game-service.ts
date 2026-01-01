@@ -18,8 +18,15 @@ export interface Game {
     isPublished?: boolean;
     creatorName?: string;
     playCount?: number;
+    activePlayerCount?: number;
     createdAt?: string;
     updatedAt?: string;
+}
+
+export interface GameError {
+    code: string;
+    message: string;
+    activePlayerCount?: number;
 }
 
 export class GameService {
@@ -100,6 +107,15 @@ export class GameService {
             }
         });
         const result = await response.json();
+
+        if (!result.success && result.error) {
+            const error = result.error as GameError;
+            if (error.code === 'ACTIVE_PLAYERS') {
+                throw new Error(error.message);
+            }
+            throw new Error(error.message || 'Failed to toggle publish status');
+        }
+
         return result.isPublished;
     }
 
@@ -112,8 +128,13 @@ export class GameService {
             }
         });
         const result = await response.json();
+
         if (!result.success) {
-            throw new Error(result.error || 'Failed to delete game');
+            const error = result.error as GameError;
+            if (error?.code === 'GAME_PUBLISHED') {
+                throw new Error(error.message);
+            }
+            throw new Error(error?.message || result.error || 'Failed to delete game');
         }
     }
 
