@@ -14,16 +14,18 @@ export class ImageOverlay {
     private imageLoaded: boolean = false;
     private polygons: ExtPolygon[] = [];
     private currentImageSrc: string = 'assets/1.jpeg';
+    private isMobile: boolean;
 
     private constructor() {
+        // Determine if mobile at initialization time
+        this.isMobile = window.innerWidth < 768;
+        
         // Create the overlay canvas - only cover the play area, not the info bar or message area
         this.canvas = document.createElement('canvas');
         this.canvas.width = config.width as number;
         this.canvas.height = customConfig.frameHeight + customConfig.margin * 2; // Only cover play area
         this.canvas.style.position = 'absolute';
         this.canvas.style.pointerEvents = 'none'; // Don't intercept mouse events
-        this.canvas.style.left = '0';
-        this.canvas.style.top = '0';
         this.canvas.id = 'image-overlay-canvas';
         
         this.ctx = this.canvas.getContext('2d', { willReadFrequently: true })!;
@@ -40,11 +42,13 @@ export class ImageOverlay {
         // Position the canvas over the Phaser game after a short delay
         setTimeout(() => this.positionCanvas(), 100);
 
-        // Listen for resize events to reposition canvas
-        window.addEventListener('resize', () => this.positionCanvas());
-        window.addEventListener('orientationchange', () => {
-            setTimeout(() => this.positionCanvas(), 200);
-        });
+        // Listen for resize events - only relevant for mobile
+        if (this.isMobile) {
+            window.addEventListener('resize', () => this.positionCanvasMobile());
+            window.addEventListener('orientationchange', () => {
+                setTimeout(() => this.positionCanvasMobile(), 200);
+            });
+        }
     }
 
     /**
@@ -95,7 +99,55 @@ export class ImageOverlay {
         return this.currentImageSrc;
     }
 
+    /**
+     * Position the canvas - routes to mobile or desktop specific method
+     */
     private positionCanvas(): void {
+        if (this.isMobile) {
+            this.positionCanvasMobile();
+        } else {
+            this.positionCanvasDesktop();
+        }
+    }
+
+    /**
+     * Desktop positioning - simple absolute positioning matching Phaser canvas offset
+     */
+    private positionCanvasDesktop(): void {
+        const contentDiv = document.getElementById('content');
+        if (!contentDiv) return;
+        
+        // Remove any existing overlay canvas first
+        const existingCanvas = document.getElementById('image-overlay-canvas');
+        if (existingCanvas && existingCanvas !== this.canvas) {
+            existingCanvas.remove();
+        }
+        
+        // Set content container to relative for absolute positioning to work
+        contentDiv.style.position = 'relative';
+        contentDiv.style.display = 'inline-block';
+        
+        const phaserCanvas = contentDiv.querySelector('canvas:not(#image-overlay-canvas)') as HTMLCanvasElement;
+        if (phaserCanvas) {
+            // Match the Phaser canvas position exactly using offset
+            this.canvas.style.left = phaserCanvas.offsetLeft + 'px';
+            this.canvas.style.top = phaserCanvas.offsetTop + 'px';
+            // Desktop: no transforms, no z-index manipulation
+            this.canvas.style.transform = '';
+            this.canvas.style.transformOrigin = '';
+            this.canvas.style.width = '';
+            this.canvas.style.zIndex = '';
+            
+            if (!this.canvas.parentElement) {
+                contentDiv.appendChild(this.canvas);
+            }
+        }
+    }
+
+    /**
+     * Mobile positioning - apply same CSS transform as Phaser canvas
+     */
+    private positionCanvasMobile(): void {
         const contentDiv = document.getElementById('content');
         if (!contentDiv) return;
         
@@ -108,34 +160,24 @@ export class ImageOverlay {
         const phaserCanvas = contentDiv.querySelector('canvas:not(#image-overlay-canvas)') as HTMLCanvasElement;
         if (!phaserCanvas) return;
         
-        // Always use absolute positioning within the content container
-        this.canvas.style.position = 'absolute';
+        // Mobile: set content container positioning
+        contentDiv.style.position = 'relative';
+        
+        // Calculate the same scale as main.ts resizeCanvas
+        const gameWidth = 800;
+        const gameHeight = 650;
+        const windowWidth = window.innerWidth;
+        const scaleX = windowWidth / gameWidth;
+        const scaleY = window.innerHeight / gameHeight;
+        const scale = Math.min(scaleX, scaleY * 0.95);
+        
+        // Position at top-left and apply transform
         this.canvas.style.left = '0';
         this.canvas.style.top = '0';
-        
-        // On mobile, apply scaling transform
-        const windowWidth = window.innerWidth;
-        if (windowWidth < 768) {
-            contentDiv.style.position = 'relative';
-            
-            // Calculate the same scale as main.ts resizeCanvas
-            const gameWidth = 800;
-            const gameHeight = 650;
-            const scaleX = windowWidth / gameWidth;
-            const scaleY = window.innerHeight / gameHeight;
-            const scale = Math.min(scaleX, scaleY * 0.95);
-            
-            this.canvas.style.width = `${gameWidth}px`;
-            this.canvas.style.transformOrigin = 'top left';
-            this.canvas.style.transform = `scale(${scale})`;
-            this.canvas.style.zIndex = '2';
-        } else {
-            // Desktop - no transform, just absolute positioning
-            this.canvas.style.width = '';
-            this.canvas.style.transform = '';
-            this.canvas.style.transformOrigin = '';
-            this.canvas.style.zIndex = '';
-        }
+        this.canvas.style.width = `${gameWidth}px`;
+        this.canvas.style.transformOrigin = 'top left';
+        this.canvas.style.transform = `scale(${scale})`;
+        this.canvas.style.zIndex = '2';
         
         if (!this.canvas.parentElement) {
             contentDiv.appendChild(this.canvas);

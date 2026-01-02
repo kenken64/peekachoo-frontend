@@ -154,7 +154,7 @@ function resizeCanvas() {
         logger.log(`Canvas scaled to ${scaledWidth}x${scaledHeight}, offset: ${offsetX}, ${offsetY}`);
     } else {
         logger.log('Desktop mode, no scaling');
-        // Desktop - reset mobile-specific scaling styles but keep essential positioning
+        // Desktop - reset mobile-specific scaling styles
         canvas.style.border = '';
         canvas.style.outline = '';
         canvas.style.boxShadow = '';
@@ -169,7 +169,15 @@ function resizeCanvas() {
         canvas.style.left = '';
         canvas.style.top = '';
         canvas.style.zIndex = '';
-        // Don't modify content styles on desktop - let CSS handle it
+        
+        // Desktop: set content container for proper overlay positioning
+        content.style.position = 'relative';
+        content.style.display = 'inline-block';
+        content.style.width = '';
+        content.style.maxWidth = '';
+        content.style.height = '';
+        content.style.margin = '';
+        content.style.overflow = '';
         
         // Reset overlay canvas transform styles on desktop
         const overlayCanvas = document.getElementById('image-overlay-canvas') as HTMLCanvasElement;
