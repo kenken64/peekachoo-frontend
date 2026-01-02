@@ -20,14 +20,33 @@ export class Player {
 
     hasMoved: boolean = false;
 
+    // Effective radius (may be larger on mobile for visibility)
+    private effectiveRadius: integer;
+
     constructor(scene: Scene, x: integer, y: integer) {
         this.speed = customConfig.playerSpeed;
+
+        // Increase player size on mobile for better visibility
+        const isMobile = window.innerWidth < 768;
+        this.effectiveRadius = isMobile ? Math.max(customConfig.playerRadius * 2, 10) : customConfig.playerRadius;
+
         this.graphics = scene.add.graphics();
-        this.graphics.lineStyle(1, customConfig.playerColor);
+        this.graphics.lineStyle(2, customConfig.playerColor);
         this.graphics.fillStyle(customConfig.playerColor);
         this.graphics.x = x - customConfig.playerRadius;
         this.graphics.y = y - customConfig.playerRadius;
-        this.graphics.fillCircleShape(new Circle(customConfig.playerRadius, customConfig.playerRadius, customConfig.playerRadius));
+
+        // Draw a larger, more visible player dot
+        this.graphics.fillCircleShape(new Circle(customConfig.playerRadius, customConfig.playerRadius, this.effectiveRadius));
+
+        // Add a contrasting border for better visibility
+        if (isMobile) {
+            this.graphics.lineStyle(2, 0xFFFFFF);
+            this.graphics.strokeCircleShape(new Circle(customConfig.playerRadius, customConfig.playerRadius, this.effectiveRadius));
+        }
+
+        // Set high depth to ensure player is always visible on top
+        this.graphics.setDepth(1000);
 
         this.previousPoint = this.point();
         this.previousOnExisting = true;
