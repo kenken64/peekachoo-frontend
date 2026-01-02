@@ -93,10 +93,14 @@ function resizeCanvas() {
 
     // Only scale on mobile/tablet (< 768px width)
     if (windowWidth < 768) {
+        // Header height on mobile (matches qix-scene responsive styles)
+        const mobileHeaderHeight = 36;
+
         // Calculate scale to fit width
         const scaleX = windowWidth / gameWidth;
-        // Also consider height to avoid vertical overflow
-        const scaleY = windowHeight / gameHeight;
+        // Also consider height to avoid vertical overflow (account for header)
+        const availableHeight = windowHeight - mobileHeaderHeight;
+        const scaleY = availableHeight / gameHeight;
         // Use the smaller scale to ensure it fits both dimensions
         const scale = Math.min(scaleX, scaleY * 0.95); // 0.95 for some padding
         logger.log(`Mobile detected, scaleX=${scaleX}, scaleY=${scaleY}, scale=${scale}`);
@@ -106,7 +110,7 @@ function resizeCanvas() {
 
         // Calculate centering offset if scaled canvas is smaller than viewport
         const offsetX = Math.max(0, (windowWidth - scaledWidth) / 2);
-        const offsetY = Math.max(0, (windowHeight - scaledHeight) / 2);
+        const offsetY = Math.max(0, (windowHeight - scaledHeight - mobileHeaderHeight) / 2);
 
         // Remove ALL borders and outlines
         canvas.style.border = 'none';
@@ -116,7 +120,7 @@ function resizeCanvas() {
         content.style.outline = 'none';
         content.style.boxShadow = 'none';
 
-        // Apply CSS transform to scale the canvas
+        // Apply CSS transform to scale the canvas - position below header
         canvas.style.width = `${gameWidth}px`;
         canvas.style.height = `${gameHeight}px`;
         canvas.style.transformOrigin = 'top left';
@@ -126,7 +130,7 @@ function resizeCanvas() {
         canvas.style.margin = '0';
         canvas.style.padding = '0';
         canvas.style.left = '0';
-        canvas.style.top = '0';
+        canvas.style.top = `${mobileHeaderHeight}px`; // Position below header
         canvas.style.zIndex = '1'; // Phaser canvas base layer
 
         // Also scale the image overlay canvas if it exists
@@ -138,20 +142,20 @@ function resizeCanvas() {
             overlayCanvas.style.transform = `scale(${scale})`;
             overlayCanvas.style.position = 'absolute';
             overlayCanvas.style.left = '0';
-            overlayCanvas.style.top = '0';
+            overlayCanvas.style.top = `${mobileHeaderHeight}px`; // Position below header
             overlayCanvas.style.zIndex = '2'; // Overlay shows image through polygon windows (transparent elsewhere)
         }
 
-        // Set content container to match scaled size and center it
+        // Set content container to match scaled size and center it (include header height)
         content.style.width = `${scaledWidth}px`;
         content.style.maxWidth = '100vw';
-        content.style.height = `${scaledHeight}px`;
+        content.style.height = `${scaledHeight + mobileHeaderHeight}px`;
         content.style.margin = `${offsetY}px auto 0 auto`;
         content.style.padding = '0';
         content.style.position = 'relative';
         content.style.overflow = 'hidden';
 
-        logger.log(`Canvas scaled to ${scaledWidth}x${scaledHeight}, offset: ${offsetX}, ${offsetY}`);
+        logger.log(`Canvas scaled to ${scaledWidth}x${scaledHeight}, offset: ${offsetX}, ${offsetY}, headerHeight: ${mobileHeaderHeight}`);
     } else {
         logger.log('Desktop mode, no scaling');
         // Desktop - reset mobile-specific scaling styles
