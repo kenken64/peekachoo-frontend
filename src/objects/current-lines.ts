@@ -22,8 +22,12 @@ export class CurrentLines {
         this.scene = scene;
 
         this.graphics = this.scene.add.graphics();
-        this.graphics.lineStyle(1, customConfig.lineColor);
+        // Use thicker line (2px instead of 1px) for better visibility on mobile
+        this.graphics.lineStyle(2, customConfig.lineColor);
         this.graphics.fillStyle(customConfig.fillColor);
+        
+        // Ensure current lines are visible on top of filled polygons
+        this.graphics.setDepth(90);
     }
 
     grid(): Grid { return this.scene.grid; }

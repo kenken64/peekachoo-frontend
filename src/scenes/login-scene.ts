@@ -487,6 +487,12 @@ export default class LoginScene extends Phaser.Scene {
         // Remove Pikachu background elements
         const pikachus = document.querySelectorAll('.pikachu-bg');
         pikachus.forEach(pikachu => pikachu.remove());
+
+        // Remove virtual D-pad if it exists (safety net for logout from game)
+        const virtualDpad = document.getElementById('virtual-dpad');
+        if (virtualDpad) {
+            virtualDpad.remove();
+        }
     }
 
     shutdown(): void {

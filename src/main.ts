@@ -127,6 +127,20 @@ function resizeCanvas() {
         canvas.style.padding = '0';
         canvas.style.left = '0';
         canvas.style.top = '0';
+        canvas.style.zIndex = '1'; // Phaser canvas base layer
+
+        // Also scale the image overlay canvas if it exists
+        const overlayCanvas = document.getElementById('image-overlay-canvas') as HTMLCanvasElement;
+        if (overlayCanvas) {
+            overlayCanvas.style.width = `${gameWidth}px`;
+            overlayCanvas.style.height = `${customConfig.frameHeight + customConfig.margin * 2}px`;
+            overlayCanvas.style.transformOrigin = 'top left';
+            overlayCanvas.style.transform = `scale(${scale})`;
+            overlayCanvas.style.position = 'absolute';
+            overlayCanvas.style.left = '0';
+            overlayCanvas.style.top = '0';
+            overlayCanvas.style.zIndex = '2'; // Overlay shows image through polygon windows (transparent elsewhere)
+        }
 
         // Set content container to match scaled size and center it
         content.style.width = `${scaledWidth}px`;
@@ -154,6 +168,7 @@ function resizeCanvas() {
         canvas.style.padding = '';
         canvas.style.left = '';
         canvas.style.top = '';
+        canvas.style.zIndex = '';
         content.style.border = '';
         content.style.outline = '';
         content.style.boxShadow = '';
@@ -163,6 +178,16 @@ function resizeCanvas() {
         content.style.padding = '';
         content.style.position = 'relative';
         content.style.overflow = '';
+
+        // Reset overlay canvas styles on desktop
+        const overlayCanvas = document.getElementById('image-overlay-canvas') as HTMLCanvasElement;
+        if (overlayCanvas) {
+            overlayCanvas.style.width = '';
+            overlayCanvas.style.height = '';
+            overlayCanvas.style.transform = 'none';
+            overlayCanvas.style.transformOrigin = '';
+            overlayCanvas.style.zIndex = '';
+        }
     }
 }
 

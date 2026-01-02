@@ -733,6 +733,13 @@ class QixScene extends Phaser.Scene {
             }
         }
         this.cleanupHeader();
+
+        // Clean up virtual D-pad if it exists
+        if (this.virtualDpad) {
+            this.virtualDpad.destroy();
+            this.virtualDpad = null;
+        }
+
         this.scene.start('MenuScene');
     }
 
@@ -751,6 +758,12 @@ class QixScene extends Phaser.Scene {
 
         AuthService.logout();
         this.cleanupHeader();
+
+        // Clean up virtual D-pad if it exists
+        if (this.virtualDpad) {
+            this.virtualDpad.destroy();
+            this.virtualDpad = null;
+        }
         // Reset the image overlay
         ImageOverlay.getInstance().reset();
         ImageOverlay.getInstance().hide();
