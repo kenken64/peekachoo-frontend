@@ -97,48 +97,48 @@ export class ImageOverlay {
 
     private positionCanvas(): void {
         const contentDiv = document.getElementById('content');
-        if (contentDiv) {
-            // Remove any existing overlay canvas first
-            const existingCanvas = document.getElementById('image-overlay-canvas');
-            if (existingCanvas && existingCanvas !== this.canvas) {
-                existingCanvas.remove();
-            }
-            
+        if (!contentDiv) return;
+        
+        // Remove any existing overlay canvas first
+        const existingCanvas = document.getElementById('image-overlay-canvas');
+        if (existingCanvas && existingCanvas !== this.canvas) {
+            existingCanvas.remove();
+        }
+        
+        const phaserCanvas = contentDiv.querySelector('canvas:not(#image-overlay-canvas)') as HTMLCanvasElement;
+        if (!phaserCanvas) return;
+        
+        // Always use absolute positioning within the content container
+        this.canvas.style.position = 'absolute';
+        this.canvas.style.left = '0';
+        this.canvas.style.top = '0';
+        
+        // On mobile, apply scaling transform
+        const windowWidth = window.innerWidth;
+        if (windowWidth < 768) {
             contentDiv.style.position = 'relative';
-            contentDiv.style.display = 'inline-block';
-            const phaserCanvas = contentDiv.querySelector('canvas:not(#image-overlay-canvas)') as HTMLCanvasElement;
-            if (phaserCanvas) {
-                // Always position at top-left of the game container
-                this.canvas.style.left = '0';
-                this.canvas.style.top = '0';
-                this.canvas.style.position = 'absolute';
-                
-                // On mobile, apply the same transform as Phaser canvas
-                const windowWidth = window.innerWidth;
-                if (windowWidth < 768) {
-                    // Calculate the same scale as main.ts resizeCanvas
-                    const gameWidth = 800;
-                    const gameHeight = 650;
-                    const scaleX = windowWidth / gameWidth;
-                    const scaleY = window.innerHeight / gameHeight;
-                    const scale = Math.min(scaleX, scaleY * 0.95);
-                    
-                    this.canvas.style.width = `${gameWidth}px`;
-                    this.canvas.style.transformOrigin = 'top left';
-                    this.canvas.style.transform = `scale(${scale})`;
-                    this.canvas.style.zIndex = '2';
-                } else {
-                    // Desktop - no transform
-                    this.canvas.style.width = '';
-                    this.canvas.style.transform = 'none';
-                    this.canvas.style.transformOrigin = '';
-                    this.canvas.style.zIndex = '';
-                }
-                
-                if (!this.canvas.parentElement) {
-                    contentDiv.appendChild(this.canvas);
-                }
-            }
+            
+            // Calculate the same scale as main.ts resizeCanvas
+            const gameWidth = 800;
+            const gameHeight = 650;
+            const scaleX = windowWidth / gameWidth;
+            const scaleY = window.innerHeight / gameHeight;
+            const scale = Math.min(scaleX, scaleY * 0.95);
+            
+            this.canvas.style.width = `${gameWidth}px`;
+            this.canvas.style.transformOrigin = 'top left';
+            this.canvas.style.transform = `scale(${scale})`;
+            this.canvas.style.zIndex = '2';
+        } else {
+            // Desktop - no transform, just absolute positioning
+            this.canvas.style.width = '';
+            this.canvas.style.transform = '';
+            this.canvas.style.transformOrigin = '';
+            this.canvas.style.zIndex = '';
+        }
+        
+        if (!this.canvas.parentElement) {
+            contentDiv.appendChild(this.canvas);
         }
     }
 

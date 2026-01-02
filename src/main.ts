@@ -154,13 +154,13 @@ function resizeCanvas() {
         logger.log(`Canvas scaled to ${scaledWidth}x${scaledHeight}, offset: ${offsetX}, ${offsetY}`);
     } else {
         logger.log('Desktop mode, no scaling');
-        // Desktop - no scaling
+        // Desktop - reset mobile-specific scaling styles but keep essential positioning
         canvas.style.border = '';
         canvas.style.outline = '';
         canvas.style.boxShadow = '';
         canvas.style.width = '';
         canvas.style.height = '';
-        canvas.style.transform = 'none';
+        canvas.style.transform = '';
         canvas.style.transformOrigin = '';
         canvas.style.display = '';
         canvas.style.position = '';
@@ -169,22 +169,14 @@ function resizeCanvas() {
         canvas.style.left = '';
         canvas.style.top = '';
         canvas.style.zIndex = '';
-        content.style.border = '';
-        content.style.outline = '';
-        content.style.boxShadow = '';
-        content.style.width = '';
-        content.style.height = '';
-        content.style.margin = '';
-        content.style.padding = '';
-        content.style.position = 'relative';
-        content.style.overflow = '';
-
-        // Reset overlay canvas styles on desktop
+        // Don't modify content styles on desktop - let CSS handle it
+        
+        // Reset overlay canvas transform styles on desktop
         const overlayCanvas = document.getElementById('image-overlay-canvas') as HTMLCanvasElement;
         if (overlayCanvas) {
             overlayCanvas.style.width = '';
             overlayCanvas.style.height = '';
-            overlayCanvas.style.transform = 'none';
+            overlayCanvas.style.transform = '';
             overlayCanvas.style.transformOrigin = '';
             overlayCanvas.style.zIndex = '';
         }
