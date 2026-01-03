@@ -90,6 +90,9 @@ class QixScene extends Phaser.Scene {
         // Initialize pauseControl first to avoid undefined errors in update()
         this.pauseControl = new PauseControl();
 
+        // Register shutdown event handler for cleanup
+        this.events.on('shutdown', this.shutdown, this);
+
         // Load custom game if gameId provided and not already loaded from restart
         if (this.gameId && !this.customGame) {
             this.gameDataReady = this.loadCustomGame();

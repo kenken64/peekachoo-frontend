@@ -41,6 +41,13 @@ export class VirtualDpad {
 
     constructor(scene: Phaser.Scene) {
         this.maxDistance = (this.THUMB_PAD_SIZE - this.THUMB_STICK_SIZE) / 2;
+        
+        // Remove any existing virtual D-pad first (in case of scene restart)
+        const existingDpad = document.getElementById('virtual-dpad');
+        if (existingDpad) {
+            existingDpad.remove();
+        }
+        
         this.createThumbPadDOM();
         this.setupTouchHandlers();
     }
