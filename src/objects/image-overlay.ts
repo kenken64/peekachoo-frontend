@@ -163,17 +163,21 @@ export class ImageOverlay {
         // Mobile: set content container positioning
         contentDiv.style.position = 'relative';
         
+        // Header height on mobile (must match main.ts resizeCanvas)
+        const mobileHeaderHeight = 36;
+        
         // Calculate the same scale as main.ts resizeCanvas
         const gameWidth = 800;
         const gameHeight = 650;
         const windowWidth = window.innerWidth;
+        const availableHeight = window.innerHeight - mobileHeaderHeight;
         const scaleX = windowWidth / gameWidth;
-        const scaleY = window.innerHeight / gameHeight;
+        const scaleY = availableHeight / gameHeight;
         const scale = Math.min(scaleX, scaleY * 0.95);
         
-        // Position at top-left and apply transform
+        // Position below header and apply transform
         this.canvas.style.left = '0';
-        this.canvas.style.top = '0';
+        this.canvas.style.top = `${mobileHeaderHeight}px`; // Position below header
         this.canvas.style.width = `${gameWidth}px`;
         this.canvas.style.transformOrigin = 'top left';
         this.canvas.style.transform = `scale(${scale})`;

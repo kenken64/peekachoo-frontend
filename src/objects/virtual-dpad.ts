@@ -9,6 +9,8 @@ export interface VirtualCursorKeys {
 
 export class VirtualDpad {
     private container: HTMLDivElement;
+    private thumbPad!: HTMLDivElement;
+    private thumbStick!: HTMLDivElement;
     private activeDirections = {
         left: false,
         right: false,
@@ -25,109 +27,282 @@ export class VirtualDpad {
     };
 
     // Minimum time (ms) to keep direction active after touch release
-    // This ensures the game loop captures at least one frame of movement
-    private readonly PRESS_PERSISTENCE_MS = 50;
+    private readonly PRESS_PERSISTENCE_MS = 80;
+
+    // Thumb pad configuration
+    private readonly DEAD_ZONE = 0.15; // 15% of radius before registering input
+    private readonly THUMB_PAD_SIZE = 140;
+    private readonly THUMB_STICK_SIZE = 56;
+    
+    private centerX = 0;
+    private centerY = 0;
+    private maxDistance = 0;
+    private isActive = false;
 
     constructor(scene: Phaser.Scene) {
-        this.createDpadDOM();
+        this.maxDistance = (this.THUMB_PAD_SIZE - this.THUMB_STICK_SIZE) / 2;
+        this.createThumbPadDOM();
         this.setupTouchHandlers();
     }
 
-    private createDpadDOM(): void {
+    private createThumbPadDOM(): void {
         this.container = document.createElement('div');
         this.container.id = 'virtual-dpad';
         this.container.innerHTML = `
             <style>
                 #virtual-dpad {
                     position: fixed;
-                    bottom: 20px;
+                    bottom: 30px;
                     left: 50%;
                     transform: translateX(-50%);
-                    width: 160px;
-                    height: 160px;
-                    display: grid;
-                    grid-template-columns: repeat(3, 1fr);
-                    grid-template-rows: repeat(3, 1fr);
-                    gap: 4px;
                     z-index: 100;
-                }
-                .dpad-btn {
-                    background: #212529;
-                    border: 4px solid #fff;
-                    box-shadow: inset -4px -4px #adafbc;
-                    font-size: 18px;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    user-select: none;
                     touch-action: none;
-                    color: #fff;
+                }
+                .thumb-pad {
+                    width: ${this.THUMB_PAD_SIZE}px;
+                    height: ${this.THUMB_PAD_SIZE}px;
+                    background: rgba(33, 37, 41, 0.7);
+                    border: 4px solid rgba(255, 255, 255, 0.6);
+                    border-radius: 50%;
+                    position: relative;
+                    box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.3);
+                }
+                .thumb-pad::before {
+                    content: '';
+                    position: absolute;
+                    top: 50%;
+                    left: 10%;
+                    right: 10%;
+                    height: 2px;
+                    background: rgba(255, 255, 255, 0.2);
+                    transform: translateY(-50%);
+                }
+                .thumb-pad::after {
+                    content: '';
+                    position: absolute;
+                    left: 50%;
+                    top: 10%;
+                    bottom: 10%;
+                    width: 2px;
+                    background: rgba(255, 255, 255, 0.2);
+                    transform: translateX(-50%);
+                }
+                .thumb-stick {
+                    width: ${this.THUMB_STICK_SIZE}px;
+                    height: ${this.THUMB_STICK_SIZE}px;
+                    background: linear-gradient(145deg, #92cc41, #76a833);
+                    border: 3px solid #fff;
+                    border-radius: 50%;
+                    position: absolute;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    box-shadow: 
+                        0 4px 8px rgba(0, 0, 0, 0.3),
+                        inset 0 2px 4px rgba(255, 255, 255, 0.3);
+                    transition: background 0.1s ease;
+                    touch-action: none;
                     cursor: pointer;
+                }
+                .thumb-stick.active {
+                    background: linear-gradient(145deg, #a8e04a, #8bc43a);
+                    box-shadow: 
+                        0 2px 4px rgba(0, 0, 0, 0.2),
+                        inset 0 2px 4px rgba(255, 255, 255, 0.4);
+                }
+                .direction-indicator {
+                    position: absolute;
+                    font-size: 12px;
+                    color: rgba(255, 255, 255, 0.3);
                     font-family: 'Press Start 2P', cursive;
+                    pointer-events: none;
                 }
-                .dpad-btn:active {
-                    background: #92cc41;
-                    color: #212529;
+                .direction-indicator.up {
+                    top: 6px;
+                    left: 50%;
+                    transform: translateX(-50%);
                 }
-                .dpad-btn-empty {
-                    visibility: hidden;
+                .direction-indicator.down {
+                    bottom: 6px;
+                    left: 50%;
+                    transform: translateX(-50%);
+                }
+                .direction-indicator.left {
+                    left: 6px;
+                    top: 50%;
+                    transform: translateY(-50%);
+                }
+                .direction-indicator.right {
+                    right: 6px;
+                    top: 50%;
+                    transform: translateY(-50%);
+                }
+                .direction-indicator.active {
+                    color: rgba(146, 204, 65, 0.9);
                 }
             </style>
-            <div class="dpad-btn dpad-btn-empty"></div>
-            <button class="dpad-btn" id="dpad-up">▲</button>
-            <div class="dpad-btn dpad-btn-empty"></div>
-            <button class="dpad-btn" id="dpad-left">◄</button>
-            <div class="dpad-btn dpad-btn-empty"></div>
-            <button class="dpad-btn" id="dpad-right">►</button>
-            <div class="dpad-btn dpad-btn-empty"></div>
-            <button class="dpad-btn" id="dpad-down">▼</button>
-            <div class="dpad-btn dpad-btn-empty"></div>
+            <div class="thumb-pad" id="thumb-pad">
+                <span class="direction-indicator up" id="indicator-up">▲</span>
+                <span class="direction-indicator down" id="indicator-down">▼</span>
+                <span class="direction-indicator left" id="indicator-left">◄</span>
+                <span class="direction-indicator right" id="indicator-right">►</span>
+                <div class="thumb-stick" id="thumb-stick"></div>
+            </div>
         `;
         document.body.appendChild(this.container);
+        
+        this.thumbPad = document.getElementById('thumb-pad') as HTMLDivElement;
+        this.thumbStick = document.getElementById('thumb-stick') as HTMLDivElement;
     }
 
     private setupTouchHandlers(): void {
+        const handleStart = (clientX: number, clientY: number) => {
+            const rect = this.thumbPad.getBoundingClientRect();
+            this.centerX = rect.left + rect.width / 2;
+            this.centerY = rect.top + rect.height / 2;
+            this.isActive = true;
+            this.thumbStick.classList.add('active');
+            this.updateThumbPosition(clientX, clientY);
+        };
+
+        const handleMove = (clientX: number, clientY: number) => {
+            if (!this.isActive) return;
+            this.updateThumbPosition(clientX, clientY);
+        };
+
+        const handleEnd = () => {
+            this.isActive = false;
+            this.thumbStick.classList.remove('active');
+            this.resetThumbPosition();
+            this.clearAllDirections();
+        };
+
+        // Touch events on the thumb pad
+        this.thumbPad.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const touch = e.touches[0];
+            handleStart(touch.clientX, touch.clientY);
+        }, { passive: false });
+
+        this.thumbPad.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const touch = e.touches[0];
+            handleMove(touch.clientX, touch.clientY);
+        }, { passive: false });
+
+        this.thumbPad.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            handleEnd();
+        }, { passive: false });
+
+        this.thumbPad.addEventListener('touchcancel', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            handleEnd();
+        }, { passive: false });
+
+        // Mouse events for desktop testing
+        this.thumbPad.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            handleStart(e.clientX, e.clientY);
+            
+            const onMouseMove = (moveEvent: MouseEvent) => {
+                handleMove(moveEvent.clientX, moveEvent.clientY);
+            };
+            
+            const onMouseUp = () => {
+                handleEnd();
+                document.removeEventListener('mousemove', onMouseMove);
+                document.removeEventListener('mouseup', onMouseUp);
+            };
+            
+            document.addEventListener('mousemove', onMouseMove);
+            document.addEventListener('mouseup', onMouseUp);
+        });
+    }
+
+    private updateThumbPosition(clientX: number, clientY: number): void {
+        // Calculate offset from center
+        let deltaX = clientX - this.centerX;
+        let deltaY = clientY - this.centerY;
+        
+        // Calculate distance from center
+        const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+        
+        // Clamp to max distance
+        if (distance > this.maxDistance) {
+            const scale = this.maxDistance / distance;
+            deltaX *= scale;
+            deltaY *= scale;
+        }
+        
+        // Update thumb stick visual position
+        const stickX = 50 + (deltaX / this.maxDistance) * 35; // 35% max offset
+        const stickY = 50 + (deltaY / this.maxDistance) * 35;
+        this.thumbStick.style.left = `${stickX}%`;
+        this.thumbStick.style.top = `${stickY}%`;
+        
+        // Calculate normalized direction (-1 to 1)
+        const normalizedX = deltaX / this.maxDistance;
+        const normalizedY = deltaY / this.maxDistance;
+        
+        // Apply dead zone
+        const deadZoneX = Math.abs(normalizedX) > this.DEAD_ZONE ? normalizedX : 0;
+        const deadZoneY = Math.abs(normalizedY) > this.DEAD_ZONE ? normalizedY : 0;
+        
+        // Determine active directions based on threshold
+        const threshold = 0.25;
+        
+        const now = Date.now();
+        
+        // Update directions - allow diagonal movement
+        const newLeft = deadZoneX < -threshold;
+        const newRight = deadZoneX > threshold;
+        const newUp = deadZoneY < -threshold;
+        const newDown = deadZoneY > threshold;
+        
+        // Track press times for newly activated directions
+        if (newLeft && !this.activeDirections.left) this.lastPressTime.left = now;
+        if (newRight && !this.activeDirections.right) this.lastPressTime.right = now;
+        if (newUp && !this.activeDirections.up) this.lastPressTime.up = now;
+        if (newDown && !this.activeDirections.down) this.lastPressTime.down = now;
+        
+        this.activeDirections.left = newLeft;
+        this.activeDirections.right = newRight;
+        this.activeDirections.up = newUp;
+        this.activeDirections.down = newDown;
+        
+        // Update visual indicators
+        this.updateIndicators();
+    }
+
+    private resetThumbPosition(): void {
+        this.thumbStick.style.left = '50%';
+        this.thumbStick.style.top = '50%';
+    }
+
+    private clearAllDirections(): void {
+        this.activeDirections.left = false;
+        this.activeDirections.right = false;
+        this.activeDirections.up = false;
+        this.activeDirections.down = false;
+        this.updateIndicators();
+    }
+
+    private updateIndicators(): void {
         const directions: ('up' | 'down' | 'left' | 'right')[] = ['up', 'down', 'left', 'right'];
-
         directions.forEach(dir => {
-            const btn = document.getElementById(`dpad-${dir}`);
-            if (!btn) return;
-
-            btn.addEventListener('touchstart', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                this.activeDirections[dir] = true;
-                this.lastPressTime[dir] = Date.now();
-            }, { passive: false });
-
-            btn.addEventListener('touchend', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                // Don't immediately set to false - let getCursors handle persistence
-                this.activeDirections[dir] = false;
-            }, { passive: false });
-
-            btn.addEventListener('touchcancel', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                this.activeDirections[dir] = false;
-            }, { passive: false });
-
-            // Also support mouse events for testing
-            btn.addEventListener('mousedown', (e) => {
-                e.preventDefault();
-                this.activeDirections[dir] = true;
-                this.lastPressTime[dir] = Date.now();
-            });
-
-            btn.addEventListener('mouseup', (e) => {
-                e.preventDefault();
-                this.activeDirections[dir] = false;
-            });
-
-            btn.addEventListener('mouseleave', (e) => {
-                this.activeDirections[dir] = false;
-            });
+            const indicator = document.getElementById(`indicator-${dir}`);
+            if (indicator) {
+                if (this.activeDirections[dir]) {
+                    indicator.classList.add('active');
+                } else {
+                    indicator.classList.remove('active');
+                }
+            }
         });
     }
 
@@ -135,7 +310,6 @@ export class VirtualDpad {
         const now = Date.now();
 
         // Check if direction is active OR was recently pressed (within persistence window)
-        // This ensures touch events persist for at least one game frame
         const isDirectionActive = (dir: 'left' | 'right' | 'up' | 'down'): boolean => {
             if (this.activeDirections[dir]) {
                 return true;
