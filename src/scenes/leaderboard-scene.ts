@@ -141,9 +141,11 @@ export class LeaderboardScene extends Phaser.Scene {
                 }
 
                 .leaderboard-rank {
-                    width: 50px;
+                    width: 60px;
+                    min-width: 60px;
                     font-size: 14px;
                     text-align: center;
+                    margin-right: 8px;
                 }
 
                 .leaderboard-player {
