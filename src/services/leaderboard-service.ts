@@ -100,13 +100,18 @@ export class LeaderboardService {
         offset?: number;
         sortBy?: LeaderboardSortBy;
     } = {}): Promise<LeaderboardResponse> {
+        const token = AuthService.getToken();
         const queryParams = new URLSearchParams();
         if (params.period) queryParams.set('period', params.period);
         if (params.limit) queryParams.set('limit', params.limit.toString());
         if (params.offset) queryParams.set('offset', params.offset.toString());
         if (params.sortBy) queryParams.set('sortBy', params.sortBy);
 
-        const response = await fetch(`${this.API_URL}/global?${queryParams.toString()}`);
+        const response = await fetch(`${this.API_URL}/global?${queryParams.toString()}`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
         const result = await response.json();
 
         if (!result.success) {
@@ -153,11 +158,16 @@ export class LeaderboardService {
         leaderboard: LeaderboardEntry[];
         pagination: { total: number; limit: number; offset: number; hasMore: boolean };
     }> {
+        const token = AuthService.getToken();
         const queryParams = new URLSearchParams();
         if (params.limit) queryParams.set('limit', params.limit.toString());
         if (params.offset) queryParams.set('offset', params.offset.toString());
 
-        const response = await fetch(`${this.API_URL}/level/${level}?${queryParams.toString()}`);
+        const response = await fetch(`${this.API_URL}/level/${level}?${queryParams.toString()}`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
         const result = await response.json();
 
         if (!result.success) {
@@ -178,11 +188,16 @@ export class LeaderboardService {
         leaderboard: LeaderboardEntry[];
         pagination: { total: number; limit: number; offset: number; hasMore: boolean };
     }> {
+        const token = AuthService.getToken();
         const queryParams = new URLSearchParams();
         if (params.limit) queryParams.set('limit', params.limit.toString());
         if (params.offset) queryParams.set('offset', params.offset.toString());
 
-        const response = await fetch(`${this.API_URL}/game/${gameId}?${queryParams.toString()}`);
+        const response = await fetch(`${this.API_URL}/game/${gameId}?${queryParams.toString()}`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
         const result = await response.json();
 
         if (!result.success) {
