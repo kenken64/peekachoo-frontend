@@ -13,6 +13,7 @@ import {CurrentLines} from "./current-lines";
 import {AllPoints} from "./all-points";
 import {Sparkies} from "./sparkies";
 import { logger } from "../config";
+import { audioService } from "../services/audio-service";
 
 export class Grid {
     static FRAME_HEIGHT_PERCENT: number = .7;
@@ -104,6 +105,9 @@ export class Grid {
 
         this.filledPolygons.drawFilledPolygon(newPolygonPoints);
         this.allPoints.updateNewInnerPoints(newPolygonPoints);
+
+        // Play territory claim sound
+        audioService.playSFX('claim');
 
         // this.qix.debug.highlightPoints(newPolygonPoints, 3, true, 300, 700);
         this.scene.debug.drawPoints1(newPolygonPoints);

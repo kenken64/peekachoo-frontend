@@ -4,6 +4,7 @@ import { GameService, Game } from '../services/game-service';
 import { ImageOverlay } from '../objects/image-overlay';
 import { websocketService } from '../services/websocket-service';
 import { logger } from '../config';
+import { audioService } from '../services/audio-service';
 
 export class MenuScene extends Phaser.Scene {
     private domContainer: HTMLDivElement | null = null;
@@ -24,6 +25,9 @@ export class MenuScene extends Phaser.Scene {
         const currentUser = AuthService.getUser();
         const currentToken = AuthService.getToken();
         logger.log('[MenuScene] Creating menu for user:', currentUser?.username, 'Token:', currentToken?.substring(0, 20) + '...');
+
+        // Play menu music
+        audioService.playMusic('menuMusic');
 
         this.createDOMUI();
         this.loadGames();
@@ -421,6 +425,7 @@ export class MenuScene extends Phaser.Scene {
                 <h1>🎮 PEEKACHOO</h1>
                 <div class="menu-user-info">
                     <span class="menu-username">👤 ${user?.username || 'Player'}</span>
+                    <button type="button" class="nes-btn" id="menu-sound-toggle" style="font-size: 8px;" title="Toggle Sound">${audioService.isMuted() ? '🔇' : '🔊'}</button>
                     <button type="button" class="nes-btn is-warning" id="menu-donation" style="font-size: 8px;">Donation</button>
                     <button type="button" class="nes-btn is-error" id="menu-logout" style="font-size: 8px;">Logout</button>
                 </div>
@@ -472,6 +477,19 @@ export class MenuScene extends Phaser.Scene {
         document.getElementById('menu-leaderboard')?.addEventListener('click', () => this.openLeaderboard());
         document.getElementById('menu-stats')?.addEventListener('click', () => this.openStats());
         document.getElementById('menu-donation')?.addEventListener('click', () => this.showDonationPopup());
+        document.getElementById('menu-sound-toggle')?.addEventListener('click', () => this.toggleSound());
+    }
+
+    private toggleSound() {
+        const isMuted = audioService.toggleMute();
+        const btn = document.getElementById('menu-sound-toggle');
+        if (btn) {
+            btn.textContent = isMuted ? '🔇' : '🔊';
+        }
+        // Play a click sound to confirm (only if unmuting)
+        if (!isMuted) {
+            audioService.playSFX('menuClick');
+        }
     }
 
     private async loadGames() {

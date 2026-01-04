@@ -181,6 +181,15 @@ Requires WebAuthn support for authentication.
 
 Based on starter project: https://github.com/troyedwardsjr/phaser3-typescript-webpack
 
+### Audio Credits
+
+| Track | Author | License | Source |
+|-------|--------|---------|--------|
+| Menu Music (8bit Bossa) | Joth | CC0 | [OpenGameArt](https://opengameart.org/content/bossa-nova) |
+| Game Music (Happy Arcade Tune) | rezoner | CC-BY 3.0 | [OpenGameArt](https://opengameart.org/content/happy-arcade-tune) |
+
+Sound effects generated using JSFXR-style synthesis.
+
 ## License
 
 MIT

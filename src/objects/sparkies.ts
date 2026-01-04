@@ -5,6 +5,7 @@ import {Sparky} from "./sparky";
 import QixScene from "../scenes/qix-scene";
 import {customConfig} from "../main";
 import {Player} from "./player";
+import { audioService } from "../services/audio-service";
 
 export class Sparkies {
     sparkies: Sparky[] = [];
@@ -30,6 +31,8 @@ export class Sparkies {
 
         if (timeSinceStart > nextStartupTimeMilliseconds) {
             this.sparkies.push(new Sparky(this.scene, 10, 10));
+            // Play enemy spawn sound
+            audioService.playSFX('enemySpawn');
         }
 
         this.sparkies.forEach((sparky) => {

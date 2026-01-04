@@ -22,6 +22,7 @@ import { sessionStore } from "../stores/session-store";
 import { ScoreSubmissionResult } from "../services/leaderboard-service";
 import { websocketService } from "../services/websocket-service";
 import { logger } from "../config";
+import { audioService } from "../services/audio-service";
 
 interface GameSceneData {
     gameId?: string;
@@ -112,6 +113,9 @@ class QixScene extends Phaser.Scene {
 
         this.sparkies = new Sparkies(this);
         this.qixes = new Qixes(this);
+
+        // Play game music
+        audioService.playMusic('gameMusic');
 
         // Set the first level image if custom game
         this.updateLevelImage();
@@ -849,6 +853,9 @@ class QixScene extends Phaser.Scene {
         this.pauseControl.pauseForWin(time);
         this.cameras.main.shake(300, .005);
 
+        // Play death sound
+        audioService.playSFX('death');
+
         // Record death for score tracking
         sessionStore.recordDeath();
 
@@ -893,6 +900,9 @@ class QixScene extends Phaser.Scene {
     passLevel(time: number) {
         this.pauseControl.pauseForWin(time);
         this.cameras.main.shake(300, .005);
+
+        // Play level complete sound
+        audioService.playSFX('levelComplete');
 
         // Update territory percentage for score calculation
         const territoryPercentage = this.grid.filledPolygons.percentArea();
@@ -1025,6 +1035,9 @@ class QixScene extends Phaser.Scene {
         });
         const isCorrect = selectedAnswer.toLowerCase() === correctAnswer.toLowerCase();
         logger.log('[QixScene] Is correct:', isCorrect);
+
+        // Play quiz result sound
+        audioService.playSFX(isCorrect ? 'quizCorrect' : 'quizWrong');
 
         // Record quiz attempt
         sessionStore.recordQuizAttempt();

@@ -5,6 +5,7 @@ import QixScene from "../scenes/qix-scene";
 import {customConfig} from "../main";
 import {Player} from "./player";
 import {Qix} from "./qix";
+import { audioService } from "../services/audio-service";
 
 export class Qixes {
     qixes: Qix[] = [];
@@ -30,6 +31,8 @@ export class Qixes {
 
         if (timeSinceStart > nextStartupTimeMilliseconds) {
             this.qixes.push(new Qix(this.scene, 200, 200));
+            // Play enemy spawn sound
+            audioService.playSFX('enemySpawn');
         }
 
         this.qixes.forEach((qix) => {
