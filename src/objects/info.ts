@@ -47,7 +47,9 @@ export class Info {
         this.gameText = scene.add.text(gameTextX, gameTextY, '', gameTextOptions);
 
         const pauseButtonOptions = {font: Info.TEXT_FONT, fill: Info.GAME_TEXT_COLOR_STR };
-        this.pauseButtonText = scene.add.text(config.width as number - Info.PAUSE_BUTTON_WIDTH, this.rectangle.top + Info.PADDING, I18nService.t('game.paused'), pauseButtonOptions);
+        const pauseButtonX = (config.width as number) - customConfig.margin - Info.PADDING;
+        this.pauseButtonText = scene.add.text(pauseButtonX, this.rectangle.top + Info.PADDING, I18nService.t('game.paused'), pauseButtonOptions);
+        this.pauseButtonText.setOrigin(1, 0);
         this.pauseButtonText.setInteractive();
         this.pauseButtonText.on('pointerdown', () => {
             this.scene.pauseControl.togglePause();
