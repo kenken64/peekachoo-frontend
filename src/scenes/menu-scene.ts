@@ -434,6 +434,29 @@ export class MenuScene extends Phaser.Scene {
                 body.lang-jp #menu-sound-toggle, body.lang-cn #menu-sound-toggle,
                 body.lang-jp #menu-donation, body.lang-cn #menu-donation,
                 body.lang-jp #menu-logout, body.lang-cn #menu-logout { font-size: 10px !important; }
+
+                /* Language Select Responsive Styles */
+                @media (max-width: 768px) {
+                    #menu-lang-select {
+                        min-width: 100px !important;
+                    }
+                }
+
+                @media (max-width: 480px) {
+                    #menu-lang-select {
+                        min-width: 80px !important;
+                        padding: 0 15px 0 5px !important;
+                        font-size: 7px !important;
+                    }
+                    .menu-lang-select-container {
+                        margin: 0 2px !important;
+                    }
+                    /* Adjust arrow position for nes.css select */
+                    .menu-lang-select-container::after {
+                        right: 5px !important;
+                        font-size: 8px !important;
+                    }
+                }
             </style>
 
             <div class="menu-header">
@@ -441,11 +464,11 @@ export class MenuScene extends Phaser.Scene {
                 <div class="menu-user-info">
                     <span class="menu-username">👤 ${user?.username || 'Player'}</span>
                     ${user?.level ? `<span class="menu-level" style="color: #FFD700;">Lv.${user.level}</span>` : ''}
-                    <div class="nes-select is-dark" style="width: auto; display: inline-block; margin: 0;">
+                    <div class="nes-select is-dark menu-lang-select-container" style="width: auto; display: inline-block; margin: 0;">
                         <select id="menu-lang-select" style="font-size: 8px; padding: 0 25px 0 10px; height: 28px; min-width: 140px;">
                             <option value="en" ${I18nService.getLang() === 'en' ? 'selected' : ''}>🇺🇸 English</option>
-                            <option value="jp" ${I18nService.getLang() === 'jp' ? 'selected' : ''}>🇯🇵 日本語 (Japanese)</option>
-                            <option value="cn" ${I18nService.getLang() === 'cn' ? 'selected' : ''}>🇨🇳 中文 (Chinese)</option>
+                            <option value="jp" ${I18nService.getLang() === 'jp' ? 'selected' : ''}>🇯🇵 日本語</option>
+                            <option value="cn" ${I18nService.getLang() === 'cn' ? 'selected' : ''}>🇨🇳 中文</option>
                         </select>
                     </div>
                     <button type="button" class="nes-btn" id="menu-sound-toggle" style="font-size: 8px;" title="${I18nService.t('menu.toggleSound')}">${audioService.isMuted() ? '🔇' : '🔊'}</button>
