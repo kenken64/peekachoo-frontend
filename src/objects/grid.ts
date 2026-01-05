@@ -150,6 +150,53 @@ export class Grid {
         return outOfBounds || withinFilledPolygon || hittingCurrentLines;
     }
 
+    getValidMove(player: Player, cursors: CursorKeys): Point | null {
+        const intendedTopLeft = player.getMove(cursors);
+        const intendedCenter = new Point(
+            intendedTopLeft.x + customConfig.playerRadius,
+            intendedTopLeft.y + customConfig.playerRadius
+        );
 
+        // Check if intended move is valid
+        if (!this.checkIllegalPoint(intendedCenter)) {
+            return intendedTopLeft;
+        }
+
+        // If invalid, try clamping to frame (handles the "overshoot" issue with high speed)
+        const frame = this.frame.rectangle;
+        const clampedCenter = new Point(
+            Phaser.Math.Clamp(intendedCenter.x, frame.x, frame.x + frame.width),
+            Phaser.Math.Clamp(intendedCenter.y, frame.y, frame.y + frame.height)
+        );
+
+        // If clamping changed the position, check if the clamped position is valid
+        if (clampedCenter.x !== intendedCenter.x || clampedCenter.y !== intendedCenter.y) {
+            if (!this.checkIllegalPoint(clampedCenter)) {
+                // Return top-left corresponding to clamped center
+                return new Point(
+                    clampedCenter.x - customConfig.playerRadius,
+                    clampedCenter.y - customConfig.playerRadius
+                );
+            }
+        }
+
+        return null;
+    }
+
+    private checkIllegalPoint(point: Point): boolean {
+        const outOfBounds =
+            (point.x < this.frame.rectangle.x) ||
+            (point.x > this.frame.rectangle.x + this.frame.rectangle.width) ||
+            (point.y < this.frame.rectangle.y) ||
+            (point.y > this.frame.rectangle.y + this.frame.rectangle.height);
+
+        const withinFilledPolygon = this.filledPolygons.pointWithinPolygon(new ExtPoint(point));
+
+        const hittingCurrentLines = this.currentLines.lines.some((line) => {
+            return Phaser.Geom.Intersects.PointToLineSegment(point, line);
+        });
+
+        return outOfBounds || withinFilledPolygon || hittingCurrentLines;
+    }
 
 }

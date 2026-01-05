@@ -1045,11 +1045,12 @@ class QixScene extends Phaser.Scene {
             ? InputManager.combine(this.cursors, this.virtualDpad.getCursors())
             : this.cursors;
 
-        if (this.grid.isIllegalMove(this.player, activeCursors)) {
+        const validPosition = this.grid.getValidMove(this.player, activeCursors);
+        if (!validPosition) {
             return;
         }
 
-        this.player.move(activeCursors);
+        this.player.moveTo(validPosition);
         this.sparkies.update();
         this.qixes.update();
         this.grid.update(this.player);
@@ -1125,7 +1126,7 @@ class QixScene extends Phaser.Scene {
                 this.player.activateSpeedBoost(this, 20000);
                 
                 // Show feedback
-                this.showToast('SPEED UP! (20s)', 'success');
+                this.showToast(I18nService.t('game.speedUp'), 'success');
                 audioService.playSFX('levelComplete'); // Reuse sound or add new one
             } else {
                 // Check if covered by filled area
