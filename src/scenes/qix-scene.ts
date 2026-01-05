@@ -827,7 +827,8 @@ class QixScene extends Phaser.Scene {
         // How to Play button
         const helpBtn = document.createElement('button');
         helpBtn.className = 'qix-header-btn qix-help-btn';
-        helpBtn.innerHTML = `<span class="btn-text">❓ ${I18nService.t('game.howToPlay')}</span><span class="btn-icon">❓</span>`;
+        // Remove text "How to Play" to reduce clutter on desktop, just show icon
+        helpBtn.innerHTML = `<span class="btn-text">❓</span><span class="btn-icon">❓</span>`;
         helpBtn.style.cssText = `
             padding: 6px 12px;
             font-size: 12px;
