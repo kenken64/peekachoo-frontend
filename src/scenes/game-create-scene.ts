@@ -453,6 +453,7 @@ export class GameCreateScene extends Phaser.Scene {
                     <div class="gc-pokemon-name">
                         ${pokemon.name}
                         ${pokemon.nameJp ? `<br><span style="font-size: 0.8em; color: #aaa;">${pokemon.nameJp}</span>` : ''}
+                        ${pokemon.nameCn ? `<br><span style="font-size: 0.8em; color: #aaa;">${pokemon.nameCn}</span>` : ''}
                     </div>
                     <div class="gc-pokemon-types">${pokemon.types.join(', ')}</div>
                 </div>
@@ -485,6 +486,7 @@ export class GameCreateScene extends Phaser.Scene {
             pokemonId: pokemon.id,
             pokemonName: pokemon.name,
             pokemonNameJP: pokemon.nameJp,
+            pokemonNameCN: pokemon.nameCn,
             pokemonSprite: pokemon.spriteUrl,
             difficulty: 1
         };
@@ -533,6 +535,7 @@ export class GameCreateScene extends Phaser.Scene {
                     <div class="gc-level-name">
                         ${level.pokemonName}
                         ${level.pokemonNameJP ? `<br><span style="font-size: 0.8em; color: #aaa;">${level.pokemonNameJP}</span>` : ''}
+                        ${level.pokemonNameCN ? `<br><span style="font-size: 0.8em; color: #aaa;">${level.pokemonNameCN}</span>` : ''}
                     </div>
                 </div>
                 <select class="nes-select is-dark" data-level-index="${index}" style="font-size: 8px;">

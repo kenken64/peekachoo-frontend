@@ -5,6 +5,7 @@ export interface Pokemon {
     id: number;
     name: string;
     nameJp?: string;
+    nameCn?: string;
     height: number;
     weight: number;
     baseExperience: number;
@@ -78,6 +79,7 @@ export class PokemonService {
         id: number;
         name: string;
         name_jp?: string;
+        name_cn?: string;
         spriteUrl: string;
         types: string[];
         isNew: boolean;

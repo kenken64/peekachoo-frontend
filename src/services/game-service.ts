@@ -7,6 +7,7 @@ export interface GameLevel {
     pokemonId: number;
     pokemonName: string;
     pokemonNameJP?: string;
+    pokemonNameCN?: string;
     pokemonSprite: string;
     difficulty: number;
 }
