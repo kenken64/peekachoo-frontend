@@ -279,7 +279,14 @@ export default class LoginScene extends Phaser.Scene {
         `;
 
         const logo = document.createElement('img');
-        logo.src = I18nService.getLang() === 'jp' ? 'assets/logo_jp.png' : 'assets/logo.png';
+        const lang = I18nService.getLang();
+        if (lang === 'jp') {
+            logo.src = 'assets/logo_jp.png';
+        } else if (lang === 'cn') {
+            logo.src = 'assets/logo_cn.png';
+        } else {
+            logo.src = 'assets/logo.png';
+        }
         logo.alt = 'PEEKACHOO';
         logo.style.cssText = `
             width: 450px;
