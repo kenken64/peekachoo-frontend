@@ -440,6 +440,7 @@ export class MenuScene extends Phaser.Scene {
                 <h1>🎮 ${I18nService.t('app.title')}</h1>
                 <div class="menu-user-info">
                     <span class="menu-username">👤 ${user?.username || 'Player'}</span>
+                    ${user?.level ? `<span class="menu-level" style="color: #FFD700;">Lv.${user.level}</span>` : ''}
                     <button type="button" class="nes-btn" id="menu-lang-toggle" style="font-size: 8px;">${I18nService.t('menu.toggleLang')}</button>
                     <button type="button" class="nes-btn" id="menu-sound-toggle" style="font-size: 8px;" title="${I18nService.t('menu.toggleSound')}">${audioService.isMuted() ? '🔇' : '🔊'}</button>
                     <button type="button" class="nes-btn is-warning" id="menu-donation" style="font-size: 8px;">${I18nService.t('menu.donation')}</button>

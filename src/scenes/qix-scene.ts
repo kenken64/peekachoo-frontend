@@ -740,7 +740,8 @@ class QixScene extends Phaser.Scene {
             font-size: 14px;
             font-weight: bold;
         `;
-        usernameDiv.innerHTML = `👤 <span style="color: #FFFFFF">${username}</span>`;
+        const levelDisplay = user?.level ? ` <span style="color: #FFD700; margin-left: 5px;">Lv.${user.level}</span>` : '';
+        usernameDiv.innerHTML = `👤 <span style="color: #FFFFFF">${username}</span>${levelDisplay}`;
 
         // Game Name display
         const gameNameDiv = document.createElement('div');
