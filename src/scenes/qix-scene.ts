@@ -43,6 +43,7 @@ class QixScene extends Phaser.Scene {
     pauseControl: PauseControl;
     levels = new Levels(this);
     private headerContainer: HTMLDivElement | null = null;
+    private loadingContainer: HTMLDivElement | null = null;
     private gameId: string | null = null;
     private customGame: Game | null = null;
     private currentLevelIndex: number = 0;
@@ -100,6 +101,7 @@ class QixScene extends Phaser.Scene {
 
         // Load custom game if gameId provided and not already loaded from restart
         if (this.gameId && !this.customGame) {
+            this.showLoadingOverlay();
             this.gameDataReady = this.loadCustomGame();
         }
 
@@ -176,11 +178,73 @@ class QixScene extends Phaser.Scene {
                 this.customGame = game;
                 // Update the image now that game is loaded
                 this.updateLevelImage();
+                // Update header with game name
+                this.updateHeaderGameName();
                 // Increment play count (fire-and-forget, ignore errors)
                 GameService.incrementPlayCount(this.gameId!).catch(() => {});
+            } else {
+                this.showToast('Failed to load game data', 'error');
+                setTimeout(() => this.goToMenu(), 2000);
             }
         } catch (error) {
             logger.error('Failed to load custom game:', error);
+            this.showToast('Error loading game', 'error');
+            setTimeout(() => this.goToMenu(), 2000);
+        } finally {
+            this.hideLoadingOverlay();
+        }
+    }
+
+    private showLoadingOverlay() {
+        if (this.loadingContainer) return;
+
+        this.loadingContainer = document.createElement('div');
+        this.loadingContainer.id = 'game-loading-overlay';
+        this.loadingContainer.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            color: white;
+            font-family: "Press Start 2P", cursive;
+        `;
+
+        this.loadingContainer.innerHTML = `
+            <div style="font-size: 20px; margin-bottom: 20px;">LOADING GAME...</div>
+            <div class="nes-progress is-primary" style="width: 300px; height: 20px;"></div>
+        `;
+
+        document.body.appendChild(this.loadingContainer);
+        
+        // Pause the game while loading
+        if (this.pauseControl) {
+            this.pauseControl.pause();
+        }
+    }
+
+    private hideLoadingOverlay() {
+        if (this.loadingContainer) {
+            this.loadingContainer.remove();
+            this.loadingContainer = null;
+        }
+        
+        // Unpause the game
+        if (this.pauseControl) {
+            this.pauseControl.unpause();
+        }
+    }
+
+    private updateHeaderGameName() {
+        const gameNameEl = document.querySelector('.qix-gamename span');
+        if (gameNameEl && this.customGame) {
+            gameNameEl.textContent = this.customGame.name;
         }
     }
 
