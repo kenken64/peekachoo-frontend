@@ -1265,6 +1265,8 @@ class QixScene extends Phaser.Scene {
     }
 
     private createQuizUI(quiz: QuizQuestion, isLastLevel: boolean) {
+        const isMobile = window.innerWidth <= 480;
+
         // Create DOM container for quiz
         const quizContainer = document.createElement('div');
         quizContainer.id = 'quiz-container';
@@ -1286,13 +1288,15 @@ class QixScene extends Phaser.Scene {
         quizBox.style.cssText = `
             max-width: 600px;
             width: 90%;
-            padding: 30px;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: ${isMobile ? '15px' : '30px'};
         `;
 
         const title = document.createElement('p');
         title.className = 'title';
         title.textContent = I18nService.t('game.quizTime');
-        title.style.cssText = 'color: #92cc41; font-size: 16px; text-align: center;';
+        title.style.cssText = `color: #92cc41; font-size: ${isMobile ? '14px' : '16px'}; text-align: center;`;
         quizBox.appendChild(title);
 
         // Show Pokemon image
@@ -1300,9 +1304,9 @@ class QixScene extends Phaser.Scene {
         pokemonImg.src = quiz.spriteUrl;
         pokemonImg.style.cssText = `
             display: block;
-            margin: 20px auto;
-            width: 150px;
-            height: 150px;
+            margin: ${isMobile ? '10px' : '20px'} auto;
+            width: ${isMobile ? '100px' : '150px'};
+            height: ${isMobile ? '100px' : '150px'};
             image-rendering: pixelated;
         `;
         quizBox.appendChild(pokemonImg);
@@ -1310,19 +1314,19 @@ class QixScene extends Phaser.Scene {
         // Question
         const question = document.createElement('p');
         question.textContent = quiz.question;
-        question.style.cssText = 'font-size: 12px; text-align: center; margin: 20px 0; color: #fff;';
+        question.style.cssText = `font-size: ${isMobile ? '14px' : '16px'}; text-align: center; margin: ${isMobile ? '10px' : '20px'} 0; color: #fff;`;
         quizBox.appendChild(question);
 
         // Choices
         const choicesContainer = document.createElement('div');
-        choicesContainer.style.cssText = 'display: flex; flex-direction: column; gap: 15px; margin: 20px 0;';
+        choicesContainer.style.cssText = `display: flex; flex-direction: column; gap: ${isMobile ? '10px' : '15px'}; margin: ${isMobile ? '10px' : '20px'} 0;`;
 
         quiz.choices.forEach((choice, index) => {
             const btn = document.createElement('button');
             btn.type = 'button';
             btn.className = 'nes-btn';
             btn.textContent = choice.toUpperCase();
-            btn.style.cssText = 'width: 100%; font-size: 10px; text-transform: capitalize;';
+            btn.style.cssText = `width: 100%; font-size: ${isMobile ? '12px' : '14px'}; text-transform: capitalize;`;
 
             btn.addEventListener('click', () => {
                 this.handleQuizAnswer(choice, quiz.correctAnswer, isLastLevel, quizContainer);
@@ -1352,31 +1356,21 @@ class QixScene extends Phaser.Scene {
         // Record quiz attempt
         sessionStore.recordQuizAttempt();
 
-        // Show feedback
-        const feedback = document.createElement('div');
-        feedback.className = `nes-balloon from-left ${isCorrect ? 'is-success' : 'is-error'}`;
-        feedback.style.cssText = `
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            z-index: 3000;
-            font-size: 14px;
-        `;
-        feedback.innerHTML = `<p>${isCorrect ? '✓ Correct! Well done!' : '✗ Wrong answer! Try again!'}</p>`;
-        document.body.appendChild(feedback);
-
-        setTimeout(() => {
-            feedback.remove();
-
-            if (isCorrect) {
+        // Show feedback using toast instead of blocking overlay
+        if (isCorrect) {
+            this.showToast(I18nService.t('game.quizCorrect'), 'success');
+            
+            // Wait a moment before proceeding
+            setTimeout(() => {
                 // Remove quiz and proceed
                 quizContainer.remove();
                 // Submit score for completed level
                 this.submitLevelScore(isLastLevel);
-            }
-            // If wrong, keep quiz open for another attempt
-        }, 2000);
+            }, 1500);
+        } else {
+            this.showToast(I18nService.t('game.quizWrong'), 'error');
+            // No delay needed for wrong answer, let player try again immediately
+        }
     }
 
     private async submitLevelScore(isLastLevel: boolean) {
