@@ -1138,7 +1138,7 @@ class QixScene extends Phaser.Scene {
                         this.shieldGraphics.clear();
                     }
                     this.showToast("Shield Deactivated", 'warning');
-                });
+                }, [], this);
             }
         } catch (error) {
             console.error("Shield activation failed", error);
