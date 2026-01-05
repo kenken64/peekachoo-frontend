@@ -63,26 +63,34 @@ export class ImageOverlay {
 
     /**
      * Set a new image to be revealed
+     * Returns a promise that resolves to true if loaded successfully, false if fallback used
      */
-    setImage(imageSrc: string): void {
+    setImage(imageSrc: string): Promise<boolean> {
         if (imageSrc === this.currentImageSrc && this.imageLoaded) {
-            return; // Already loaded
+            return Promise.resolve(true); // Already loaded
         }
         
         this.currentImageSrc = imageSrc;
         this.imageLoaded = false;
-        this.image = new Image();
-        this.image.crossOrigin = 'anonymous';
-        this.image.onload = () => {
-            this.imageLoaded = true;
-            this.redraw();
-        };
-        this.image.onerror = () => {
-            console.error('Failed to load image:', imageSrc);
-            // Fallback to default image
-            this.image.src = 'assets/1.jpeg';
-        };
-        this.image.src = imageSrc;
+        
+        return new Promise((resolve) => {
+            this.image = new Image();
+            this.image.crossOrigin = 'anonymous';
+            this.image.onload = () => {
+                this.imageLoaded = true;
+                this.redraw();
+                resolve(true);
+            };
+            this.image.onerror = () => {
+                console.error('Failed to load image:', imageSrc);
+                // Fallback to default image
+                this.image.src = 'assets/1.jpeg';
+                // We resolve false to indicate the requested image failed
+                // But we still load the fallback so the game doesn't crash
+                resolve(false);
+            };
+            this.image.src = imageSrc;
+        });
     }
 
     /**

@@ -203,15 +203,29 @@ class QixScene extends Phaser.Scene {
     /**
      * Fetch a random unrevealed Pokemon from the backend for endless mode
      */
-    private async fetchRandomPokemon(): Promise<void> {
+    private async fetchRandomPokemon(retryCount = 0): Promise<void> {
+        if (retryCount > 3) {
+            logger.warn('[QixScene] Max retries reached for fetching Pokemon');
+            ImageOverlay.getInstance().setImage('assets/1.jpeg');
+            return;
+        }
+
         try {
             const pokemon = await PokemonService.getRandomUnrevealed();
             if (pokemon && pokemon.spriteUrl) {
-                this.endlessModePokemon = pokemon;
-                ImageOverlay.getInstance().setImage(pokemon.spriteUrl);
-                // Use Japanese name if available and language is JP, otherwise fallback to English name
-                const displayName = (I18nService.getLang() === 'jp' && pokemon.name_jp) ? pokemon.name_jp : pokemon.name;
-                logger.log('[QixScene] Loaded random Pokemon:', displayName, pokemon.isNew ? '(NEW!)' : '(already revealed)');
+                // Try to load the image
+                const success = await ImageOverlay.getInstance().setImage(pokemon.spriteUrl);
+                
+                if (success) {
+                    this.endlessModePokemon = pokemon;
+                    // Use Japanese name if available and language is JP, otherwise fallback to English name
+                    const displayName = (I18nService.getLang() === 'jp' && pokemon.name_jp) ? pokemon.name_jp : pokemon.name;
+                    logger.log('[QixScene] Loaded random Pokemon:', displayName, pokemon.isNew ? '(NEW!)' : '(already revealed)');
+                } else {
+                    logger.warn('[QixScene] Failed to load image for Pokemon:', pokemon.name, 'Retrying...');
+                    // If image failed to load, try another Pokemon
+                    await this.fetchRandomPokemon(retryCount + 1);
+                }
             } else {
                 // Fallback to default image if no Pokemon available
                 logger.warn('[QixScene] No random Pokemon available, using default');
