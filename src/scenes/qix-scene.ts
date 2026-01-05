@@ -55,6 +55,12 @@ class QixScene extends Phaser.Scene {
     private readonly POWERUP_SPAWN_INTERVAL = 5000; // Try to spawn every 5 seconds
     private endlessModePokemon: { id: number; name: string; name_jp?: string; spriteUrl: string; types: string[]; isNew: boolean } | null = null;
 
+    private shieldKey: Phaser.Input.Keyboard.Key;
+    private isShieldActive: boolean = false;
+    private shieldGraphics: Phaser.GameObjects.Graphics;
+    private shieldTimer: Phaser.Time.TimerEvent;
+    private shieldButton: HTMLButtonElement | null = null;
+
     constructor() {
         super({
             key: 'Qix'
@@ -98,6 +104,10 @@ class QixScene extends Phaser.Scene {
     create() {
         this.powerUps = [];
         this.lastPowerUpSpawnTime = 0;
+        
+        // Refresh user data immediately
+        this.refreshUserData();
+        
         this.createHeader();
 
         // Initialize pauseControl first to avoid undefined errors in update()
@@ -117,6 +127,7 @@ class QixScene extends Phaser.Scene {
         // Add virtual D-pad for mobile devices
         if (InputManager.isMobile()) {
             this.virtualDpad = new VirtualDpad(this);
+            this.createShieldButton();
         }
 
         this.grid = new Grid(this);
@@ -135,6 +146,40 @@ class QixScene extends Phaser.Scene {
 
         // Start tracking current level for scoring
         this.startLevelTracking();
+
+        // Initialize Shield Key
+        this.shieldKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
+        this.isShieldActive = false;
+        
+        // Initialize Shield Graphics - Create it proactively
+        this.shieldGraphics = this.add.graphics();
+        this.shieldGraphics.setDepth(1001); // Above player
+    }
+
+    private async refreshUserData() {
+        try {
+            const user = await AuthService.getCurrentUser();
+            if (user) {
+                this.updateHeaderUserInfo(user);
+                
+                // Update shield button for mobile if needed
+                if (InputManager.isMobile()) {
+                    this.createShieldButton();
+                }
+            }
+        } catch (error) {
+            console.error('[QixScene] Failed to refresh user data:', error);
+        }
+    }
+
+    private updateHeaderUserInfo(user: any) {
+        if (!this.headerContainer) return;
+        const usernameDiv = this.headerContainer.querySelector('.qix-username');
+        if (usernameDiv) {
+            const levelDisplay = user.level ? ` <span style="color: #FFD700; margin-left: 5px;">Lv.${user.level}</span>` : '';
+            const shieldsDisplay = ` <span style="color: #ff6b6b; margin-left: 10px;">🛡️ ${user.shields || 0}</span>`;
+            usernameDiv.innerHTML = `👤 <span style="color: #FFFFFF">${user.username}</span>${levelDisplay}${shieldsDisplay}`;
+        }
     }
 
     private async startLevelTracking() {
@@ -748,7 +793,8 @@ class QixScene extends Phaser.Scene {
             font-weight: bold;
         `;
         const levelDisplay = user?.level ? ` <span style="color: #FFD700; margin-left: 5px;">Lv.${user.level}</span>` : '';
-        usernameDiv.innerHTML = `👤 <span style="color: #FFFFFF">${username}</span>${levelDisplay}`;
+        const shieldsDisplay = ` <span style="color: #ff6b6b; margin-left: 10px;">🛡️ ${user?.shields || 0}</span>`;
+        usernameDiv.innerHTML = `👤 <span style="color: #FFFFFF">${username}</span>${levelDisplay}${shieldsDisplay}`;
 
         // Game Name display
         const gameNameDiv = document.createElement('div');
@@ -959,6 +1005,11 @@ class QixScene extends Phaser.Scene {
         }
         this.cleanupHeader();
 
+        if (this.shieldButton) {
+            this.shieldButton.remove();
+            this.shieldButton = null;
+        }
+
         // Clean up virtual D-pad if it exists
         if (this.virtualDpad) {
             this.virtualDpad.destroy();
@@ -983,6 +1034,11 @@ class QixScene extends Phaser.Scene {
 
         AuthService.logout();
         this.cleanupHeader();
+
+        if (this.shieldButton) {
+            this.shieldButton.remove();
+            this.shieldButton = null;
+        }
 
         // Clean up virtual D-pad if it exists
         if (this.virtualDpad) {
@@ -1010,6 +1066,11 @@ class QixScene extends Phaser.Scene {
     shutdown(): void {
         this.cleanupHeader();
         
+        if (this.shieldButton) {
+            this.shieldButton.remove();
+            this.shieldButton = null;
+        }
+
         this.powerUps.forEach(p => p.destroy());
         this.powerUps = [];
 
@@ -1030,6 +1091,128 @@ class QixScene extends Phaser.Scene {
         }
     }
 
+    private async activateShield() {
+        if (this.isShieldActive) return;
+        
+        const user = AuthService.getUser();
+        if (!user || !user.shields || user.shields <= 0) {
+            this.showToast("No shields available!", 'error');
+            return;
+        }
+
+        try {
+            const result = await AuthService.consumeShield();
+            if (result.success) {
+                this.isShieldActive = true;
+                this.showToast("Shield Activated! (6s)", 'success');
+                
+                // Update header immediately
+                const updatedUser = AuthService.getUser();
+                if (updatedUser) {
+                    this.updateHeaderUserInfo(updatedUser);
+                }
+
+                // Update shield button if exists
+                if (this.shieldButton) {
+                    if (updatedUser && updatedUser.shields > 0) {
+                        const badge = this.shieldButton.querySelector('#shield-badge');
+                        if (badge) badge.textContent = updatedUser.shields.toString();
+                    } else {
+                        this.shieldButton.remove();
+                        this.shieldButton = null;
+                    }
+                }
+
+                // Ensure graphics exists and is visible
+                if (!this.shieldGraphics) {
+                    this.shieldGraphics = this.add.graphics();
+                    this.shieldGraphics.setDepth(1001);
+                }
+                this.shieldGraphics.clear();
+                
+                // Timer to deactivate
+                this.shieldTimer = this.time.delayedCall(6000, () => {
+                    this.isShieldActive = false;
+                    if (this.shieldGraphics) {
+                        this.shieldGraphics.clear();
+                    }
+                    this.showToast("Shield Deactivated", 'warning');
+                });
+            }
+        } catch (error) {
+            console.error("Shield activation failed", error);
+            this.showToast("Failed to activate shield", 'error');
+        }
+    }
+
+    private createShieldButton() {
+        const user = AuthService.getUser();
+        if (!user || !user.shields || user.shields <= 0) return;
+
+        if (this.shieldButton) {
+            this.shieldButton.remove();
+        }
+
+        this.shieldButton = document.createElement('button');
+        this.shieldButton.id = 'shield-btn';
+        this.shieldButton.innerHTML = '🛡️';
+        this.shieldButton.style.cssText = `
+            position: fixed;
+            bottom: 60px;
+            right: 40px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: rgba(0, 255, 255, 0.3);
+            border: 2px solid #00FFFF;
+            color: white;
+            font-size: 24px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            touch-action: none;
+            user-select: none;
+            cursor: pointer;
+            outline: none;
+            -webkit-tap-highlight-color: transparent;
+        `;
+
+        // Add count badge
+        const badge = document.createElement('div');
+        badge.id = 'shield-badge';
+        badge.textContent = user.shields.toString();
+        badge.style.cssText = `
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: red;
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 12px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border: 1px solid white;
+        `;
+        this.shieldButton.appendChild(badge);
+
+        this.shieldButton.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            this.activateShield();
+        });
+        
+        // Also add click for testing on desktop with mobile emulation
+        this.shieldButton.addEventListener('click', (e) => {
+            e.preventDefault();
+            this.activateShield();
+        });
+
+        document.body.appendChild(this.shieldButton);
+    }
+
     update(time: number, delta: number) {
         // Guard against uninitialized state
         if (!this.pauseControl || !this.grid || !this.player) {
@@ -1038,6 +1221,29 @@ class QixScene extends Phaser.Scene {
 
         if (this.pauseControl.isPaused(time)) {
             return;
+        }
+
+        // Shield Input
+        if (Phaser.Input.Keyboard.JustDown(this.shieldKey)) {
+            this.activateShield();
+        }
+
+        // Update Shield Graphics
+        if (this.isShieldActive && this.shieldGraphics && this.player) {
+             this.shieldGraphics.clear();
+             // Cyan glow with fill for better visibility
+             this.shieldGraphics.lineStyle(4, 0x00FFFF, 0.8);
+             this.shieldGraphics.fillStyle(0x00FFFF, 0.3);
+             
+             // Dynamic radius calculation
+             const isMobile = window.innerWidth < 768;
+             const baseRadius = customConfig.playerRadius;
+             // Player effective radius is larger on mobile (approx 2x or min 10)
+             const playerEffectiveRadius = isMobile ? Math.max(baseRadius * 2, 10) : baseRadius;
+             const shieldRadius = playerEffectiveRadius + 15;
+             
+             this.shieldGraphics.fillCircle(this.player.x(), this.player.y(), shieldRadius);
+             this.shieldGraphics.strokeCircle(this.player.x(), this.player.y(), shieldRadius);
         }
 
         // Combine keyboard and virtual D-pad inputs
@@ -1142,6 +1348,7 @@ class QixScene extends Phaser.Scene {
     }
 
     checkForLoss(): boolean {
+        if (this.isShieldActive) return false;
         return this.sparkies.checkForCollisionWithPlayer() || this.qixes.checkForCollisionWithCurrentLines();
     }
 

@@ -27,6 +27,15 @@ export class MenuScene extends Phaser.Scene {
         const currentToken = AuthService.getToken();
         logger.log('[MenuScene] Creating menu for user:', currentUser?.username, 'Token:', currentToken?.substring(0, 20) + '...');
 
+        // Refresh user data (background fetch)
+        this.refreshUserData();
+
+        // Listen for wake event to refresh data when returning from game
+        this.events.on('wake', () => {
+             this.refreshUserData();
+             this.loadGames();
+        });
+
         // Play menu music
         audioService.playMusic('menuMusic');
 
@@ -464,6 +473,7 @@ export class MenuScene extends Phaser.Scene {
                 <div class="menu-user-info">
                     <span class="menu-username">👤 ${user?.username || 'Player'}</span>
                     ${user?.level ? `<span class="menu-level" style="color: #FFD700;">Lv.${user.level}</span>` : ''}
+                    <span class="menu-shields" style="color: #ff6b6b;">🛡️ ${user?.shields || 0}</span>
                     <div class="nes-select is-dark menu-lang-select-container" style="width: auto; display: inline-block; margin: 0;">
                         <select id="menu-lang-select" style="font-size: 8px; padding: 0 25px 0 10px; height: 28px; min-width: 140px;">
                             <option value="en" ${I18nService.getLang() === 'en' ? 'selected' : ''}>🇺🇸 English</option>
@@ -497,6 +507,10 @@ export class MenuScene extends Phaser.Scene {
                         <span class="menu-btn-icon">📊</span>
                         <span>${I18nService.t('menu.stats')}</span>
                     </button>
+                    <button type="button" class="nes-btn is-error menu-action-btn" id="menu-purchase-shield">
+                        <span class="menu-btn-icon">🛡️</span>
+                        <span>${I18nService.t('menu.purchaseShield')}</span>
+                    </button>
                 </div>
 
                 <div class="menu-section">
@@ -522,12 +536,33 @@ export class MenuScene extends Phaser.Scene {
         document.getElementById('menu-create')?.addEventListener('click', () => this.createGame());
         document.getElementById('menu-leaderboard')?.addEventListener('click', () => this.openLeaderboard());
         document.getElementById('menu-stats')?.addEventListener('click', () => this.openStats());
+        document.getElementById('menu-purchase-shield')?.addEventListener('click', () => this.showPurchasePopup());
         document.getElementById('menu-donation')?.addEventListener('click', () => this.showDonationPopup());
         document.getElementById('menu-sound-toggle')?.addEventListener('click', () => this.toggleSound());
         document.getElementById('menu-lang-select')?.addEventListener('change', (e) => {
             const lang = (e.target as HTMLSelectElement).value;
             this.changeLanguage(lang);
         });
+
+        // Initial user data refresh
+        this.refreshUserData();
+    }
+
+    private async refreshUserData() {
+        try {
+            const user = await AuthService.getCurrentUser();
+            if (user && this.domContainer) {
+                const usernameEl = this.domContainer.querySelector('.menu-username');
+                const levelEl = this.domContainer.querySelector('.menu-level');
+                const shieldsEl = this.domContainer.querySelector('.menu-shields');
+
+                if (usernameEl) usernameEl.textContent = `👤 ${user.username}`;
+                if (levelEl) levelEl.textContent = `Lv.${user.level || 0}`;
+                if (shieldsEl) shieldsEl.textContent = `🛡️ ${user.shields || 0}`;
+            }
+        } catch (error) {
+            console.error("Failed to refresh user data", error);
+        }
     }
 
     private toggleSound() {
@@ -816,6 +851,232 @@ export class MenuScene extends Phaser.Scene {
         // Close on button click
         overlay.querySelector('.donation-popup-close')?.addEventListener('click', () => {
             overlay.remove();
+        });
+
+        // Close on Escape key
+        const escHandler = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                overlay.remove();
+                document.removeEventListener('keydown', escHandler);
+            }
+        };
+        document.addEventListener('keydown', escHandler);
+
+        document.body.appendChild(overlay);
+    }
+
+    private showPurchasePopup() {
+        const overlay = document.createElement('div');
+        overlay.className = 'donation-popup-overlay'; // Reuse donation popup styles
+        overlay.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        `;
+
+        const unitPrice = 0.20;
+        let quantity = 1;
+
+        overlay.innerHTML = `
+            <style>
+                .purchase-form-group {
+                    margin-bottom: 15px;
+                    text-align: left;
+                }
+                .purchase-form-label {
+                    display: block;
+                    margin-bottom: 5px;
+                    font-size: 10px;
+                    color: #fff;
+                }
+                .purchase-input {
+                    width: 100%;
+                    padding: 8px;
+                    background-color: #fff;
+                    border: 4px solid #212529;
+                    font-family: inherit;
+                    font-size: 12px;
+                }
+                .purchase-row {
+                    display: flex;
+                    gap: 10px;
+                }
+                .quantity-control {
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 10px;
+                    margin: 15px 0;
+                }
+                .quantity-btn {
+                    width: 30px;
+                    height: 30px;
+                    padding: 0;
+                    font-size: 16px;
+                    line-height: 1;
+                }
+                .quantity-display {
+                    font-size: 18px;
+                    min-width: 30px;
+                    text-align: center;
+                }
+            </style>
+            <div class="nes-container is-dark with-title donation-popup-content" style="width: 400px; max-width: 90%;">
+                <p class="title" style="color: #ff6b6b;">Purchase Shield</p>
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <span style="font-size: 40px;">🛡️</span>
+                    <p style="margin: 10px 0; font-size: 12px;">Protect yourself from one hit!</p>
+                    
+                    <div class="quantity-control">
+                        <button type="button" class="nes-btn quantity-btn" id="qty-minus">-</button>
+                        <span class="quantity-display" id="qty-val">1</span>
+                        <button type="button" class="nes-btn quantity-btn" id="qty-plus">+</button>
+                    </div>
+
+                    <p style="color: #ffd700; font-size: 14px;">Total: $<span id="total-price">${unitPrice.toFixed(2)}</span></p>
+                    <p style="color: #888; font-size: 10px;">($${unitPrice.toFixed(2)} per unit)</p>
+                </div>
+                
+                <div class="purchase-form-group">
+                    <label class="purchase-form-label">Card Number</label>
+                    <input type="text" class="purchase-input" placeholder="0000 0000 0000 0000" maxlength="19">
+                </div>
+                
+                <div class="purchase-row">
+                    <div class="purchase-form-group" style="flex: 1;">
+                        <label class="purchase-form-label">Expiry</label>
+                        <input type="text" class="purchase-input" placeholder="MM/YY" maxlength="5">
+                    </div>
+                    <div class="purchase-form-group" style="flex: 1;">
+                        <label class="purchase-form-label">CVV</label>
+                        <input type="text" class="purchase-input" placeholder="123" maxlength="3">
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 10px; justify-content: center; margin-top: 20px;">
+                    <button type="button" class="nes-btn is-error purchase-cancel-btn">Cancel</button>
+                    <button type="button" class="nes-btn is-success purchase-confirm-btn">Purchase</button>
+                </div>
+            </div>
+        `;
+
+        // Quantity logic
+        const updatePrice = () => {
+            const total = (quantity * unitPrice).toFixed(2);
+            const priceEl = overlay.querySelector('#total-price');
+            const qtyEl = overlay.querySelector('#qty-val');
+            if (priceEl) priceEl.textContent = total;
+            if (qtyEl) qtyEl.textContent = quantity.toString();
+        };
+
+        overlay.querySelector('#qty-minus')?.addEventListener('click', () => {
+            if (quantity > 1) {
+                quantity--;
+                updatePrice();
+            }
+        });
+
+        overlay.querySelector('#qty-plus')?.addEventListener('click', () => {
+            if (quantity < 99) {
+                quantity++;
+                updatePrice();
+            }
+        });
+
+        // Close on overlay click
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) {
+                overlay.remove();
+            }
+        });
+
+        // Close on Cancel button click
+        overlay.querySelector('.purchase-cancel-btn')?.addEventListener('click', () => {
+            overlay.remove();
+        });
+
+        // Handle Purchase
+        overlay.querySelector('.purchase-confirm-btn')?.addEventListener('click', async () => {
+            const cardNum = (overlay.querySelector('input[placeholder="0000 0000 0000 0000"]') as HTMLInputElement).value;
+            const expiry = (overlay.querySelector('input[placeholder="MM/YY"]') as HTMLInputElement).value;
+            const cvv = (overlay.querySelector('input[placeholder="123"]') as HTMLInputElement).value;
+
+            if (!cardNum || !expiry || !cvv) {
+                this.showToast('Please fill in all fields', 'error');
+                return;
+            }
+
+            // Show custom confirmation dialog
+            const confirmOverlay = document.createElement('div');
+            confirmOverlay.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.85);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 2100;
+            `;
+
+            confirmOverlay.innerHTML = `
+                <div class="nes-container is-dark with-title" style="background-color: #212529; min-width: 300px; padding: 20px;">
+                    <p class="title" style="color: #f7d51d;">Confirm Purchase</p>
+                    <div style="text-align: center; margin-bottom: 20px;">
+                        <p style="margin-bottom: 10px;">Buy <span style="color: #ff6b6b;">${quantity}</span> Shield(s)?</p>
+                        <p style="color: #ffd700; font-size: 18px;">Total: $${(quantity * unitPrice).toFixed(2)}</p>
+                    </div>
+                    <div style="display: flex; gap: 15px; justify-content: center;">
+                        <button type="button" class="nes-btn is-error confirm-cancel-btn">Cancel</button>
+                        <button type="button" class="nes-btn is-success confirm-yes-btn">Confirm</button>
+                    </div>
+                </div>
+            `;
+
+            document.body.appendChild(confirmOverlay);
+
+            // Cancel handler
+            confirmOverlay.querySelector('.confirm-cancel-btn')?.addEventListener('click', () => {
+                confirmOverlay.remove();
+            });
+
+            // Confirm handler
+            confirmOverlay.querySelector('.confirm-yes-btn')?.addEventListener('click', async () => {
+                confirmOverlay.remove();
+                
+                const btn = overlay.querySelector('.purchase-confirm-btn') as HTMLButtonElement;
+                const originalText = btn.textContent;
+                btn.textContent = 'Processing...';
+                btn.disabled = true;
+                btn.classList.remove('is-success');
+                btn.classList.add('is-disabled');
+
+                try {
+                    const result = await AuthService.purchaseShield(quantity);
+                    overlay.remove();
+                    this.showToast(`Purchase Successful! You now have ${result.shields} shields.`, 'success');
+                    
+                    // Update UI
+                    this.cleanup();
+                    this.createDOMUI();
+                    this.loadGames();
+                } catch (error: any) {
+                    btn.textContent = originalText;
+                    btn.disabled = false;
+                    btn.classList.add('is-success');
+                    btn.classList.remove('is-disabled');
+                    this.showToast('Purchase failed: ' + error.message, 'error');
+                }
+            });
         });
 
         // Close on Escape key

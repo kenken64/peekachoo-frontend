@@ -8,6 +8,7 @@ interface User {
     username: string;
     displayName: string;
     level?: number;
+    shields?: number;
 }
 
 interface AuthResponse {
@@ -274,4 +275,61 @@ export async function getCurrentUser(): Promise<User | null> {
     } catch {
         return null;
     }
+}
+
+export async function purchaseShield(quantity: number): Promise<{ success: boolean, shields: number }> {
+    const token = getToken();
+    if (!token) throw new Error('Not authenticated');
+
+    const response = await fetch(`${API_BASE}/purchase-shield`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ quantity })
+    });
+
+    if (!response.ok) {
+        throw new Error('Purchase failed');
+    }
+
+    const result = await response.json();
+    
+    // Update local user state
+    const user = getUser();
+    if (user) {
+        user.shields = result.shields;
+        setUser(user);
+    }
+
+    return result;
+}
+
+export async function consumeShield(): Promise<{ success: boolean, shields: number }> {
+    const token = getToken();
+    if (!token) throw new Error('Not authenticated');
+
+    const response = await fetch(`${API_BASE}/consume-shield`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        }
+    });
+
+    if (!response.ok) {
+        throw new Error('Failed to consume shield');
+    }
+
+    const result = await response.json();
+    
+    // Update local user state
+    const user = getUser();
+    if (user) {
+        user.shields = result.shields;
+        setUser(user);
+    }
+
+    return result;
 }
