@@ -101,7 +101,7 @@ export default class LoginScene extends Phaser.Scene {
 
             /* Mobile Responsive Styles */
             @media (max-width: 767px) {
-                .nes-container.is-dark.with-title {
+                .login-form-container {
                     width: 85% !important;
                     max-width: 400px !important;
                     padding: 15px !important;
@@ -112,41 +112,41 @@ export default class LoginScene extends Phaser.Scene {
                     overflow-y: visible !important;
                 }
 
-                .nes-container.is-dark.with-title .title {
+                .login-form-container .title {
                     padding: 8px 0 !important;
                     margin-bottom: 8px !important;
                 }
 
-                .nes-container.is-dark.with-title img[alt="PEEKACHOO"] {
+                .login-form-container img[alt="PEEKACHOO"] {
                     width: 100% !important;
                     max-width: 320px !important;
                     margin: 0 auto !important;
                 }
 
-                .nes-container.is-dark.with-title p {
+                .login-form-container p {
                     margin-bottom: 12px !important;
                     font-size: 10px !important;
                 }
 
-                .nes-container.is-dark.with-title .nes-field {
+                .login-form-container .nes-field {
                     margin-bottom: 15px !important;
                 }
 
-                .nes-container.is-dark.with-title .nes-input {
+                .login-form-container .nes-input {
                     font-size: 14px !important;
                     padding: 10px !important;
                 }
 
-                .nes-container.is-dark.with-title .nes-btn {
+                .login-form-container .nes-btn {
                     font-size: 11px !important;
                     padding: 10px 16px !important;
                 }
 
-                .nes-container.is-dark.with-title label {
+                .login-form-container label {
                     font-size: 11px !important;
                 }
 
-                .nes-container.is-dark.with-title #login-error-message {
+                .login-form-container #login-error-message {
                     min-height: 18px !important;
                     margin-bottom: 12px !important;
                     font-size: 8px !important;
@@ -160,28 +160,28 @@ export default class LoginScene extends Phaser.Scene {
             }
 
             @media (max-width: 480px) {
-                .nes-container.is-dark.with-title {
+                .login-form-container {
                     width: 90% !important;
                     max-width: 350px !important;
                     padding: 12px !important;
                 }
 
-                .nes-container.is-dark.with-title img[alt="PEEKACHOO"] {
+                .login-form-container img[alt="PEEKACHOO"] {
                     width: 100% !important;
                     max-width: 280px !important;
                 }
 
-                .nes-container.is-dark.with-title p {
+                .login-form-container p {
                     font-size: 9px !important;
                     margin-bottom: 10px !important;
                 }
 
-                .nes-container.is-dark.with-title .nes-input {
+                .login-form-container .nes-input {
                     font-size: 12px !important;
                     padding: 8px !important;
                 }
 
-                .nes-container.is-dark.with-title .nes-btn {
+                .login-form-container .nes-btn {
                     font-size: 10px !important;
                     padding: 8px 14px !important;
                 }
@@ -194,30 +194,30 @@ export default class LoginScene extends Phaser.Scene {
             }
 
             @media (max-width: 360px) {
-                .nes-container.is-dark.with-title {
+                .login-form-container {
                     width: 92% !important;
                     max-width: 300px !important;
                     padding: 10px !important;
                 }
 
-                .nes-container.is-dark.with-title img[alt="PEEKACHOO"] {
+                .login-form-container img[alt="PEEKACHOO"] {
                     max-width: 240px !important;
                 }
 
-                .nes-container.is-dark.with-title .title {
+                .login-form-container .title {
                     padding: 5px 0 !important;
                 }
 
-                .nes-container.is-dark.with-title p {
+                .login-form-container p {
                     font-size: 8px !important;
                 }
 
-                .nes-container.is-dark.with-title .nes-btn {
+                .login-form-container .nes-btn {
                     font-size: 9px !important;
                     padding: 6px 12px !important;
                 }
 
-                .nes-container.is-dark.with-title label {
+                .login-form-container label {
                     font-size: 10px !important;
                 }
 
@@ -259,7 +259,7 @@ export default class LoginScene extends Phaser.Scene {
 
         // Create container div
         this.formContainer = document.createElement('div');
-        this.formContainer.className = 'nes-container is-dark';
+        this.formContainer.className = 'nes-container is-dark login-form-container';
         this.formContainer.style.cssText = `
             position: absolute;
             left: 50%;
