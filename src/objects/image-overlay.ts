@@ -214,6 +214,18 @@ export class ImageOverlay {
     }
 
     /**
+     * Completely reset the overlay state (e.g. on logout)
+     */
+    fullReset(): void {
+        this.polygons = [];
+        this.currentImageSrc = 'assets/1.jpeg';
+        this.imageLoaded = false;
+        this.image.src = this.currentImageSrc;
+        this.show();
+        this.redraw();
+    }
+
+    /**
      * Hide the overlay temporarily (e.g., when showing text)
      */
     hide(): void {

@@ -188,6 +188,9 @@ class QixScene extends Phaser.Scene {
      * Update the overlay image based on current level
      */
     updateLevelImage() {
+        // Reset endless mode pokemon state
+        this.endlessModePokemon = null;
+        
         if (this.customGame && this.customGame.levels.length > 0) {
             const levelIndex = Math.min(this.currentLevelIndex, this.customGame.levels.length - 1);
             const level = this.customGame.levels[levelIndex];

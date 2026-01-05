@@ -802,7 +802,7 @@ export class MenuScene extends Phaser.Scene {
         AuthService.logout();
         this.cleanup();
         // Ensure game overlay is hidden when logging out
-        ImageOverlay.getInstance().reset();
+        ImageOverlay.getInstance().fullReset();
         ImageOverlay.getInstance().hide();
         this.scene.start('LoginScene');
     }
