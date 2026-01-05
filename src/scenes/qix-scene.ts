@@ -1203,7 +1203,7 @@ class QixScene extends Phaser.Scene {
 
         const title = document.createElement('p');
         title.className = 'title';
-        title.textContent = 'QUIZ TIME!';
+        title.textContent = I18nService.t('game.quizTime');
         title.style.cssText = 'color: #92cc41; font-size: 16px; text-align: center;';
         quizBox.appendChild(title);
 
