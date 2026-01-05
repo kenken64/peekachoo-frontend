@@ -25,6 +25,7 @@ import { websocketService } from "../services/websocket-service";
 import { logger } from "../config";
 import { audioService } from "../services/audio-service";
 import { I18nService } from "../services/i18n-service";
+import { PowerUp } from "../objects/power-up";
 
 interface GameSceneData {
     gameId?: string;
@@ -48,6 +49,9 @@ class QixScene extends Phaser.Scene {
     private customGame: Game | null = null;
     private currentLevelIndex: number = 0;
     private virtualDpad: VirtualDpad | null = null;
+    private powerUps: PowerUp[] = [];
+    private lastPowerUpSpawnTime: number = 0;
+    private readonly POWERUP_SPAWN_INTERVAL = 15000; // Try to spawn every 15 seconds
     private endlessModePokemon: { id: number; name: string; name_jp?: string; spriteUrl: string; types: string[]; isNew: boolean } | null = null;
 
     constructor() {
@@ -91,6 +95,8 @@ class QixScene extends Phaser.Scene {
     }
 
     create() {
+        this.powerUps = [];
+        this.lastPowerUpSpawnTime = 0;
         this.createHeader();
 
         // Initialize pauseControl first to avoid undefined errors in update()
@@ -1002,6 +1008,9 @@ class QixScene extends Phaser.Scene {
 
     shutdown(): void {
         this.cleanupHeader();
+        
+        this.powerUps.forEach(p => p.destroy());
+        this.powerUps = [];
 
         // Clean up virtual D-pad if it exists
         if (this.virtualDpad) {
@@ -1051,6 +1060,79 @@ class QixScene extends Phaser.Scene {
 
         if (this.checkForLoss()) {
             this.loseLife(time);
+        }
+
+        // Power-up logic
+        if (time > this.lastPowerUpSpawnTime + this.POWERUP_SPAWN_INTERVAL) {
+            this.spawnPowerUp();
+            this.lastPowerUpSpawnTime = time;
+        }
+
+        // Check power-up collisions
+        this.checkPowerUpCollisions();
+    }
+
+    private spawnPowerUp() {
+        // Max 1 power-up at a time
+        if (this.powerUps.length > 0) return;
+
+        // Try to find a valid spawn position (not in filled area)
+        // We'll try 10 times then give up for this frame
+        for (let i = 0; i < 10; i++) {
+            const margin = customConfig.margin;
+            const width = config.width as number - (2 * margin);
+            const height = customConfig.frameHeight;
+            
+            const x = margin + Math.random() * width;
+            const y = margin + Math.random() * height;
+
+            // Check if point is inside any filled polygon
+            // Since we don't have a direct "contains" method exposed on FilledPolygons easily,
+            // we can check if it's "safe" by checking if it's NOT in the filled area.
+            // Actually, in Qix, the "filled" area is safe for the player to walk on?
+            // No, usually the player walks on the lines.
+            // If the power-up is in the "unfilled" area (where Qix is), the player has to draw to it.
+            // If the power-up is on the "filled" area, the player can walk to it.
+            
+            // Let's spawn it anywhere within the frame for now.
+            // If it's inside a filled polygon, the player can walk to it safely.
+            // If it's in the empty space, the player has to draw to it.
+            
+            // Create power-up
+            const powerUp = new PowerUp(this, x, y);
+            this.powerUps.push(powerUp);
+            break;
+        }
+    }
+
+    private checkPowerUpCollisions() {
+        const playerRadius = customConfig.playerRadius * 2; // Use a slightly larger radius for collection
+        
+        for (let i = this.powerUps.length - 1; i >= 0; i--) {
+            const powerUp = this.powerUps[i];
+            
+            if (!powerUp.isActive) {
+                this.powerUps.splice(i, 1);
+                continue;
+            }
+
+            const distance = Phaser.Math.Distance.Between(
+                this.player.x(), this.player.y(),
+                powerUp.x, powerUp.y
+            );
+
+            if (distance < playerRadius + 15) { // 15 is approx powerup radius
+                // Collected!
+                powerUp.collect();
+                this.powerUps.splice(i, 1);
+                
+                // Activate speed boost
+                this.player.activateSpeedBoost(this, 20000);
+                
+                // Show feedback
+                this.showToast('SPEED UP! (20s)', 'success');
+                audioService.playSFX('levelComplete'); // Reuse sound or add new one
+            }
         }
     }
 

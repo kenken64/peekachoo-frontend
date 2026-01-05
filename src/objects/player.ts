@@ -23,8 +23,13 @@ export class Player {
     // Effective radius (may be larger on mobile for visibility)
     private effectiveRadius: integer;
 
+    private baseSpeed: integer;
+    private speedMultiplier: number = 1;
+    private speedBoostTimer: Phaser.Time.TimerEvent;
+
     constructor(scene: Scene, x: integer, y: integer) {
-        this.speed = customConfig.playerSpeed;
+        this.baseSpeed = customConfig.playerSpeed;
+        this.speed = this.baseSpeed;
 
         // Increase player size on mobile for better visibility
         const isMobile = window.innerWidth < 768;
@@ -104,5 +109,22 @@ export class Player {
         return new Point(x, y);
     }
 
+    activateSpeedBoost(scene: Scene, durationMs: number = 20000) {
+        this.speedMultiplier = 2;
+        this.updateSpeed();
 
+        // Cancel existing timer if any
+        if (this.speedBoostTimer) {
+            this.speedBoostTimer.remove(false);
+        }
+
+        this.speedBoostTimer = scene.time.delayedCall(durationMs, () => {
+            this.speedMultiplier = 1;
+            this.updateSpeed();
+        });
+    }
+
+    private updateSpeed() {
+        this.speed = this.baseSpeed * this.speedMultiplier;
+    }
 }
