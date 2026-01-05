@@ -259,7 +259,7 @@ export default class LoginScene extends Phaser.Scene {
 
         // Create container div
         this.formContainer = document.createElement('div');
-        this.formContainer.className = 'nes-container is-dark with-title';
+        this.formContainer.className = 'nes-container is-dark';
         this.formContainer.style.cssText = `
             position: absolute;
             left: 50%;
@@ -273,11 +273,9 @@ export default class LoginScene extends Phaser.Scene {
 
         // Logo
         const logoContainer = document.createElement('div');
-        logoContainer.className = 'title';
         logoContainer.style.cssText = `
             text-align: center;
-            padding: 10px 0;
-            background: transparent !important;
+            margin-bottom: 10px;
         `;
 
         const logo = document.createElement('img');
