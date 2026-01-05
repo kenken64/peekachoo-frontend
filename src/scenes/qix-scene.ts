@@ -51,7 +51,7 @@ class QixScene extends Phaser.Scene {
     private virtualDpad: VirtualDpad | null = null;
     private powerUps: PowerUp[] = [];
     private lastPowerUpSpawnTime: number = 0;
-    private readonly POWERUP_SPAWN_INTERVAL = 15000; // Try to spawn every 15 seconds
+    private readonly POWERUP_SPAWN_INTERVAL = 5000; // Try to spawn every 5 seconds
     private endlessModePokemon: { id: number; name: string; name_jp?: string; spriteUrl: string; types: string[]; isNew: boolean } | null = null;
 
     constructor() {
