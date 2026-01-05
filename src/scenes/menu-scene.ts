@@ -420,6 +420,20 @@ export class MenuScene extends Phaser.Scene {
                         padding: 5px 6px;
                     }
                 }
+
+                /* Japanese Font Adjustments */
+                body.lang-jp .menu-header h1 { font-size: 18px; }
+                body.lang-jp .menu-user-info { font-size: 12px; }
+                body.lang-jp .menu-action-btn { font-size: 14px; }
+                body.lang-jp .menu-section h2 { font-size: 16px; }
+                body.lang-jp .menu-game-title { font-size: 14px; }
+                body.lang-jp .menu-game-desc { font-size: 10px; }
+                body.lang-jp .menu-game-meta { font-size: 10px; }
+                body.lang-jp .menu-game-btn { font-size: 10px; }
+                body.lang-jp #menu-lang-toggle, 
+                body.lang-jp #menu-sound-toggle, 
+                body.lang-jp #menu-donation, 
+                body.lang-jp #menu-logout { font-size: 10px !important; }
             </style>
 
             <div class="menu-header">

@@ -628,6 +628,29 @@ export class StatsScene extends Phaser.Scene {
                         text-align: left;
                     }
                 }
+
+                /* Japanese Font Adjustments */
+                body.lang-jp .stats-title { font-size: 20px; }
+                body.lang-jp .stats-tab { font-size: 12px; }
+                body.lang-jp .stats-loading { font-size: 14px; }
+                body.lang-jp .stats-error { font-size: 14px; }
+                body.lang-jp .stats-card-title { font-size: 12px; }
+                body.lang-jp .stats-card-value { font-size: 26px; }
+                body.lang-jp .stats-card-subtitle { font-size: 12px; }
+                body.lang-jp .stats-rank-number { font-size: 34px; }
+                body.lang-jp .stats-percentile { font-size: 13px; }
+                body.lang-jp .stats-grid-item { font-size: 13px; }
+                body.lang-jp .achievements-points { font-size: 26px; }
+                body.lang-jp .achievement-name { font-size: 13px; }
+                body.lang-jp .achievement-desc { font-size: 11px; }
+                body.lang-jp .achievement-points { font-size: 12px; }
+                body.lang-jp .history-date { font-size: 12px; }
+                body.lang-jp .history-score { font-size: 16px; }
+                body.lang-jp .history-levels { font-size: 12px; }
+                body.lang-jp .history-duration { font-size: 12px; }
+                body.lang-jp .collection-count { font-size: 26px; }
+                body.lang-jp .stats-page-btn { font-size: 12px; }
+                body.lang-jp .stats-page-info { font-size: 12px; }
             </style>
 
             <div class="stats-panel nes-container is-dark">

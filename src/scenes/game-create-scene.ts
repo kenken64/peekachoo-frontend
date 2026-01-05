@@ -299,6 +299,17 @@ export class GameCreateScene extends Phaser.Scene {
                     from { transform: translateX(0); opacity: 1; }
                     to { transform: translateX(100%); opacity: 0; }
                 }
+
+                /* Japanese Font Adjustments */
+                body.lang-jp .gc-header h1 { font-size: 16px; }
+                body.lang-jp .gc-header-buttons button { font-size: 12px; }
+                body.lang-jp .gc-section h2 { font-size: 14px; }
+                body.lang-jp .nes-field label { font-size: 12px; }
+                body.lang-jp .nes-input, body.lang-jp .nes-textarea { font-size: 12px; }
+                body.lang-jp .gc-pokemon-name { font-size: 12px; }
+                body.lang-jp .gc-level-name { font-size: 12px; }
+                body.lang-jp .gc-empty-state { font-size: 10px; }
+                body.lang-jp #gc-sync-btn { font-size: 10px !important; }
             </style>
 
             <div class="gc-header">

@@ -279,6 +279,14 @@ export class I18nService {
                 this.currentLang = 'en';
             }
         }
+
+        // Apply class
+        if (this.currentLang === 'jp') {
+            document.body.classList.add('lang-jp');
+        } else {
+            document.body.classList.remove('lang-jp');
+        }
+
         logger.log(`[I18n] Initialized with language: ${this.currentLang}`);
     }
 
@@ -289,6 +297,14 @@ export class I18nService {
     static setLang(lang: Language) {
         this.currentLang = lang;
         localStorage.setItem('lang', lang);
+        
+        // Update body class for styling
+        if (lang === 'jp') {
+            document.body.classList.add('lang-jp');
+        } else {
+            document.body.classList.remove('lang-jp');
+        }
+
         logger.log(`[I18n] Language set to: ${lang}`);
         this.notifyListeners();
     }

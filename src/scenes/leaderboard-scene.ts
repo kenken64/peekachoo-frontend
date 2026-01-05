@@ -361,6 +361,17 @@ export class LeaderboardScene extends Phaser.Scene {
                         height: 6px;
                     }
                 }
+
+                /* Japanese Font Adjustments */
+                body.lang-jp .leaderboard-title { font-size: 20px; }
+                body.lang-jp .leaderboard-tab { font-size: 12px; }
+                body.lang-jp .leaderboard-row-header { font-size: 12px; }
+                body.lang-jp .leaderboard-player { font-size: 14px; }
+                body.lang-jp .leaderboard-score { font-size: 14px; }
+                body.lang-jp .leaderboard-level { font-size: 13px; }
+                body.lang-jp .leaderboard-streak { font-size: 13px; }
+                body.lang-jp .leaderboard-page-btn { font-size: 12px; }
+                body.lang-jp .leaderboard-page-info { font-size: 12px; }
             </style>
 
             <div class="leaderboard-panel nes-container is-dark">
