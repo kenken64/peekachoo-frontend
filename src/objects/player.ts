@@ -110,13 +110,13 @@ export class Player {
     }
 
     moveTo(point: Point) {
-        this.graphics.x = point.x;
-        this.graphics.y = point.y;
-        
         if (!this.previousPoint.equals(this.point())) {
             this.hasMoved = true;
         }
         this.previousPoint = this.point();
+
+        this.graphics.x = point.x;
+        this.graphics.y = point.y;
     }
 
     activateSpeedBoost(scene: Scene, durationMs: number = 20000) {
