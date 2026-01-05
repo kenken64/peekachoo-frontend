@@ -305,6 +305,10 @@ class QixScene extends Phaser.Scene {
                     font-size: 12px !important;
                 }
 
+                .qix-gamename {
+                    display: none !important;
+                }
+
                 /* How to Play Modal */
                 #how-to-play-modal .modal-content,
                 #how-to-play-modal > div > div {
@@ -597,8 +601,24 @@ class QixScene extends Phaser.Scene {
         `;
         usernameDiv.innerHTML = `👤 <span style="color: #FFFFFF">${username}</span>`;
 
+        // Game Name display
+        const gameNameDiv = document.createElement('div');
+        gameNameDiv.className = 'qix-gamename';
+        gameNameDiv.style.cssText = `
+            color: #92cc41;
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+            font-weight: bold;
+            margin-left: 10px;
+            border-left: 1px solid #555;
+            padding-left: 15px;
+        `;
+        const gameName = this.customGame ? this.customGame.name : I18nService.t('menu.play');
+        gameNameDiv.innerHTML = `🎮 <span style="color: #FFFFFF">${gameName}</span>`;
+
         leftDiv.appendChild(backBtn);
         leftDiv.appendChild(usernameDiv);
+        leftDiv.appendChild(gameNameDiv);
 
         // Right side container for help and logout
         const rightDiv = document.createElement('div');
