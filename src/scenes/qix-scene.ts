@@ -1652,6 +1652,7 @@ class QixScene extends Phaser.Scene {
 
 class PauseControl {
     private paused: boolean = false;
+    private locked: boolean = false;
     private winTime: number;
 
     constructor() {
@@ -1663,6 +1664,7 @@ class PauseControl {
 
     pauseForWin(time: number): void {
         this.paused = true;
+        this.locked = true;
         this.winTime = time;
     }
 
@@ -1671,11 +1673,15 @@ class PauseControl {
     }
 
     unpause(): void {
-        this.paused = false;
+        if (!this.locked) {
+            this.paused = false;
+        }
     }
 
     togglePause(): void {
-        this.paused = ! this.paused;
+        if (!this.locked) {
+            this.paused = !this.paused;
+        }
     }
 
 }
