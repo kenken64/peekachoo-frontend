@@ -13,6 +13,9 @@ interface Translations {
 
 const translations: Translations = {
     en: {
+        // App
+        "app.title": "PEEKACHOO",
+
         // Menu
         "menu.play": "Endless Mode",
         "menu.create": "Create Game",
@@ -187,6 +190,9 @@ const translations: Translations = {
         "notify.connecting": "CONNECTING",
     },
     jp: {
+        // App
+        "app.title": "クイックスカッコー",
+
         // Menu
         "menu.play": "エンドレスモード",
         "menu.create": "ゲーム作成",

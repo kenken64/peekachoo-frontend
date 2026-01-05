@@ -437,7 +437,7 @@ export class MenuScene extends Phaser.Scene {
             </style>
 
             <div class="menu-header">
-                <h1>🎮 PEEKACHOO</h1>
+                <h1>🎮 ${I18nService.t('app.title')}</h1>
                 <div class="menu-user-info">
                     <span class="menu-username">👤 ${user?.username || 'Player'}</span>
                     <button type="button" class="nes-btn" id="menu-lang-toggle" style="font-size: 8px;">${I18nService.t('menu.toggleLang')}</button>
