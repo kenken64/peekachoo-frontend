@@ -430,7 +430,7 @@ export class MenuScene extends Phaser.Scene {
                 body.lang-jp .menu-game-desc, body.lang-cn .menu-game-desc { font-size: 10px; }
                 body.lang-jp .menu-game-meta, body.lang-cn .menu-game-meta { font-size: 10px; }
                 body.lang-jp .menu-game-btn, body.lang-cn .menu-game-btn { font-size: 10px; }
-                body.lang-jp #menu-lang-toggle, body.lang-cn #menu-lang-toggle,
+                body.lang-jp #menu-lang-select, body.lang-cn #menu-lang-select,
                 body.lang-jp #menu-sound-toggle, body.lang-cn #menu-sound-toggle,
                 body.lang-jp #menu-donation, body.lang-cn #menu-donation,
                 body.lang-jp #menu-logout, body.lang-cn #menu-logout { font-size: 10px !important; }
@@ -441,7 +441,13 @@ export class MenuScene extends Phaser.Scene {
                 <div class="menu-user-info">
                     <span class="menu-username">👤 ${user?.username || 'Player'}</span>
                     ${user?.level ? `<span class="menu-level" style="color: #FFD700;">Lv.${user.level}</span>` : ''}
-                    <button type="button" class="nes-btn" id="menu-lang-toggle" style="font-size: 8px;">${I18nService.t('menu.toggleLang')}</button>
+                    <div class="nes-select is-dark" style="width: auto; display: inline-block; margin: 0;">
+                        <select id="menu-lang-select" style="font-size: 8px; padding: 0 25px 0 10px; height: 28px; min-width: 140px;">
+                            <option value="en" ${I18nService.getLang() === 'en' ? 'selected' : ''}>🇺🇸 English</option>
+                            <option value="jp" ${I18nService.getLang() === 'jp' ? 'selected' : ''}>🇯🇵 日本語 (Japanese)</option>
+                            <option value="cn" ${I18nService.getLang() === 'cn' ? 'selected' : ''}>🇨🇳 中文 (Chinese)</option>
+                        </select>
+                    </div>
                     <button type="button" class="nes-btn" id="menu-sound-toggle" style="font-size: 8px;" title="${I18nService.t('menu.toggleSound')}">${audioService.isMuted() ? '🔇' : '🔊'}</button>
                     <button type="button" class="nes-btn is-warning" id="menu-donation" style="font-size: 8px;">${I18nService.t('menu.donation')}</button>
                     <button type="button" class="nes-btn is-error" id="menu-logout" style="font-size: 8px;">${I18nService.t('menu.logout')}</button>
@@ -495,7 +501,10 @@ export class MenuScene extends Phaser.Scene {
         document.getElementById('menu-stats')?.addEventListener('click', () => this.openStats());
         document.getElementById('menu-donation')?.addEventListener('click', () => this.showDonationPopup());
         document.getElementById('menu-sound-toggle')?.addEventListener('click', () => this.toggleSound());
-        document.getElementById('menu-lang-toggle')?.addEventListener('click', () => this.toggleLanguage());
+        document.getElementById('menu-lang-select')?.addEventListener('change', (e) => {
+            const lang = (e.target as HTMLSelectElement).value;
+            this.changeLanguage(lang);
+        });
     }
 
     private toggleSound() {
@@ -660,11 +669,13 @@ export class MenuScene extends Phaser.Scene {
         }
     }
 
-    private toggleLanguage() {
-        I18nService.toggleLang();
-        // Re-render the entire scene to update texts
-        this.cleanup();
-        this.scene.restart();
+    private changeLanguage(lang: string) {
+        if (lang === 'en' || lang === 'jp' || lang === 'cn') {
+            I18nService.setLang(lang);
+            // Re-render the entire scene to update texts
+            this.cleanup();
+            this.scene.restart();
+        }
     }
 
     private async deleteGame(gameId: string, gameName: string) {
