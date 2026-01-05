@@ -241,6 +241,36 @@ class QixScene extends Phaser.Scene {
         }
     }
 
+    private showToast(message: string, type: 'success' | 'error' | 'info' | 'warning' = 'info') {
+        // Get or create toast container
+        let container = document.getElementById('qix-toast-container');
+        if (!container) {
+            container = document.createElement('div');
+            container.id = 'qix-toast-container';
+            container.className = 'qix-toast-container';
+            document.body.appendChild(container);
+        }
+
+        // Create toast element with NES style
+        const toast = document.createElement('div');
+        const balloonClass = type === 'success' ? 'is-success' : type === 'error' ? 'is-error' : type === 'warning' ? 'is-warning' : 'is-dark';
+        toast.className = `nes-balloon from-right ${balloonClass} qix-toast`;
+        toast.innerHTML = `<p>${message}</p>`;
+        container.appendChild(toast);
+
+        // Auto remove after 3 seconds
+        setTimeout(() => {
+            toast.style.animation = 'qix-toast-slide-out 0.3s ease-in forwards';
+            setTimeout(() => {
+                toast.remove();
+                // Remove container if empty
+                if (container && container.children.length === 0) {
+                    container.remove();
+                }
+            }, 300);
+        }, 3000);
+    }
+
     private updateHeaderGameName() {
         const gameNameEl = document.querySelector('.qix-gamename span');
         if (gameNameEl && this.customGame) {
@@ -366,6 +396,33 @@ class QixScene extends Phaser.Scene {
             }
             .qix-header-btn .btn-text {
                 display: inline;
+            }
+
+            /* Toast notifications */
+            .qix-toast-container {
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                z-index: 3000;
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .qix-toast {
+                animation: qix-toast-slide-in 0.3s ease-out;
+                font-size: 12px;
+                padding: 1rem !important;
+            }
+
+            @keyframes qix-toast-slide-in {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+
+            @keyframes qix-toast-slide-out {
+                from { transform: translateX(0); opacity: 1; }
+                to { transform: translateX(100%); opacity: 0; }
             }
 
             /* Mobile Responsive Styles for QixScene */
