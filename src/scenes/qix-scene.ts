@@ -191,6 +191,13 @@ class QixScene extends Phaser.Scene {
         // Reset endless mode pokemon state
         this.endlessModePokemon = null;
         
+        // If we have a gameId but no customGame data yet, it means we are still loading.
+        // We should NOT start endless mode.
+        if (this.gameId && !this.customGame) {
+            logger.log('[QixScene] Waiting for custom game data to load...');
+            return;
+        }
+
         if (this.customGame && this.customGame.levels.length > 0) {
             const levelIndex = Math.min(this.currentLevelIndex, this.customGame.levels.length - 1);
             const level = this.customGame.levels[levelIndex];
