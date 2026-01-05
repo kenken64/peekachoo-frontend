@@ -2,6 +2,7 @@ import 'phaser';
 import { PokemonService, Pokemon } from '../services/pokemon-service';
 import { GameService, GameLevel, Game } from '../services/game-service';
 import * as AuthService from '../services/auth-service';
+import { I18nService } from '../services/i18n-service';
 
 export class GameCreateScene extends Phaser.Scene {
     private gameName: string = '';
@@ -53,8 +54,8 @@ export class GameCreateScene extends Phaser.Scene {
     }
 
     private createDOMUI() {
-        const headerTitle = this.isEditMode ? 'EDIT GAME' : 'CREATE NEW GAME';
-        const saveButtonText = this.isEditMode ? 'Update' : 'Save';
+        const headerTitle = this.isEditMode ? I18nService.t('create.editTitle') : I18nService.t('create.title');
+        const saveButtonText = this.isEditMode ? I18nService.t('create.update') : I18nService.t('create.save');
 
         // Create container for DOM elements
         this.domContainer = document.createElement('div');
@@ -303,7 +304,7 @@ export class GameCreateScene extends Phaser.Scene {
             <div class="gc-header">
                 <h1>${this.isEditMode ? '✏️' : '🎮'} ${headerTitle}</h1>
                 <div class="gc-header-buttons">
-                    <button type="button" class="nes-btn" id="gc-back-btn">Back</button>
+                    <button type="button" class="nes-btn" id="gc-back-btn">${I18nService.t('create.back')}</button>
                     <button type="button" class="nes-btn is-primary" id="gc-save-btn" disabled>${saveButtonText}</button>
                 </div>
             </div>
@@ -311,35 +312,35 @@ export class GameCreateScene extends Phaser.Scene {
             <div class="gc-content">
                 <div class="gc-left">
                     <div class="nes-container is-dark gc-section">
-                        <h2>GAME DETAILS</h2>
+                        <h2>${I18nService.t('create.gameDetails')}</h2>
                         <div class="nes-field">
-                            <label for="gc-name">Game Name</label>
-                            <input type="text" class="nes-input is-dark" id="gc-name" placeholder="Enter name" maxlength="50">
+                            <label for="gc-name">${I18nService.t('create.name')}</label>
+                            <input type="text" class="nes-input is-dark" id="gc-name" placeholder="${I18nService.t('create.enterName')}" maxlength="50">
                         </div>
                         <div class="nes-field">
-                            <label for="gc-description">Description (optional)</label>
-                            <textarea class="nes-textarea is-dark" id="gc-description" placeholder="Enter description" maxlength="200"></textarea>
+                            <label for="gc-description">${I18nService.t('create.descriptionOptional')}</label>
+                            <textarea class="nes-textarea is-dark" id="gc-description" placeholder="${I18nService.t('create.enterDescription')}" maxlength="200"></textarea>
                         </div>
                     </div>
 
                     <div class="nes-container is-dark gc-section">
-                        <h2>SEARCH POKEMON</h2>
-                        <button type="button" class="nes-btn is-warning" id="gc-sync-btn" style="width: 100%; margin-bottom: 15px; font-size: 8px;">🔄 Sync from API</button>
+                        <h2>${I18nService.t('create.searchPokemon')}</h2>
+                        <button type="button" class="nes-btn is-warning" id="gc-sync-btn" style="width: 100%; margin-bottom: 15px; font-size: 8px;">🔄 ${I18nService.t('create.syncApi')}</button>
                         <div class="nes-field">
-                            <label for="gc-search">Search</label>
-                            <input type="text" class="nes-input is-dark" id="gc-search" placeholder="Enter name">
+                            <label for="gc-search">${I18nService.t('create.search')}</label>
+                            <input type="text" class="nes-input is-dark" id="gc-search" placeholder="${I18nService.t('create.enterPokemonName')}">
                         </div>
                         <div class="gc-search-results" id="gc-search-results">
-                            <div class="gc-empty-state">Enter Pokemon name</div>
+                            <div class="gc-empty-state">${I18nService.t('create.enterPokemonName')}</div>
                         </div>
                     </div>
                 </div>
 
                 <div class="gc-right">
                     <div class="nes-container is-dark gc-section">
-                        <h2>GAME LEVELS (${this.selectedLevels.length})</h2>
+                        <h2>${I18nService.t('create.gameLevels')} (${this.selectedLevels.length})</h2>
                         <div class="gc-levels-list" id="gc-levels-list">
-                            <div class="gc-empty-state">No levels yet.<br>Search and add Pokemon</div>
+                            <div class="gc-empty-state">${I18nService.t('create.noLevels')}</div>
                         </div>
                     </div>
                 </div>
@@ -388,15 +389,15 @@ export class GameCreateScene extends Phaser.Scene {
         const syncBtn = document.getElementById('gc-sync-btn') as HTMLButtonElement;
         if (syncBtn) {
             syncBtn.disabled = true;
-            syncBtn.textContent = '⏳ Syncing all Pokemon...';
+            syncBtn.textContent = `⏳ ${I18nService.t('create.syncing')}`;
         }
 
         try {
             const result = await PokemonService.syncPokemon(true); // syncAll = true
             if (result.success) {
-                this.showToast(`Synced ${result.data.total} Pokemon!`, 'success');
+                this.showToast(I18nService.t('create.synced', result.data.total), 'success');
             } else {
-                this.showToast('Sync failed: ' + result.error, 'error');
+                this.showToast(I18nService.t('create.syncFailed', result.error), 'error');
             }
         } catch (error: any) {
             this.showToast('Sync error: ' + error.message, 'error');

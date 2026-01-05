@@ -1,5 +1,6 @@
 import 'phaser';
 import { LeaderboardService, LeaderboardEntry, LeaderboardPeriod } from '../services/leaderboard-service';
+import { I18nService } from '../services/i18n-service';
 
 export class LeaderboardScene extends Phaser.Scene {
     private domContainer: HTMLDivElement | null = null;

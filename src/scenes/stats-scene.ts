@@ -1,6 +1,7 @@
 import 'phaser';
 import { StatsService, PlayerStats, PlayerStatsResponse, RecentGame } from '../services/stats-service';
 import { AchievementsService, AchievementsResponse } from '../services/achievements-service';
+import { I18nService } from '../services/i18n-service';
 
 type StatsTab = 'overview' | 'achievements' | 'history' | 'collection';
 
@@ -631,19 +632,19 @@ export class StatsScene extends Phaser.Scene {
 
             <div class="stats-panel nes-container is-dark">
                 <div class="stats-header">
-                    <h2 class="stats-title">📊 MY STATS</h2>
+                    <h2 class="stats-title">📊 ${I18nService.t('stats.title')}</h2>
                     <button class="stats-close" id="stats-close">✕</button>
                 </div>
 
                 <div class="stats-tabs">
-                    <button class="stats-tab active" data-tab="overview">OVERVIEW</button>
-                    <button class="stats-tab" data-tab="achievements">ACHIEVEMENTS</button>
-                    <button class="stats-tab" data-tab="history">HISTORY</button>
-                    <button class="stats-tab" data-tab="collection">COLLECTION</button>
+                    <button class="stats-tab active" data-tab="overview">${I18nService.t('stats.overview')}</button>
+                    <button class="stats-tab" data-tab="achievements">${I18nService.t('stats.achievements')}</button>
+                    <button class="stats-tab" data-tab="history">${I18nService.t('stats.history')}</button>
+                    <button class="stats-tab" data-tab="collection">${I18nService.t('stats.collection')}</button>
                 </div>
 
                 <div class="stats-content" id="stats-content">
-                    <div class="stats-loading">Loading...</div>
+                    <div class="stats-loading">${I18nService.t('stats.loading')}</div>
                 </div>
             </div>
         `;
@@ -688,14 +689,14 @@ export class StatsScene extends Phaser.Scene {
     private showLoading() {
         const container = document.getElementById('stats-content');
         if (container) {
-            container.innerHTML = '<div class="stats-loading">Loading...</div>';
+            container.innerHTML = `<div class="stats-loading">${I18nService.t('stats.loading')}</div>`;
         }
     }
 
     private showError() {
         const container = document.getElementById('stats-content');
         if (container) {
-            container.innerHTML = '<div class="stats-error">Failed to load stats</div>';
+            container.innerHTML = `<div class="stats-error">${I18nService.t('stats.error')}</div>`;
         }
     }
 
@@ -726,71 +727,71 @@ export class StatsScene extends Phaser.Scene {
         container.innerHTML = `
             <div class="stats-overview">
                 <div class="stats-card">
-                    <div class="stats-card-title">Global Rank</div>
+                    <div class="stats-card-title">${I18nService.t('stats.globalRank')}</div>
                     <div class="stats-rank-card">
                         <div class="stats-rank-number">#${rankings.global.rank || '—'}</div>
                         <div class="stats-rank-details">
-                            <div class="stats-percentile">Top ${rankings.global.percentile.toFixed(1)}%</div>
-                            <div class="stats-card-subtitle">of ${rankings.global.total.toLocaleString()} players</div>
+                            <div class="stats-percentile">${I18nService.t('stats.topPercent', rankings.global.percentile.toFixed(1))}</div>
+                            <div class="stats-card-subtitle">${I18nService.t('stats.ofPlayers', rankings.global.total.toLocaleString())}</div>
                         </div>
                     </div>
                 </div>
 
                 <div class="stats-card">
-                    <div class="stats-card-title">Total Score</div>
+                    <div class="stats-card-title">${I18nService.t('stats.totalScore')}</div>
                     <div class="stats-card-value">${this.formatNumber(stats.totalScoreAllTime)}</div>
-                    <div class="stats-card-subtitle">Best game: ${this.formatNumber(stats.bestSingleGameScore)}</div>
+                    <div class="stats-card-subtitle">${I18nService.t('stats.bestGame', this.formatNumber(stats.bestSingleGameScore))}</div>
                 </div>
 
                 <div class="stats-card">
-                    <div class="stats-card-title">Highest Level</div>
+                    <div class="stats-card-title">${I18nService.t('stats.highestLevel')}</div>
                     <div class="stats-card-value">${stats.highestLevelReached}</div>
-                    <div class="stats-card-subtitle">${stats.totalLevelsCompleted} levels completed</div>
+                    <div class="stats-card-subtitle">${I18nService.t('stats.levelsCompleted', stats.totalLevelsCompleted)}</div>
                 </div>
 
                 <div class="stats-card">
-                    <div class="stats-card-title">Best Streak</div>
+                    <div class="stats-card-title">${I18nService.t('stats.bestStreak')}</div>
                     <div class="stats-card-value">🔥 ${stats.bestStreak}</div>
-                    <div class="stats-card-subtitle">Current: ${stats.currentStreak}</div>
+                    <div class="stats-card-subtitle">${I18nService.t('stats.currentStreak', stats.currentStreak)}</div>
                 </div>
 
                 <div class="stats-card">
-                    <div class="stats-card-title">Games Played</div>
+                    <div class="stats-card-title">${I18nService.t('stats.gamesPlayedTitle')}</div>
                     <div class="stats-card-value">${stats.totalGamesPlayed}</div>
-                    <div class="stats-card-subtitle">Avg: ${this.formatNumber(stats.averageScorePerGame)} pts/game</div>
+                    <div class="stats-card-subtitle">${I18nService.t('stats.avgScore', this.formatNumber(stats.averageScorePerGame))}</div>
                 </div>
 
                 <div class="stats-card">
-                    <div class="stats-card-title">Play Time</div>
+                    <div class="stats-card-title">${I18nService.t('stats.playTime')}</div>
                     <div class="stats-card-value">${StatsService.formatPlayTime(stats.totalPlayTimeSeconds)}</div>
-                    <div class="stats-card-subtitle">Since ${this.formatDate(stats.firstPlayedAt)}</div>
+                    <div class="stats-card-subtitle">${I18nService.t('stats.since', this.formatDate(stats.firstPlayedAt))}</div>
                 </div>
 
                 <div class="stats-card" style="grid-column: span 2;">
-                    <div class="stats-card-title">Performance Stats</div>
+                    <div class="stats-card-title">${I18nService.t('stats.performance')}</div>
                     <div class="stats-grid">
                         <div class="stats-grid-item">
-                            <span class="stats-grid-label">Territory Avg</span>
+                            <span class="stats-grid-label">${I18nService.t('stats.territoryAvg')}</span>
                             <span class="stats-grid-value">${(stats.averageCoverage * 100).toFixed(1)}%</span>
                         </div>
                         <div class="stats-grid-item">
-                            <span class="stats-grid-label">Best Coverage</span>
+                            <span class="stats-grid-label">${I18nService.t('stats.bestCoverage')}</span>
                             <span class="stats-grid-value">${(stats.bestCoverage * 100).toFixed(1)}%</span>
                         </div>
                         <div class="stats-grid-item">
-                            <span class="stats-grid-label">Quiz Accuracy</span>
+                            <span class="stats-grid-label">${I18nService.t('stats.quizAccuracy')}</span>
                             <span class="stats-grid-value">${(stats.quizAccuracy * 100).toFixed(1)}%</span>
                         </div>
                         <div class="stats-grid-item">
-                            <span class="stats-grid-label">Fastest Level</span>
+                            <span class="stats-grid-label">${I18nService.t('stats.fastestLevel')}</span>
                             <span class="stats-grid-value">${stats.fastestLevelSeconds ? stats.fastestLevelSeconds + 's' : '—'}</span>
                         </div>
                         <div class="stats-grid-item">
-                            <span class="stats-grid-label">Pokemon Revealed</span>
+                            <span class="stats-grid-label">${I18nService.t('stats.pokemonRevealed')}</span>
                             <span class="stats-grid-value">${stats.uniquePokemonRevealed}/${stats.totalPokemon}</span>
                         </div>
                         <div class="stats-grid-item">
-                            <span class="stats-grid-label">Total Territory</span>
+                            <span class="stats-grid-label">${I18nService.t('stats.totalTerritory')}</span>
                             <span class="stats-grid-value">${this.formatNumber(stats.totalTerritoryClaimed)}%</span>
                         </div>
                     </div>

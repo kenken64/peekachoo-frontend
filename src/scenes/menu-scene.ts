@@ -520,7 +520,7 @@ export class MenuScene extends Phaser.Scene {
         if (!container) return;
 
         if (this.myGames.length === 0) {
-            container.innerHTML = '<div class="nes-container is-dark menu-empty">You haven\'t created any games yet.<br>Click "Create Game" to start!</div>';
+            container.innerHTML = `<div class="nes-container is-dark menu-empty">${I18nService.t('menu.noMyGames')}</div>`;
             return;
         }
 
@@ -533,7 +533,7 @@ export class MenuScene extends Phaser.Scene {
         if (!container) return;
 
         if (this.publishedGames.length === 0) {
-            container.innerHTML = '<div class="nes-container is-dark menu-empty">No community games available yet.<br>Be the first to publish one!</div>';
+            container.innerHTML = `<div class="nes-container is-dark menu-empty">${I18nService.t('menu.noCommunityGames')}</div>`;
             return;
         }
 
@@ -547,31 +547,31 @@ export class MenuScene extends Phaser.Scene {
         ).join('');
 
         const statusBadge = isOwner
-            ? `<span class="nes-badge ${game.isPublished ? 'is-primary' : 'is-dark'}" style="font-size: 8px;"><span class="${game.isPublished ? 'is-primary' : 'is-dark'}">${game.isPublished ? 'Published' : 'Draft'}</span></span>`
+            ? `<span class="nes-badge ${game.isPublished ? 'is-primary' : 'is-dark'}" style="font-size: 8px;"><span class="${game.isPublished ? 'is-primary' : 'is-dark'}">${game.isPublished ? I18nService.t('menu.published') : I18nService.t('menu.draft')}</span></span>`
             : '';
 
         // Show active players count if any (for owner's published games)
         const activePlayers = isOwner && game.isPublished && game.activePlayerCount && game.activePlayerCount > 0
-            ? `<span style="color: #92cc41; margin-left: 10px;">🎮 ${game.activePlayerCount} playing</span>`
+            ? `<span style="color: #92cc41; margin-left: 10px;">${I18nService.t('menu.playing', game.activePlayerCount)}</span>`
             : '';
 
         const ownerActions = isOwner ? `
             <div class="menu-game-actions">
-                <button type="button" class="nes-btn is-success menu-game-btn" data-action="play" data-game-id="${game.id}">Play</button>
-                <button type="button" class="nes-btn is-warning menu-game-btn" data-action="edit" data-game-id="${game.id}">Edit</button>
-                <button type="button" class="nes-btn ${game.isPublished ? 'is-dark' : 'is-primary'} menu-game-btn" data-action="publish" data-game-id="${game.id}">${game.isPublished ? 'Unpublish' : 'Publish'}</button>
-                <button type="button" class="nes-btn is-error menu-game-btn" data-action="delete" data-game-id="${game.id}">Delete</button>
+                <button type="button" class="nes-btn is-success menu-game-btn" data-action="play" data-game-id="${game.id}">${I18nService.t('menu.playBtn')}</button>
+                <button type="button" class="nes-btn is-warning menu-game-btn" data-action="edit" data-game-id="${game.id}">${I18nService.t('menu.editBtn')}</button>
+                <button type="button" class="nes-btn ${game.isPublished ? 'is-dark' : 'is-primary'} menu-game-btn" data-action="publish" data-game-id="${game.id}">${game.isPublished ? I18nService.t('menu.unpublishBtn') : I18nService.t('menu.publishBtn')}</button>
+                <button type="button" class="nes-btn is-error menu-game-btn" data-action="delete" data-game-id="${game.id}">${I18nService.t('menu.deleteBtn')}</button>
             </div>
         ` : '';
 
         return `
             <div class="nes-container is-dark menu-game-card" data-game-id="${game.id}" data-is-owner="${isOwner}">
                 <div class="menu-game-title">${game.name} ${statusBadge}${activePlayers}</div>
-                <div class="menu-game-desc">${game.description || 'No description'}</div>
+                <div class="menu-game-desc">${game.description || I18nService.t('menu.noDescription')}</div>
                 <div class="menu-game-levels">${levelPreviews}</div>
                 <div class="menu-game-meta">
-                    <span>${game.levels.length} levels</span>
-                    <span>${isOwner ? '' : `by ${game.creatorName} • `}${game.playCount || 0} plays</span>
+                    <span>${I18nService.t('menu.levelsCount', game.levels.length)}</span>
+                    <span>${isOwner ? '' : `${I18nService.t('menu.byCreator', game.creatorName)} • `}${I18nService.t('menu.playsCount', game.playCount || 0)}</span>
                 </div>
                 ${ownerActions}
             </div>
