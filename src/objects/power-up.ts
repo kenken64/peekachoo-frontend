@@ -60,8 +60,8 @@ export class PowerUp extends Phaser.GameObjects.Container {
 
     collect() {
         this.isActive = false;
-        if (this.floatTween) this.floatTween.remove();
-        if (this.glowTween) this.glowTween.remove();
+        if (this.floatTween) this.floatTween.stop();
+        if (this.glowTween) this.glowTween.stop();
         this.destroy();
     }
 }

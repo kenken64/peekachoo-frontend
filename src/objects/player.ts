@@ -121,7 +121,7 @@ export class Player {
         this.speedBoostTimer = scene.time.delayedCall(durationMs, () => {
             this.speedMultiplier = 1;
             this.updateSpeed();
-        });
+        }, [], this);
     }
 
     private updateSpeed() {
