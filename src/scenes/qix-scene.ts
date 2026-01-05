@@ -47,7 +47,7 @@ class QixScene extends Phaser.Scene {
     private customGame: Game | null = null;
     private currentLevelIndex: number = 0;
     private virtualDpad: VirtualDpad | null = null;
-    private endlessModePokemon: { id: number; name: string; spriteUrl: string; types: string[]; isNew: boolean } | null = null;
+    private endlessModePokemon: { id: number; name: string; name_jp?: string; spriteUrl: string; types: string[]; isNew: boolean } | null = null;
 
     constructor() {
         super({
@@ -210,7 +210,7 @@ class QixScene extends Phaser.Scene {
                 this.endlessModePokemon = pokemon;
                 ImageOverlay.getInstance().setImage(pokemon.spriteUrl);
                 // Use Japanese name if available and language is JP, otherwise fallback to English name
-                const displayName = (I18nService.getLang() === 'jp' && (pokemon as any).name_jp) ? (pokemon as any).name_jp : pokemon.name;
+                const displayName = (I18nService.getLang() === 'jp' && pokemon.name_jp) ? pokemon.name_jp : pokemon.name;
                 logger.log('[QixScene] Loaded random Pokemon:', displayName, pokemon.isNew ? '(NEW!)' : '(already revealed)');
             } else {
                 // Fallback to default image if no Pokemon available
@@ -963,7 +963,11 @@ class QixScene extends Phaser.Scene {
         // Get current Pokemon info
         const currentPokemon = this.customGame ?
             this.customGame.levels[this.currentLevelIndex] :
-            { pokemonName: 'Mystery Pokemon', pokemonSprite: ImageOverlay.getInstance().getCurrentImageUrl() };
+            (this.endlessModePokemon ? {
+                pokemonName: this.endlessModePokemon.name,
+                pokemonSprite: this.endlessModePokemon.spriteUrl,
+                pokemonNameJP: this.endlessModePokemon.name_jp
+            } : { pokemonName: 'Mystery Pokemon', pokemonSprite: ImageOverlay.getInstance().getCurrentImageUrl() });
 
         try {
             // Generate quiz question

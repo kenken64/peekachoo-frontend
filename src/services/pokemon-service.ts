@@ -77,6 +77,7 @@ export class PokemonService {
     static async getRandomUnrevealed(): Promise<{
         id: number;
         name: string;
+        name_jp?: string;
         spriteUrl: string;
         types: string[];
         isNew: boolean;
