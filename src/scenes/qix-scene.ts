@@ -1398,7 +1398,7 @@ class PauseControl {
     constructor() {
     }
 
-    isPaused(time: number): boolean {
+    isPaused(time?: number): boolean {
         return this.paused;
     }
 
