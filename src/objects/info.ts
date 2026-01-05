@@ -64,7 +64,7 @@ export class Info {
     height(): number { return this.rectangle.height; }
 
     updateGameText() {
-        const cols = [15, 15, 15, 15, 15, 30];
+        const cols = [12, 8, 12, 8, 10, 5];
 
         const player = this.scene.player;
         const grid = this.scene.grid;
