@@ -2,6 +2,7 @@ import 'phaser';
 import * as AuthService from '../services/auth-service';
 import { websocketService } from '../services/websocket-service';
 import { notificationManager } from '../services/notification-manager';
+import { I18nService } from '../services/i18n-service';
 
 export default class LoginScene extends Phaser.Scene {
     private usernameInput!: HTMLInputElement;
@@ -280,7 +281,7 @@ export default class LoginScene extends Phaser.Scene {
         `;
 
         const logo = document.createElement('img');
-        logo.src = 'assets/logo.png';
+        logo.src = I18nService.getLang() === 'jp' ? 'assets/logo_jp.png' : 'assets/logo.png';
         logo.alt = 'PEEKACHOO';
         logo.style.cssText = `
             width: 450px;
