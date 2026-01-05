@@ -194,10 +194,17 @@ class QixScene extends Phaser.Scene {
         if (this.customGame && this.customGame.levels.length > 0) {
             const levelIndex = Math.min(this.currentLevelIndex, this.customGame.levels.length - 1);
             const level = this.customGame.levels[levelIndex];
+            logger.log('[QixScene] Setting Custom Game Level Image:', {
+                gameName: this.customGame.name,
+                levelIndex,
+                pokemonName: level.pokemonName,
+                spriteUrl: level.pokemonSprite
+            });
             if (level && level.pokemonSprite) {
                 ImageOverlay.getInstance().setImage(level.pokemonSprite);
             }
         } else {
+            logger.log('[QixScene] Setting Endless Mode Image (fetching random)...');
             // Endless mode - fetch random unrevealed Pokemon from backend
             this.pokemonReady = this.fetchRandomPokemon();
         }
@@ -223,7 +230,13 @@ class QixScene extends Phaser.Scene {
                     this.endlessModePokemon = pokemon;
                     // Use Japanese name if available and language is JP, otherwise fallback to English name
                     const displayName = (I18nService.getLang() === 'jp' && pokemon.name_jp) ? pokemon.name_jp : pokemon.name;
-                    logger.log('[QixScene] Loaded random Pokemon:', displayName, pokemon.isNew ? '(NEW!)' : '(already revealed)');
+                    logger.log('[QixScene] Loaded random Pokemon for Reveal:', {
+                        name: pokemon.name,
+                        nameJP: pokemon.name_jp,
+                        displayName,
+                        spriteUrl: pokemon.spriteUrl,
+                        isNew: pokemon.isNew
+                    });
                 } else {
                     logger.warn('[QixScene] Failed to load image for Pokemon:', pokemon.name, 'Retrying...');
                     // If image failed to load, try another Pokemon
@@ -1005,6 +1018,13 @@ class QixScene extends Phaser.Scene {
                 pokemonSprite: this.endlessModePokemon.spriteUrl,
                 pokemonNameJP: this.endlessModePokemon.name_jp
             } : { pokemonName: 'Mystery Pokemon', pokemonSprite: ImageOverlay.getInstance().getCurrentImageUrl() });
+
+        logger.log('[QixScene] Generating Quiz for:', {
+            gameMode: this.customGame ? 'Custom' : 'Endless',
+            pokemonName: currentPokemon.pokemonName,
+            pokemonNameJP: (currentPokemon as any).pokemonNameJP,
+            spriteUrl: currentPokemon.pokemonSprite
+        });
 
         try {
             // Generate quiz question
