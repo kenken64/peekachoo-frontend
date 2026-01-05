@@ -380,11 +380,13 @@ export class I18nService {
             }
         }
 
-        // Apply class
+        // Apply class and lang attribute
         if (this.currentLang === 'jp') {
             document.body.classList.add('lang-jp');
+            document.documentElement.lang = 'ja';
         } else {
             document.body.classList.remove('lang-jp');
+            document.documentElement.lang = 'en';
         }
 
         logger.log(`[I18n] Initialized with language: ${this.currentLang}`);
@@ -401,8 +403,10 @@ export class I18nService {
         // Update body class for styling
         if (lang === 'jp') {
             document.body.classList.add('lang-jp');
+            document.documentElement.lang = 'ja';
         } else {
             document.body.classList.remove('lang-jp');
+            document.documentElement.lang = 'en';
         }
 
         logger.log(`[I18n] Language set to: ${lang}`);
