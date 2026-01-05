@@ -26,6 +26,7 @@ import { logger } from "../config";
 import { audioService } from "../services/audio-service";
 import { I18nService } from "../services/i18n-service";
 import { PowerUp } from "../objects/power-up";
+import { ExtPoint } from "../objects/ext-point";
 
 interface GameSceneData {
     gameId?: string;
@@ -1087,16 +1088,10 @@ class QixScene extends Phaser.Scene {
             const y = margin + Math.random() * height;
 
             // Check if point is inside any filled polygon
-            // Since we don't have a direct "contains" method exposed on FilledPolygons easily,
-            // we can check if it's "safe" by checking if it's NOT in the filled area.
-            // Actually, in Qix, the "filled" area is safe for the player to walk on?
-            // No, usually the player walks on the lines.
-            // If the power-up is in the "unfilled" area (where Qix is), the player has to draw to it.
-            // If the power-up is on the "filled" area, the player can walk to it.
-            
-            // Let's spawn it anywhere within the frame for now.
-            // If it's inside a filled polygon, the player can walk to it safely.
-            // If it's in the empty space, the player has to draw to it.
+            const point = ExtPoint.createWithCoordinates(x, y);
+            if (this.grid.filledPolygons.pointWithinPolygon(point)) {
+                continue; // Try again
+            }
             
             // Create power-up
             const powerUp = new PowerUp(this, x, y);
@@ -1122,7 +1117,7 @@ class QixScene extends Phaser.Scene {
             );
 
             if (distance < playerRadius + 15) { // 15 is approx powerup radius
-                // Collected!
+                // Collected by player!
                 powerUp.collect();
                 this.powerUps.splice(i, 1);
                 
@@ -1132,6 +1127,15 @@ class QixScene extends Phaser.Scene {
                 // Show feedback
                 this.showToast('SPEED UP! (20s)', 'success');
                 audioService.playSFX('levelComplete'); // Reuse sound or add new one
+            } else {
+                // Check if covered by filled area
+                const powerUpPoint = ExtPoint.createWithCoordinates(powerUp.x, powerUp.y);
+                if (this.grid.filledPolygons.pointWithinPolygon(powerUpPoint)) {
+                    // Covered by area - remove and force respawn
+                    powerUp.collect();
+                    this.powerUps.splice(i, 1);
+                    this.lastPowerUpSpawnTime = 0; // Trigger immediate respawn
+                }
             }
         }
     }
