@@ -71,9 +71,9 @@ export class Info {
 
         let data: string[] = [];
 
-        data.push(`% Filled:`);
+        data.push(I18nService.t('game.filled'));
         data.push(`${filledPolygons.percentAreaString()}`);
-        data.push(`% Target:`);
+        data.push(I18nService.t('game.target'));
         data.push(`${this.scene.levels.coverageTarget}`);
         data.push(I18nService.t('game.level', ''));
         data.push(`${this.scene.levels.currentLevel}`);

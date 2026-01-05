@@ -547,7 +547,7 @@ class QixScene extends Phaser.Scene {
         // Back to menu button
         const backBtn = document.createElement('button');
         backBtn.className = 'qix-header-btn qix-back-btn';
-        backBtn.innerHTML = '<span class="btn-text">← Menu</span><span class="btn-icon">←</span>';
+        backBtn.innerHTML = `<span class="btn-text">← ${I18nService.t('game.menu')}</span><span class="btn-icon">←</span>`;
         backBtn.style.cssText = `
             padding: 6px 12px;
             font-size: 12px;
@@ -595,7 +595,7 @@ class QixScene extends Phaser.Scene {
         // How to Play button
         const helpBtn = document.createElement('button');
         helpBtn.className = 'qix-header-btn qix-help-btn';
-        helpBtn.innerHTML = '<span class="btn-text">❓ How to Play</span><span class="btn-icon">❓</span>';
+        helpBtn.innerHTML = `<span class="btn-text">❓ ${I18nService.t('game.howToPlay')}</span><span class="btn-icon">❓</span>`;
         helpBtn.style.cssText = `
             padding: 6px 12px;
             font-size: 12px;
@@ -620,7 +620,7 @@ class QixScene extends Phaser.Scene {
         // Logout button
         const logoutBtn = document.createElement('button');
         logoutBtn.className = 'qix-header-btn qix-logout-btn';
-        logoutBtn.innerHTML = '<span class="btn-text">Logout</span><span class="btn-icon">⬅</span>';
+        logoutBtn.innerHTML = `<span class="btn-text">${I18nService.t('menu.logout')}</span><span class="btn-icon">⬅</span>`;
         logoutBtn.style.cssText = `
             padding: 6px 16px;
             font-size: 12px;
@@ -693,51 +693,38 @@ class QixScene extends Phaser.Scene {
 
         modal.innerHTML = `
             <h2 style="color: #FFD700; text-align: center; margin-top: 0; font-size: 28px;">
-                🎮 How to Play
+                ${I18nService.t('game.howToPlayTitle')}
             </h2>
             
-            <h3 style="color: #CCAAFF; margin-bottom: 10px;">🕹️ Controls</h3>
+            <h3 style="color: #CCAAFF; margin-bottom: 10px;">🕹️ ${I18nService.t('game.controls')}</h3>
             <ul style="line-height: 1.8; margin-bottom: 20px;">
-                <li><strong>Arrow Keys</strong> - Move your player around the border</li>
-                <li><strong>↑ Up</strong> - Move up</li>
-                <li><strong>↓ Down</strong> - Move down</li>
-                <li><strong>← Left</strong> - Move left</li>
-                <li><strong>→ Right</strong> - Move right</li>
+                ${I18nService.t('game.controlsList')}
             </ul>
             
-            <h3 style="color: #CCAAFF; margin-bottom: 10px;">🎯 Objective</h3>
+            <h3 style="color: #CCAAFF; margin-bottom: 10px;">🎯 ${I18nService.t('game.objective')}</h3>
             <p style="line-height: 1.6; margin-bottom: 20px;">
-                Claim territory by drawing lines across the playing field. 
-                Fill up <strong style="color: #FFD700;">75%</strong> or more of the area to reveal the hidden image and advance to the next level!
+                ${I18nService.t('game.objectiveText')}
             </p>
             
-            <h3 style="color: #CCAAFF; margin-bottom: 10px;">📜 Rules</h3>
+            <h3 style="color: #CCAAFF; margin-bottom: 10px;">📜 ${I18nService.t('game.rules')}</h3>
             <ul style="line-height: 1.8; margin-bottom: 20px;">
-                <li>You can only move along the <strong>border</strong> or <strong>claimed areas</strong></li>
-                <li>When you venture into unclaimed territory, you draw a line</li>
-                <li>Complete a shape by returning to claimed territory to fill it in</li>
-                <li>The area without enemies gets filled!</li>
+                ${I18nService.t('game.rulesList')}
             </ul>
             
-            <h3 style="color: #CCAAFF; margin-bottom: 10px;">⚠️ Dangers</h3>
+            <h3 style="color: #CCAAFF; margin-bottom: 10px;">⚠️ ${I18nService.t('game.dangers')}</h3>
             <ul style="line-height: 1.8; margin-bottom: 20px;">
-                <li><strong style="color: #FF6B6B;">Qix</strong> - The bouncing enemy in the center. Don't let it touch your line while drawing!</li>
-                <li><strong style="color: #FF6B6B;">Sparky</strong> - Enemies that patrol the borders. Avoid them!</li>
-                <li>If hit, you lose a life and restart the level</li>
+                ${I18nService.t('game.dangersList')}
             </ul>
             
-            <h3 style="color: #CCAAFF; margin-bottom: 10px;">💡 Tips</h3>
+            <h3 style="color: #CCAAFF; margin-bottom: 10px;">💡 ${I18nService.t('game.tips')}</h3>
             <ul style="line-height: 1.8; margin-bottom: 25px;">
-                <li>Draw quickly to minimize risk</li>
-                <li>Claim smaller areas at first for safety</li>
-                <li>Watch enemy patterns before making your move</li>
-                <li>Larger claims give more area percentage!</li>
+                ${I18nService.t('game.tipsList')}
             </ul>
         `;
 
         // Close button
         const closeBtn = document.createElement('button');
-        closeBtn.textContent = '✓ Got it!';
+        closeBtn.textContent = I18nService.t('game.gotIt');
         closeBtn.style.cssText = `
             display: block;
             width: 100%;
