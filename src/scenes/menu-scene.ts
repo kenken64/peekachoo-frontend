@@ -421,19 +421,19 @@ export class MenuScene extends Phaser.Scene {
                     }
                 }
 
-                /* Japanese Font Adjustments */
-                body.lang-jp .menu-header h1 { font-size: 18px; }
-                body.lang-jp .menu-user-info { font-size: 12px; }
-                body.lang-jp .menu-action-btn { font-size: 14px; }
-                body.lang-jp .menu-section h2 { font-size: 16px; }
-                body.lang-jp .menu-game-title { font-size: 14px; }
-                body.lang-jp .menu-game-desc { font-size: 10px; }
-                body.lang-jp .menu-game-meta { font-size: 10px; }
-                body.lang-jp .menu-game-btn { font-size: 10px; }
-                body.lang-jp #menu-lang-toggle, 
-                body.lang-jp #menu-sound-toggle, 
-                body.lang-jp #menu-donation, 
-                body.lang-jp #menu-logout { font-size: 10px !important; }
+                /* Japanese and Chinese Font Adjustments */
+                body.lang-jp .menu-header h1, body.lang-cn .menu-header h1 { font-size: 18px; }
+                body.lang-jp .menu-user-info, body.lang-cn .menu-user-info { font-size: 12px; }
+                body.lang-jp .menu-action-btn, body.lang-cn .menu-action-btn { font-size: 14px; }
+                body.lang-jp .menu-section h2, body.lang-cn .menu-section h2 { font-size: 16px; }
+                body.lang-jp .menu-game-title, body.lang-cn .menu-game-title { font-size: 14px; }
+                body.lang-jp .menu-game-desc, body.lang-cn .menu-game-desc { font-size: 10px; }
+                body.lang-jp .menu-game-meta, body.lang-cn .menu-game-meta { font-size: 10px; }
+                body.lang-jp .menu-game-btn, body.lang-cn .menu-game-btn { font-size: 10px; }
+                body.lang-jp #menu-lang-toggle, body.lang-cn #menu-lang-toggle,
+                body.lang-jp #menu-sound-toggle, body.lang-cn #menu-sound-toggle,
+                body.lang-jp #menu-donation, body.lang-cn #menu-donation,
+                body.lang-jp #menu-logout, body.lang-cn #menu-logout { font-size: 10px !important; }
             </style>
 
             <div class="menu-header">
