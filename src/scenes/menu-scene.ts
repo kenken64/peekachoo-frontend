@@ -5,6 +5,7 @@ import { ImageOverlay } from '../objects/image-overlay';
 import { websocketService } from '../services/websocket-service';
 import { logger } from '../config';
 import { audioService } from '../services/audio-service';
+import { I18nService } from '../services/i18n-service';
 
 export class MenuScene extends Phaser.Scene {
     private domContainer: HTMLDivElement | null = null;
@@ -425,9 +426,10 @@ export class MenuScene extends Phaser.Scene {
                 <h1>🎮 PEEKACHOO</h1>
                 <div class="menu-user-info">
                     <span class="menu-username">👤 ${user?.username || 'Player'}</span>
-                    <button type="button" class="nes-btn" id="menu-sound-toggle" style="font-size: 8px;" title="Toggle Sound">${audioService.isMuted() ? '🔇' : '🔊'}</button>
-                    <button type="button" class="nes-btn is-warning" id="menu-donation" style="font-size: 8px;">Donation</button>
-                    <button type="button" class="nes-btn is-error" id="menu-logout" style="font-size: 8px;">Logout</button>
+                    <button type="button" class="nes-btn" id="menu-lang-toggle" style="font-size: 8px;">${I18nService.t('menu.toggleLang')}</button>
+                    <button type="button" class="nes-btn" id="menu-sound-toggle" style="font-size: 8px;" title="${I18nService.t('menu.toggleSound')}">${audioService.isMuted() ? '🔇' : '🔊'}</button>
+                    <button type="button" class="nes-btn is-warning" id="menu-donation" style="font-size: 8px;">${I18nService.t('menu.donation')}</button>
+                    <button type="button" class="nes-btn is-error" id="menu-logout" style="font-size: 8px;">${I18nService.t('menu.logout')}</button>
                 </div>
             </div>
 
@@ -435,35 +437,35 @@ export class MenuScene extends Phaser.Scene {
                 <div class="menu-actions">
                     <button type="button" class="nes-btn is-primary menu-action-btn" id="menu-play">
                         <span class="menu-btn-icon">🕹️</span>
-                        <span>Play Classic</span>
+                        <span>${I18nService.t('menu.play')}</span>
                     </button>
                     <button type="button" class="nes-btn is-success menu-action-btn" id="menu-create">
                         <span class="menu-btn-icon">✨</span>
-                        <span>Create Game</span>
+                        <span>${I18nService.t('menu.create')}</span>
                     </button>
                 </div>
                 <div class="menu-actions" style="margin-top: -20px;">
                     <button type="button" class="nes-btn is-warning menu-action-btn" id="menu-leaderboard">
                         <span class="menu-btn-icon">🏆</span>
-                        <span>Leaderboard</span>
+                        <span>${I18nService.t('menu.leaderboard')}</span>
                     </button>
                     <button type="button" class="nes-btn menu-action-btn" id="menu-stats" style="background: #9b59b6; border-color: #8e44ad;">
                         <span class="menu-btn-icon">📊</span>
-                        <span>My Stats</span>
+                        <span>${I18nService.t('menu.stats')}</span>
                     </button>
                 </div>
 
                 <div class="menu-section">
-                    <h2>📁 MY GAMES</h2>
+                    <h2>📁 ${I18nService.t('menu.myGames')}</h2>
                     <div id="menu-my-games" class="menu-games-grid">
-                        <div class="menu-loading">Loading...</div>
+                        <div class="menu-loading">${I18nService.t('menu.loading')}</div>
                     </div>
                 </div>
 
                 <div class="menu-section">
-                    <h2>🌍 COMMUNITY GAMES</h2>
+                    <h2>🌍 ${I18nService.t('menu.communityGames')}</h2>
                     <div id="menu-published-games" class="menu-games-grid">
-                        <div class="menu-loading">Loading...</div>
+                        <div class="menu-loading">${I18nService.t('menu.loading')}</div>
                     </div>
                 </div>
             </div>
@@ -478,6 +480,7 @@ export class MenuScene extends Phaser.Scene {
         document.getElementById('menu-stats')?.addEventListener('click', () => this.openStats());
         document.getElementById('menu-donation')?.addEventListener('click', () => this.showDonationPopup());
         document.getElementById('menu-sound-toggle')?.addEventListener('click', () => this.toggleSound());
+        document.getElementById('menu-lang-toggle')?.addEventListener('click', () => this.toggleLanguage());
     }
 
     private toggleSound() {
@@ -640,6 +643,13 @@ export class MenuScene extends Phaser.Scene {
         } catch (error: any) {
             this.showToast('Failed to update publish status: ' + error.message, 'error');
         }
+    }
+
+    private toggleLanguage() {
+        I18nService.toggleLang();
+        // Re-render the entire scene to update texts
+        this.cleanup();
+        this.scene.restart();
     }
 
     private async deleteGame(gameId: string, gameName: string) {

@@ -16,6 +16,7 @@ import {Qixes} from "../objects/qixes";
 import {ImageOverlay} from "../objects/image-overlay";
 import * as AuthService from "../services/auth-service";
 import { GameService, Game, GameLevel } from "../services/game-service";
+import { PokemonService } from "../services/pokemon-service";
 import { VirtualDpad } from "../objects/virtual-dpad";
 import { InputManager } from "../utils/input-manager";
 import { sessionStore } from "../stores/session-store";
@@ -23,6 +24,7 @@ import { ScoreSubmissionResult } from "../services/leaderboard-service";
 import { websocketService } from "../services/websocket-service";
 import { logger } from "../config";
 import { audioService } from "../services/audio-service";
+import { I18nService } from "../services/i18n-service";
 
 interface GameSceneData {
     gameId?: string;
@@ -45,6 +47,7 @@ class QixScene extends Phaser.Scene {
     private customGame: Game | null = null;
     private currentLevelIndex: number = 0;
     private virtualDpad: VirtualDpad | null = null;
+    private endlessModePokemon: { id: number; name: string; spriteUrl: string; types: string[]; isNew: boolean } | null = null;
 
     constructor() {
         super({
@@ -68,6 +71,7 @@ class QixScene extends Phaser.Scene {
 
     private sessionReady: Promise<void> | null = null;
     private gameDataReady: Promise<void> | null = null;
+    private pokemonReady: Promise<void> | null = null;
 
     private initSession() {
         this.sessionReady = this.doInitSession();
@@ -125,25 +129,42 @@ class QixScene extends Phaser.Scene {
     }
 
     private async startLevelTracking() {
-        // Wait for session and game data to be ready before tracking level
+        // Wait for session, game data, and Pokemon to be ready before tracking level
         if (this.sessionReady) {
             await this.sessionReady;
         }
         if (this.gameDataReady) {
             await this.gameDataReady;
         }
+        if (this.pokemonReady) {
+            await this.pokemonReady;
+        }
 
-        const currentLevel = this.customGame?.levels[this.currentLevelIndex];
+        // Determine Pokemon info based on game mode
+        let pokemonId: number | undefined;
+        let pokemonName: string | undefined;
+
+        if (this.customGame?.levels[this.currentLevelIndex]) {
+            // Custom game mode
+            const currentLevel = this.customGame.levels[this.currentLevelIndex];
+            pokemonId = currentLevel.pokemonId;
+            pokemonName = currentLevel.pokemonName;
+        } else if (this.endlessModePokemon) {
+            // Endless mode
+            pokemonId = this.endlessModePokemon.id;
+            pokemonName = this.endlessModePokemon.name;
+        }
+
         logger.log('[QixScene] Starting level tracking with Pokemon:', {
             level: this.levels.currentLevel,
-            pokemonId: currentLevel?.pokemonId,
-            pokemonName: currentLevel?.pokemonName
+            pokemonId,
+            pokemonName
         });
 
         sessionStore.startLevel(
             this.levels.currentLevel,
-            currentLevel?.pokemonId,
-            currentLevel?.pokemonName
+            pokemonId,
+            pokemonName
         );
         logger.log('[QixScene] Level tracking started for level:', this.levels.currentLevel);
     }
@@ -174,7 +195,31 @@ class QixScene extends Phaser.Scene {
                 ImageOverlay.getInstance().setImage(level.pokemonSprite);
             }
         } else {
-            // Classic mode - use default image
+            // Endless mode - fetch random unrevealed Pokemon from backend
+            this.pokemonReady = this.fetchRandomPokemon();
+        }
+    }
+
+    /**
+     * Fetch a random unrevealed Pokemon from the backend for endless mode
+     */
+    private async fetchRandomPokemon(): Promise<void> {
+        try {
+            const pokemon = await PokemonService.getRandomUnrevealed();
+            if (pokemon && pokemon.spriteUrl) {
+                this.endlessModePokemon = pokemon;
+                ImageOverlay.getInstance().setImage(pokemon.spriteUrl);
+                // Use Japanese name if available and language is JP, otherwise fallback to English name
+                const displayName = (I18nService.getLang() === 'jp' && (pokemon as any).name_jp) ? (pokemon as any).name_jp : pokemon.name;
+                logger.log('[QixScene] Loaded random Pokemon:', displayName, pokemon.isNew ? '(NEW!)' : '(already revealed)');
+            } else {
+                // Fallback to default image if no Pokemon available
+                logger.warn('[QixScene] No random Pokemon available, using default');
+                ImageOverlay.getInstance().setImage('assets/1.jpeg');
+            }
+        } catch (error) {
+            logger.error('[QixScene] Failed to fetch random Pokemon:', error);
+            // Fallback to default image on error
             ImageOverlay.getInstance().setImage('assets/1.jpeg');
         }
     }
@@ -861,7 +906,7 @@ class QixScene extends Phaser.Scene {
 
         // Hide overlay so text is visible
         ImageOverlay.getInstance().hide();
-        let winText = this.createWinText(`Ouch!!!.`, "#000000");
+        let winText = this.createWinText(I18nService.t('game.ouch'), "#000000");
 
         const _this = this;
         setTimeout(function () {
@@ -910,7 +955,7 @@ class QixScene extends Phaser.Scene {
 
         // First, reveal the full image so player can see it
         ImageOverlay.getInstance().revealFullImage();
-        let winText = this.createWinText(`Level ${this.levels.currentLevel} Complete!`, "#000000");
+        let winText = this.createWinText(I18nService.t('game.levelComplete', this.levels.currentLevel), "#000000");
 
         const _this = this;
 
@@ -1189,7 +1234,7 @@ class QixScene extends Phaser.Scene {
             // Game complete! Show congratulations
             this.showGameComplete();
         } else {
-            const winText = this.createWinText(`Sweet!!\nOn to level ${this.levels.currentLevel + 1}`, "#000000");
+            const winText = this.createWinText(I18nService.t('game.sweet', this.levels.currentLevel + 1), "#000000");
 
             setTimeout(() => {
                 winText.destroy();
@@ -1258,7 +1303,7 @@ class QixScene extends Phaser.Scene {
         const centerX = (config.width as number) / 2;
         const centerY = (customConfig.frameHeight as number) / 2;
 
-        const congratsText = this.add.text(centerX, centerY + spacing.congratsY, '🎉 Congratulations! 🎉', {
+        const congratsText = this.add.text(centerX, centerY + spacing.congratsY, I18nService.t('game.congrats'), {
             fontFamily: 'Arial',
             fontSize: fontSizes.congrats,
             color: '#FFD700',
@@ -1268,7 +1313,7 @@ class QixScene extends Phaser.Scene {
         congratsText.setDepth(1000);
 
         const gameName = this.customGame?.name || 'the game';
-        const messageText = this.add.text(centerX, centerY + spacing.messageY, `You completed ${gameName}!`, {
+        const messageText = this.add.text(centerX, centerY + spacing.messageY, I18nService.t('game.completed', gameName), {
             fontFamily: 'Arial',
             fontSize: fontSizes.message,
             color: '#FFFFFF',
@@ -1277,7 +1322,7 @@ class QixScene extends Phaser.Scene {
         messageText.setOrigin(0.5);
         messageText.setDepth(1000);
 
-        const levelsText = this.add.text(centerX, centerY + spacing.levelsY, `${this.customGame?.levels.length || levelsCompleted} Pokémon revealed!`, {
+        const levelsText = this.add.text(centerX, centerY + spacing.levelsY, I18nService.t('game.pokemonRevealed', this.customGame?.levels.length || levelsCompleted), {
             fontFamily: 'Arial',
             fontSize: fontSizes.levels,
             color: '#CCAAFF',
@@ -1287,7 +1332,7 @@ class QixScene extends Phaser.Scene {
         levelsText.setDepth(1000);
 
         // Show final score
-        const scoreText = this.add.text(centerX, centerY + spacing.scoreY, `Final Score: ${finalScore.toLocaleString()}`, {
+        const scoreText = this.add.text(centerX, centerY + spacing.scoreY, I18nService.t('game.finalScore', finalScore.toLocaleString()), {
             fontFamily: 'Arial',
             fontSize: fontSizes.score,
             color: '#92cc41',
@@ -1306,7 +1351,7 @@ class QixScene extends Phaser.Scene {
         buttonBg.setDepth(1000);
         buttonBg.setInteractive(new Phaser.Geom.Rectangle(buttonX, buttonY, buttonWidth, buttonHeight), Phaser.Geom.Rectangle.Contains);
 
-        const buttonText = this.add.text(centerX, buttonY + buttonHeight / 2, 'Return to Menu', {
+        const buttonText = this.add.text(centerX, buttonY + buttonHeight / 2, I18nService.t('game.returnMenu'), {
             fontFamily: 'Arial',
             fontSize: fontSizes.button,
             color: '#FFFFFF',

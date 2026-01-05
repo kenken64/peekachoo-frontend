@@ -7,13 +7,14 @@ import Text = Phaser.GameObjects.Text;
 import {config, customConfig} from "../main";
 import QixScene from "../scenes/qix-scene";
 import {StringUtils} from "../utils/string-utils";
+import { I18nService } from '../services/i18n-service';
 
 export class Info {
     static OUTLINE_COLOR = 0xFFFFFF;
 
     static PADDING = 10;
     static PAUSE_BUTTON_WIDTH = 70;
-    static TEXT_FONT = '12px Courier';
+    static TEXT_FONT = '12px "DotGothic16", "Press Start 2P", Courier';
 
     static GAME_TEXT_COLOR_STR= '#FFFFFF';
 
@@ -46,12 +47,12 @@ export class Info {
         this.gameText = scene.add.text(gameTextX, gameTextY, '', gameTextOptions);
 
         const pauseButtonOptions = {font: Info.TEXT_FONT, fill: Info.GAME_TEXT_COLOR_STR };
-        this.pauseButtonText = scene.add.text(config.width as number - Info.PAUSE_BUTTON_WIDTH, this.rectangle.top + Info.PADDING, 'Pause', pauseButtonOptions);
+        this.pauseButtonText = scene.add.text(config.width as number - Info.PAUSE_BUTTON_WIDTH, this.rectangle.top + Info.PADDING, I18nService.t('game.paused'), pauseButtonOptions);
         this.pauseButtonText.setInteractive();
         this.pauseButtonText.on('pointerdown', () => {
             this.scene.pauseControl.togglePause();
 
-            this.pauseButtonText.setText((this.pauseButtonText.text === 'Pause') ? 'Unpause' : 'Pause');
+            this.pauseButtonText.setText((this.scene.pauseControl.isPaused()) ? I18nService.t('game.resume') : I18nService.t('game.paused'));
         });
     }
 
@@ -74,7 +75,7 @@ export class Info {
         data.push(`${filledPolygons.percentAreaString()}`);
         data.push(`% Target:`);
         data.push(`${this.scene.levels.coverageTarget}`);
-        data.push(`Level:`);
+        data.push(I18nService.t('game.level', ''));
         data.push(`${this.scene.levels.currentLevel}`);
 
         this.gameLines = StringUtils.dataToLines(cols, data);
