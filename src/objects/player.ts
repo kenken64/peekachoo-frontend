@@ -115,7 +115,7 @@ export class Player {
 
         // Cancel existing timer if any
         if (this.speedBoostTimer) {
-            this.speedBoostTimer.remove(false);
+            this.speedBoostTimer.remove(() => {});
         }
 
         this.speedBoostTimer = scene.time.delayedCall(durationMs, () => {
