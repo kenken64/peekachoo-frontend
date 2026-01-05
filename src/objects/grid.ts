@@ -3,6 +3,7 @@ declare type integer = number;
 
 import Graphics = Phaser.GameObjects.Graphics;
 import Rectangle = Phaser.Geom.Rectangle;
+import Point = Phaser.Geom.Point;
 import {config, customConfig} from "../main";
 import {Player} from "./player";
 import {ExtPoint} from "./ext-point";
