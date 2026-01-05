@@ -53,7 +53,7 @@ export default class LoginScene extends Phaser.Scene {
         }).setOrigin(0.5);
 
         // Info text
-        this.add.text(width / 2, height - 60, 'Use your device biometrics\nor security key for login', {
+        this.add.text(width / 2, height - 60, I18nService.t('login.securityKey'), {
             fontSize: '10px',
             fontFamily: 'Press Start 2P',
             color: '#888888',
@@ -303,7 +303,7 @@ export default class LoginScene extends Phaser.Scene {
             font-size: 10px;
             color: #aaa;
         `;
-        subtitle.textContent = 'Sign in to play';
+        subtitle.textContent = I18nService.t('login.signIn');
         this.formContainer.appendChild(subtitle);
 
         // Username field container
@@ -313,14 +313,14 @@ export default class LoginScene extends Phaser.Scene {
 
         const label = document.createElement('label');
         label.setAttribute('for', 'username-input');
-        label.textContent = 'Username';
+        label.textContent = I18nService.t('login.username');
         label.style.fontSize = '10px';
 
         this.usernameInput = document.createElement('input');
         this.usernameInput.type = 'text';
         this.usernameInput.id = 'username-input';
         this.usernameInput.className = 'nes-input is-dark';
-        this.usernameInput.placeholder = 'Enter username';
+        this.usernameInput.placeholder = I18nService.t('login.enterUsername');
         this.usernameInput.style.fontSize = '12px';
 
         fieldContainer.appendChild(label);
@@ -352,7 +352,7 @@ export default class LoginScene extends Phaser.Scene {
         const registerBtn = document.createElement('button');
         registerBtn.type = 'button';
         registerBtn.className = 'nes-btn is-success';
-        registerBtn.textContent = 'Register';
+        registerBtn.textContent = I18nService.t('login.register');
         registerBtn.style.fontSize = '10px';
         registerBtn.addEventListener('click', async () => {
             await this.handleRegister();
@@ -362,7 +362,7 @@ export default class LoginScene extends Phaser.Scene {
         const loginBtn = document.createElement('button');
         loginBtn.type = 'button';
         loginBtn.className = 'nes-btn is-primary';
-        loginBtn.textContent = 'Login';
+        loginBtn.textContent = I18nService.t('login.login');
         loginBtn.style.fontSize = '10px';
         loginBtn.addEventListener('click', async () => {
             await this.handleLogin();
@@ -388,19 +388,19 @@ export default class LoginScene extends Phaser.Scene {
         const username = this.usernameInput.value.trim();
 
         if (!username) {
-            this.showStatus('Please enter a username', true);
+            this.showStatus(I18nService.t('login.enterUsernameError'), true);
             return;
         }
 
         if (username.length < 3) {
-            this.showStatus('Username must be at least 3 characters', true);
+            this.showStatus(I18nService.t('login.usernameLengthError'), true);
             return;
         }
 
         try {
-            this.showStatus('Creating passkey...', false);
+            this.showStatus(I18nService.t('login.registering'), false);
             await AuthService.register(username);
-            this.showStatus('Registration successful!', false);
+            this.showStatus(I18nService.t('login.registerSuccess'), false);
 
             // Initialize WebSocket and notifications
             notificationManager.initialize();
@@ -418,7 +418,7 @@ export default class LoginScene extends Phaser.Scene {
         const username = this.usernameInput.value.trim();
 
         if (!username) {
-            this.showStatus('Please enter a username', true);
+            this.showStatus(I18nService.t('login.enterUsernameError'), true);
             return;
         }
 
@@ -426,13 +426,13 @@ export default class LoginScene extends Phaser.Scene {
             // First check if user exists
             const exists = await AuthService.checkUsername(username);
             if (!exists) {
-                this.showStatus('User not found. Click Register to create an account.', true);
+                this.showStatus(I18nService.t('login.userNotFound'), true);
                 return;
             }
 
-            this.showStatus('Authenticating...', false);
+            this.showStatus(I18nService.t('login.authenticating'), false);
             await AuthService.login(username);
-            this.showStatus('Login successful!', false);
+            this.showStatus(I18nService.t('login.loginSuccess'), false);
 
             // Initialize WebSocket and notifications
             notificationManager.initialize();
@@ -447,7 +447,7 @@ export default class LoginScene extends Phaser.Scene {
     }
 
     private async validateAndProceed(): Promise<void> {
-        this.add.text(this.cameras.main.width / 2, this.cameras.main.height / 2, 'Validating session...', {
+        this.add.text(this.cameras.main.width / 2, this.cameras.main.height / 2, I18nService.t('login.validating'), {
             fontSize: '14px',
             fontFamily: 'Press Start 2P',
             color: '#92cc41'

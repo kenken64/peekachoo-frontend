@@ -151,6 +151,22 @@ const translations: Translations = {
         "create.syncing": "Syncing all Pokemon...",
         "create.synced": "Synced {0} Pokemon!",
         "create.syncFailed": "Sync failed: {0}",
+
+        // Login
+        "login.signIn": "Sign in to play",
+        "login.username": "Username",
+        "login.enterUsername": "Enter username",
+        "login.register": "Register",
+        "login.login": "Login",
+        "login.securityKey": "Use your device biometrics\nor security key for login",
+        "login.validating": "Validating session...",
+        "login.registering": "Creating passkey...",
+        "login.registerSuccess": "Registration successful!",
+        "login.authenticating": "Authenticating...",
+        "login.loginSuccess": "Login successful!",
+        "login.userNotFound": "User not found. Click Register to create an account.",
+        "login.enterUsernameError": "Please enter a username",
+        "login.usernameLengthError": "Username must be at least 3 characters",
     },
     jp: {
         // Menu
@@ -291,6 +307,22 @@ const translations: Translations = {
         "create.syncing": "全ポケモンを同期中...",
         "create.synced": "{0}匹のポケモンを同期しました！",
         "create.syncFailed": "同期に失敗しました: {0}",
+
+        // Login
+        "login.signIn": "ログインしてプレイ",
+        "login.username": "ユーザー名",
+        "login.enterUsername": "ユーザー名を入力",
+        "login.register": "登録",
+        "login.login": "ログイン",
+        "login.securityKey": "生体認証または\nセキュリティキーでログイン",
+        "login.validating": "セッションを確認中...",
+        "login.registering": "パスキーを作成中...",
+        "login.registerSuccess": "登録完了！",
+        "login.authenticating": "認証中...",
+        "login.loginSuccess": "ログイン成功！",
+        "login.userNotFound": "ユーザーが見つかりません。登録ボタンからアカウントを作成してください。",
+        "login.enterUsernameError": "ユーザー名を入力してください",
+        "login.usernameLengthError": "ユーザー名は3文字以上で入力してください",
     }
 };
 
