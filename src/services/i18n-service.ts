@@ -167,6 +167,24 @@ const translations: Translations = {
         "login.userNotFound": "User not found. Click Register to create an account.",
         "login.enterUsernameError": "Please enter a username",
         "login.usernameLengthError": "Username must be at least 3 characters",
+
+        // Notifications
+        "notify.rankUp": "Rank Up!",
+        "notify.rankUpMsg": "You moved up {0} position{1} to #{2}!",
+        "notify.rankChanged": "Rank Changed",
+        "notify.rankChangedMsg": "You moved to rank #{0}",
+        "notify.achievement": "Achievement Unlocked!",
+        "notify.newPokemon": "New Pokemon!",
+        "notify.newPokemonMsg": "{0} added to collection!\n{1}/{2} collected",
+        "notify.streak": "{0} Streak!",
+        "notify.streakMsg": "+{0} bonus points!",
+        "notify.leaderboardUpdate": "Leaderboard Update",
+        "notify.leaderboardUpdateMsg": "{0} scored {1} pts on level {2}!",
+        "notify.topRankUpdate": "Top 10 Update",
+        "notify.topRankUpdateMsg": "{0} reached rank #{1}!",
+        "notify.connected": "LIVE",
+        "notify.disconnected": "OFFLINE",
+        "notify.connecting": "CONNECTING",
     },
     jp: {
         // Menu
@@ -323,6 +341,24 @@ const translations: Translations = {
         "login.userNotFound": "ユーザーが見つかりません。登録ボタンからアカウントを作成してください。",
         "login.enterUsernameError": "ユーザー名を入力してください",
         "login.usernameLengthError": "ユーザー名は3文字以上で入力してください",
+
+        // Notifications
+        "notify.rankUp": "ランクアップ！",
+        "notify.rankUpMsg": "{0} ランクアップ！ 現在 #{2} 位です！",
+        "notify.rankChanged": "ランク変動",
+        "notify.rankChangedMsg": "現在 #{0} 位です",
+        "notify.achievement": "実績解除！",
+        "notify.newPokemon": "新ポケモン！",
+        "notify.newPokemonMsg": "{0} をコレクションに追加！\n{1}/{2} 匹",
+        "notify.streak": "{0} 連勝！",
+        "notify.streakMsg": "+{0} ボーナスポイント！",
+        "notify.leaderboardUpdate": "ランキング更新",
+        "notify.leaderboardUpdateMsg": "{0} がレベル {2} で {1} 点を獲得！",
+        "notify.topRankUpdate": "トップ10更新",
+        "notify.topRankUpdateMsg": "{0} が #{1} 位にランクイン！",
+        "notify.connected": "接続中",
+        "notify.disconnected": "オフライン",
+        "notify.connecting": "接続試行中",
     }
 };
 

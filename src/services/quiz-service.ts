@@ -1,5 +1,6 @@
 import { getToken } from './auth-service';
 import { config } from '../config';
+import { I18nService } from './i18n-service';
 
 const API_URL = config.apiUrl;
 
@@ -14,7 +15,7 @@ export class QuizService {
     /**
      * Generate a quiz question for a Pokemon
      */
-    static async generateQuiz(pokemonName: string, spriteUrl: string, allPokemonNames: string[] = []): Promise<QuizQuestion> {
+    static async generateQuiz(pokemonName: string, spriteUrl: string, allPokemonNames: string[] = [], pokemonNameJP?: string): Promise<QuizQuestion> {
         const token = getToken();
         if (!token) {
             throw new Error('Not authenticated');
@@ -29,7 +30,9 @@ export class QuizService {
             body: JSON.stringify({
                 pokemonName,
                 spriteUrl,
-                allPokemonNames
+                allPokemonNames,
+                pokemonNameJP,
+                lang: I18nService.getLang()
             })
         });
 

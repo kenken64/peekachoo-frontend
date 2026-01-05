@@ -4,6 +4,7 @@ import { config } from '../config';
 export interface Pokemon {
     id: number;
     name: string;
+    nameJp?: string;
     height: number;
     weight: number;
     baseExperience: number;

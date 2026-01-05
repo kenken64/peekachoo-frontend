@@ -974,7 +974,8 @@ class QixScene extends Phaser.Scene {
             const quiz = await QuizService.generateQuiz(
                 currentPokemon.pokemonName,
                 currentPokemon.pokemonSprite,
-                allPokemonNames
+                allPokemonNames,
+                (currentPokemon as any).pokemonNameJP
             );
 
             // Create quiz UI

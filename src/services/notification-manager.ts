@@ -7,6 +7,7 @@ import {
     LeaderboardUpdateEvent
 } from './websocket-service';
 import { logger } from '../config';
+import { I18nService } from './i18n-service';
 
 /**
  * Notification types
@@ -338,8 +339,8 @@ class NotificationManager {
                 this.show({
                     id: `rank-${Date.now()}`,
                     type: 'rank',
-                    title: 'Rank Up!',
-                    message: `You moved up ${data.change} position${data.change > 1 ? 's' : ''} to #${data.newRank}!`,
+                    title: I18nService.t('notify.rankUp'),
+                    message: I18nService.t('notify.rankUpMsg', data.change, data.change > 1 ? 's' : '', data.newRank),
                     icon: '📈',
                     duration: 5000
                 });
@@ -347,8 +348,8 @@ class NotificationManager {
                 this.show({
                     id: `rank-${Date.now()}`,
                     type: 'info',
-                    title: 'Rank Changed',
-                    message: `You moved to rank #${data.newRank}`,
+                    title: I18nService.t('notify.rankChanged'),
+                    message: I18nService.t('notify.rankChangedMsg', data.newRank),
                     icon: '📊',
                     duration: 4000
                 });
@@ -360,7 +361,7 @@ class NotificationManager {
             this.show({
                 id: `achievement-${data.id}`,
                 type: 'achievement',
-                title: 'Achievement Unlocked!',
+                title: I18nService.t('notify.achievement'),
                 message: `${data.icon} ${data.name}\n${data.description}`,
                 icon: '🏆',
                 duration: 6000
@@ -370,11 +371,16 @@ class NotificationManager {
         // Pokemon reveal notifications
         websocketService.on('pokemon_revealed', (data: PokemonRevealedEvent) => {
             if (data.pokemon) {
+                // Use Japanese name if available and language is JP
+                const pokemonName = (I18nService.getLang() === 'jp' && (data.pokemon as any).name_jp) 
+                    ? (data.pokemon as any).name_jp 
+                    : data.pokemon.name;
+
                 this.show({
                     id: `pokemon-${data.pokemon.id}`,
                     type: 'success',
-                    title: 'New Pokemon!',
-                    message: `${data.pokemon.name} added to collection!\n${data.collectionProgress.count}/${data.collectionProgress.total} collected`,
+                    title: I18nService.t('notify.newPokemon'),
+                    message: I18nService.t('notify.newPokemonMsg', pokemonName, data.collectionProgress.count, data.collectionProgress.total),
                     icon: '🎉',
                     duration: 5000
                 });
@@ -386,8 +392,8 @@ class NotificationManager {
             this.show({
                 id: `streak-${data.streak}`,
                 type: 'achievement',
-                title: `${data.streak} Streak!`,
-                message: `+${data.bonus} bonus points!`,
+                title: I18nService.t('notify.streak', data.streak),
+                message: I18nService.t('notify.streakMsg', data.bonus),
                 icon: '🔥',
                 duration: 4000
             });
@@ -399,8 +405,8 @@ class NotificationManager {
                 this.show({
                     id: `leaderboard-${Date.now()}`,
                     type: 'info',
-                    title: 'Leaderboard Update',
-                    message: `${data.displayName} scored ${data.score.toLocaleString()} pts on level ${data.level}!`,
+                    title: I18nService.t('notify.leaderboardUpdate'),
+                    message: I18nService.t('notify.leaderboardUpdateMsg', data.displayName, data.score.toLocaleString(), data.level),
                     icon: '🏅',
                     duration: 4000
                 });
@@ -412,8 +418,8 @@ class NotificationManager {
             this.show({
                 id: `top-rank-${Date.now()}`,
                 type: 'info',
-                title: 'Top 10 Update',
-                message: `${data.displayName} reached rank #${data.newRank}!`,
+                title: I18nService.t('notify.topRankUpdate'),
+                message: I18nService.t('notify.topRankUpdateMsg', data.displayName, data.newRank),
                 icon: '👑',
                 duration: 4000
             });
@@ -493,9 +499,9 @@ class NotificationManager {
         indicator.className = `ws-status ${status}`;
 
         const statusText = {
-            connected: 'LIVE',
-            disconnected: 'OFFLINE',
-            connecting: 'CONNECTING'
+            connected: I18nService.t('notify.connected'),
+            disconnected: I18nService.t('notify.disconnected'),
+            connecting: I18nService.t('notify.connecting')
         };
 
         indicator.innerHTML = `

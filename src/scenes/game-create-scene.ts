@@ -450,7 +450,10 @@ export class GameCreateScene extends Phaser.Scene {
             <div class="nes-container is-dark gc-pokemon-item" data-pokemon-id="${pokemon.id}">
                 <img src="${pokemon.spriteUrl}" alt="${pokemon.name}" onerror="this.src='https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/0.png'">
                 <div class="gc-pokemon-info">
-                    <div class="gc-pokemon-name">${pokemon.name}</div>
+                    <div class="gc-pokemon-name">
+                        ${pokemon.name}
+                        ${pokemon.nameJp ? `<br><span style="font-size: 0.8em; color: #aaa;">${pokemon.nameJp}</span>` : ''}
+                    </div>
                     <div class="gc-pokemon-types">${pokemon.types.join(', ')}</div>
                 </div>
                 <button type="button" class="nes-btn is-success gc-add-btn" data-pokemon-id="${pokemon.id}">Add</button>
@@ -481,6 +484,7 @@ export class GameCreateScene extends Phaser.Scene {
             levelNumber: this.selectedLevels.length + 1,
             pokemonId: pokemon.id,
             pokemonName: pokemon.name,
+            pokemonNameJP: pokemon.nameJp,
             pokemonSprite: pokemon.spriteUrl,
             difficulty: 1
         };
@@ -526,7 +530,10 @@ export class GameCreateScene extends Phaser.Scene {
                 <div class="gc-level-number">${level.levelNumber}</div>
                 <img src="${level.pokemonSprite}" alt="${level.pokemonName}" onerror="this.src='https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/0.png'">
                 <div class="gc-level-info">
-                    <div class="gc-level-name">${level.pokemonName}</div>
+                    <div class="gc-level-name">
+                        ${level.pokemonName}
+                        ${level.pokemonNameJP ? `<br><span style="font-size: 0.8em; color: #aaa;">${level.pokemonNameJP}</span>` : ''}
+                    </div>
                 </div>
                 <select class="nes-select is-dark" data-level-index="${index}" style="font-size: 8px;">
                     <option value="1" ${level.difficulty === 1 ? 'selected' : ''}>Easy</option>
