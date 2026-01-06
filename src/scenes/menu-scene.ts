@@ -907,6 +907,10 @@ export class MenuScene extends Phaser.Scene {
         // Price in SGD
         const unitPriceSGD = 0.27;
         let quantity = 1;
+        
+        // Check if remaining allowance is less than the cost of a single shield
+        const canAffordAtLeastOne = purchaseStatus.remainingAllowance >= unitPriceSGD;
+        const showPurchaseForm = purchaseStatus.canPurchase && canAffordAtLeastOne;
 
         overlay.innerHTML = `
             <style>
@@ -954,11 +958,16 @@ export class MenuScene extends Phaser.Scene {
             </style>
             <div class="nes-container is-dark with-title donation-popup-content" style="width: 400px; max-width: 90%;">
                 <p class="title" style="color: #ff6b6b;">Purchase Shield</p>
-                ${!purchaseStatus.canPurchase ? `
+                ${!showPurchaseForm ? `
                 <div style="text-align: center; margin-bottom: 20px;">
                     <span style="font-size: 40px;">🚫</span>
+                    ${!purchaseStatus.canPurchase ? `
                     <p style="margin: 10px 0; font-size: 12px; color: #ff6b6b;">Monthly limit reached!</p>
-                    <p style="font-size: 11px; color: #888;">You've spent SGD $${purchaseStatus.monthlySpent.toFixed(2)} this month.</p>
+                    ` : `
+                    <p style="margin: 10px 0; font-size: 12px; color: #ff6b6b;">Insufficient balance!</p>
+                    <p style="font-size: 11px; color: #888;">Remaining: S$${purchaseStatus.remainingAllowance.toFixed(2)} (min S$${unitPriceSGD.toFixed(2)} needed)</p>
+                    `}
+                    <p style="font-size: 11px; color: #888;">You've spent S$${purchaseStatus.monthlySpent.toFixed(2)} this month.</p>
                     <p style="font-size: 11px; color: #888;">Limit resets on: <span style="color: #ffd700;">${purchaseStatus.purchaseResetDate || 'N/A'}</span></p>
                 </div>
                 <div style="display: flex; gap: 10px; justify-content: center; margin-top: 20px;">
