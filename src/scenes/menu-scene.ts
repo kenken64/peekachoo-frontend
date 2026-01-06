@@ -904,7 +904,8 @@ export class MenuScene extends Phaser.Scene {
             z-index: 2000;
         `;
 
-        const unitPrice = 0.20;
+        // Price in SGD
+        const unitPriceSGD = 0.27;
         let quantity = 1;
 
         overlay.innerHTML = `
@@ -974,14 +975,14 @@ export class MenuScene extends Phaser.Scene {
                         <button type="button" class="nes-btn quantity-btn" id="qty-plus">+</button>
                     </div>
 
-                    <p style="color: #ffd700; font-size: 14px;">Total: $<span id="total-price">${unitPrice.toFixed(2)}</span></p>
-                    <p style="color: #888; font-size: 10px;">($${unitPrice.toFixed(2)} per unit)</p>
+                    <p style="color: #ffd700; font-size: 14px;">Total: S$<span id="total-price">${unitPriceSGD.toFixed(2)}</span></p>
+                    <p style="color: #888; font-size: 10px;">(S$${unitPriceSGD.toFixed(2)} per unit)</p>
                 </div>
                 
                 <div style="text-align: center; margin-bottom: 20px;">
                     <p style="font-size: 10px; color: #888;">Secure payment via Razorpay</p>
-                    <p style="font-size: 9px; color: #92cc41; margin-top: 8px;">✓ Remaining: SGD $${purchaseStatus.remainingAllowance.toFixed(2)} / $50.00</p>
-                    <p style="font-size: 9px; color: #ff9800;">⚠️ Limit: SGD $50.00 per month</p>
+                    <p style="font-size: 9px; color: #92cc41; margin-top: 8px;">✓ Remaining: S$${purchaseStatus.remainingAllowance.toFixed(2)} / S$50.00</p>
+                    <p style="font-size: 9px; color: #ff9800;">⚠️ Limit: S$50.00 per month</p>
                 </div>
 
                 <div style="display: flex; gap: 10px; justify-content: center; margin-top: 20px;">
@@ -994,7 +995,7 @@ export class MenuScene extends Phaser.Scene {
 
         // Quantity logic
         const updatePrice = () => {
-            const total = (quantity * unitPrice).toFixed(2);
+            const total = (quantity * unitPriceSGD).toFixed(2);
             const priceEl = overlay.querySelector('#total-price');
             const qtyEl = overlay.querySelector('#qty-val');
             if (priceEl) priceEl.textContent = total;
@@ -1049,7 +1050,7 @@ export class MenuScene extends Phaser.Scene {
                     <p class="title" style="color: #f7d51d;">Confirm Purchase</p>
                     <div style="text-align: center; margin-bottom: 20px;">
                         <p style="margin-bottom: 10px;">Buy <span style="color: #ff6b6b;">${quantity}</span> Shield(s)?</p>
-                        <p style="color: #ffd700; font-size: 18px;">Total: $${(quantity * unitPrice).toFixed(2)}</p>
+                        <p style="color: #ffd700; font-size: 18px;">Total: S$${(quantity * unitPriceSGD).toFixed(2)}</p>
                     </div>
                     <div style="display: flex; gap: 15px; justify-content: center;">
                         <button type="button" class="nes-btn is-error confirm-cancel-btn">Cancel</button>
