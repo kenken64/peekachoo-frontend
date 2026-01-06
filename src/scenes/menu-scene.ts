@@ -878,7 +878,17 @@ export class MenuScene extends Phaser.Scene {
         document.body.appendChild(overlay);
     }
 
-    private showPurchasePopup() {
+    private async showPurchasePopup() {
+        // First, check purchase status
+        let purchaseStatus: AuthService.PurchaseStatus | null = null;
+        try {
+            purchaseStatus = await AuthService.checkPurchaseStatus();
+        } catch (error: any) {
+            console.error('Failed to check purchase status:', error);
+            this.showToast('Failed to check purchase status. Please try again.', 'error');
+            return;
+        }
+
         const overlay = document.createElement('div');
         overlay.className = 'donation-popup-overlay'; // Reuse donation popup styles
         overlay.style.cssText = `
@@ -943,6 +953,17 @@ export class MenuScene extends Phaser.Scene {
             </style>
             <div class="nes-container is-dark with-title donation-popup-content" style="width: 400px; max-width: 90%;">
                 <p class="title" style="color: #ff6b6b;">Purchase Shield</p>
+                ${!purchaseStatus.canPurchase ? `
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <span style="font-size: 40px;">🚫</span>
+                    <p style="margin: 10px 0; font-size: 12px; color: #ff6b6b;">Monthly limit reached!</p>
+                    <p style="font-size: 11px; color: #888;">You've spent SGD $${purchaseStatus.monthlySpent.toFixed(2)} this month.</p>
+                    <p style="font-size: 11px; color: #888;">Limit resets on: <span style="color: #ffd700;">${purchaseStatus.purchaseResetDate || 'N/A'}</span></p>
+                </div>
+                <div style="display: flex; gap: 10px; justify-content: center; margin-top: 20px;">
+                    <button type="button" class="nes-btn is-error purchase-cancel-btn">Close</button>
+                </div>
+                ` : `
                 <div style="text-align: center; margin-bottom: 20px;">
                     <span style="font-size: 40px;">🛡️</span>
                     <p style="margin: 10px 0; font-size: 12px;">Protect yourself from one hit!</p>
@@ -959,13 +980,15 @@ export class MenuScene extends Phaser.Scene {
                 
                 <div style="text-align: center; margin-bottom: 20px;">
                     <p style="font-size: 10px; color: #888;">Secure payment via Razorpay</p>
-                    <p style="font-size: 9px; color: #ff9800; margin-top: 8px;">⚠️ Limit: SGD $50.00 per month</p>
+                    <p style="font-size: 9px; color: #92cc41; margin-top: 8px;">✓ Remaining: SGD $${purchaseStatus.remainingAllowance.toFixed(2)} / $50.00</p>
+                    <p style="font-size: 9px; color: #ff9800;">⚠️ Limit: SGD $50.00 per month</p>
                 </div>
 
                 <div style="display: flex; gap: 10px; justify-content: center; margin-top: 20px;">
                     <button type="button" class="nes-btn is-error purchase-cancel-btn">Cancel</button>
                     <button type="button" class="nes-btn is-success purchase-confirm-btn">Pay Now</button>
                 </div>
+                `}
             </div>
         `;
 

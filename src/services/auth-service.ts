@@ -383,3 +383,29 @@ export async function verifyRazorpayPayment(paymentData: any): Promise<{ success
     
     return result;
 }
+
+export interface PurchaseStatus {
+    canPurchase: boolean;
+    monthlySpent: number;
+    remainingAllowance: number;
+    purchaseResetDate: string | null;
+}
+
+export async function checkPurchaseStatus(): Promise<PurchaseStatus> {
+    const token = getToken();
+    if (!token) throw new Error('Not authenticated');
+
+    const response = await fetch(`${PAYMENT_API_BASE}/purchase-status`, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        }
+    });
+
+    if (!response.ok) {
+        throw new Error('Failed to check purchase status');
+    }
+
+    return response.json();
+}
