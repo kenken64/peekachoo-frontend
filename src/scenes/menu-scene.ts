@@ -959,7 +959,7 @@ export class MenuScene extends Phaser.Scene {
                 
                 <div style="text-align: center; margin-bottom: 20px;">
                     <p style="font-size: 10px; color: #888;">Secure payment via Razorpay</p>
-                    <p style="font-size: 9px; color: #ff9800; margin-top: 8px;">⚠️ Limit: USD $50.00 per month</p>
+                    <p style="font-size: 9px; color: #ff9800; margin-top: 8px;">⚠️ Limit: SGD $50.00 per month</p>
                 </div>
 
                 <div style="display: flex; gap: 10px; justify-content: center; margin-top: 20px;">
