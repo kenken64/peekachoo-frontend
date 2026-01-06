@@ -1,5 +1,6 @@
 # Stage 1: Build the application
-FROM node:16-alpine AS builder
+# Cache bust: 2026-01-07
+FROM node:18-alpine AS builder
 
 WORKDIR /app
 
