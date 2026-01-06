@@ -1093,7 +1093,8 @@ export class MenuScene extends Phaser.Scene {
                                 const verifyResult = await AuthService.verifyRazorpayPayment({
                                     razorpay_order_id: response.razorpay_order_id,
                                     razorpay_payment_id: response.razorpay_payment_id,
-                                    razorpay_signature: response.razorpay_signature
+                                    razorpay_signature: response.razorpay_signature,
+                                    quantity: quantity
                                 });
                                 
                                 overlay.remove();
