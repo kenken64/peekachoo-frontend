@@ -957,25 +957,13 @@ export class MenuScene extends Phaser.Scene {
                     <p style="color: #888; font-size: 10px;">($${unitPrice.toFixed(2)} per unit)</p>
                 </div>
                 
-                <div class="purchase-form-group">
-                    <label class="purchase-form-label">Card Number</label>
-                    <input type="text" class="purchase-input" placeholder="0000 0000 0000 0000" maxlength="19">
-                </div>
-                
-                <div class="purchase-row">
-                    <div class="purchase-form-group" style="flex: 1;">
-                        <label class="purchase-form-label">Expiry</label>
-                        <input type="text" class="purchase-input" placeholder="MM/YY" maxlength="5">
-                    </div>
-                    <div class="purchase-form-group" style="flex: 1;">
-                        <label class="purchase-form-label">CVV</label>
-                        <input type="text" class="purchase-input" placeholder="123" maxlength="3">
-                    </div>
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <p style="font-size: 10px; color: #888;">Secure payment via Razorpay</p>
                 </div>
 
                 <div style="display: flex; gap: 10px; justify-content: center; margin-top: 20px;">
                     <button type="button" class="nes-btn is-error purchase-cancel-btn">Cancel</button>
-                    <button type="button" class="nes-btn is-success purchase-confirm-btn">Purchase</button>
+                    <button type="button" class="nes-btn is-success purchase-confirm-btn">Pay Now</button>
                 </div>
             </div>
         `;
@@ -1017,15 +1005,6 @@ export class MenuScene extends Phaser.Scene {
 
         // Handle Purchase
         overlay.querySelector('.purchase-confirm-btn')?.addEventListener('click', async () => {
-            const cardNum = (overlay.querySelector('input[placeholder="0000 0000 0000 0000"]') as HTMLInputElement).value;
-            const expiry = (overlay.querySelector('input[placeholder="MM/YY"]') as HTMLInputElement).value;
-            const cvv = (overlay.querySelector('input[placeholder="123"]') as HTMLInputElement).value;
-
-            if (!cardNum || !expiry || !cvv) {
-                this.showToast('Please fill in all fields', 'error');
-                return;
-            }
-
             // Show custom confirmation dialog
             const confirmOverlay = document.createElement('div');
             confirmOverlay.style.cssText = `
@@ -1050,7 +1029,7 @@ export class MenuScene extends Phaser.Scene {
                     </div>
                     <div style="display: flex; gap: 15px; justify-content: center;">
                         <button type="button" class="nes-btn is-error confirm-cancel-btn">Cancel</button>
-                        <button type="button" class="nes-btn is-success confirm-yes-btn">Confirm</button>
+                        <button type="button" class="nes-btn is-success confirm-yes-btn">Pay</button>
                     </div>
                 </div>
             `;
@@ -1074,20 +1053,72 @@ export class MenuScene extends Phaser.Scene {
                 btn.classList.add('is-disabled');
 
                 try {
-                    const result = await AuthService.purchaseShield(quantity);
-                    overlay.remove();
-                    this.showToast(`Purchase Successful! You now have ${result.shields} shields.`, 'success');
+                    // Create Razorpay Order
+                    const orderData = await AuthService.createRazorpayOrder(quantity);
                     
-                    // Update UI
-                    this.cleanup();
-                    this.createDOMUI();
-                    this.loadGames();
+                    const options = {
+                        "key": "rzp_test_sg_hqvjt7HayPwnsJ",
+                        "amount": orderData.amount,
+                        "currency": orderData.currency,
+                        "name": "Peekachoo Shield",
+                        "description": `Purchase ${quantity} Shield(s)`,
+                        "order_id": orderData.id,
+                        "handler": async (response: any) => {
+                            try {
+                                const verifyResult = await AuthService.verifyRazorpayPayment({
+                                    razorpay_order_id: response.razorpay_order_id,
+                                    razorpay_payment_id: response.razorpay_payment_id,
+                                    razorpay_signature: response.razorpay_signature
+                                });
+                                
+                                overlay.remove();
+                                this.showToast(`Purchase Successful! You now have ${verifyResult.shields} shields.`, 'success');
+                                
+                                // Update UI
+                                this.cleanup();
+                                this.createDOMUI();
+                                this.loadGames();
+                            } catch (error: any) {
+                                this.showToast('Payment Verification Failed: ' + error.message, 'error');
+                                btn.textContent = originalText;
+                                btn.disabled = false;
+                                btn.classList.add('is-success');
+                                btn.classList.remove('is-disabled');
+                            }
+                        },
+                        "prefill": {
+                            "name": AuthService.getCurrentUser()?.username || "Guest",
+                        },
+                        "theme": {
+                            "color": "#3399cc"
+                        },
+                        "modal": {
+                            "ondismiss": () => {
+                                btn.textContent = originalText;
+                                btn.disabled = false;
+                                btn.classList.add('is-success');
+                                btn.classList.remove('is-disabled');
+                            }
+                        }
+                    };
+                    
+                    const rzp1 = new (window as any).Razorpay(options);
+                    rzp1.on('payment.failed', (response: any) => {
+                        this.showToast('Payment Failed: ' + response.error.description, 'error');
+                        btn.textContent = originalText;
+                        btn.disabled = false;
+                        btn.classList.add('is-success');
+                        btn.classList.remove('is-disabled');
+                    });
+                    
+                    rzp1.open();
+
                 } catch (error: any) {
                     btn.textContent = originalText;
                     btn.disabled = false;
                     btn.classList.add('is-success');
                     btn.classList.remove('is-disabled');
-                    this.showToast('Purchase failed: ' + error.message, 'error');
+                    this.showToast('Order Creation Failed: ' + error.message, 'error');
                 }
             });
         });

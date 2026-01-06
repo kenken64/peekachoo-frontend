@@ -2,6 +2,7 @@
 import { config, logger } from '../config';
 
 const API_BASE = `${config.apiUrl}/auth`;
+const PAYMENT_API_BASE = `${config.apiUrl}/payment`;
 
 interface User {
     id: string;
@@ -331,5 +332,54 @@ export async function consumeShield(): Promise<{ success: boolean, shields: numb
         setUser(user);
     }
 
+    return result;
+}
+
+export async function createRazorpayOrder(quantity: number): Promise<any> {
+    const token = getToken();
+    if (!token) throw new Error('Not authenticated');
+
+    const response = await fetch(`${PAYMENT_API_BASE}/create-order`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ quantity })
+    });
+
+    if (!response.ok) {
+        throw new Error('Failed to create order');
+    }
+
+    return response.json();
+}
+
+export async function verifyRazorpayPayment(paymentData: any): Promise<{ success: boolean, shields: number }> {
+    const token = getToken();
+    if (!token) throw new Error('Not authenticated');
+
+    const response = await fetch(`${PAYMENT_API_BASE}/verify-payment`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(paymentData)
+    });
+
+    if (!response.ok) {
+         throw new Error('Payment verification failed');
+    }
+
+    const result = await response.json();
+
+    // Update local user state
+    const user = getUser();
+    if (user && result.success) {
+        user.shields = result.shields;
+        setUser(user);
+    }
+    
     return result;
 }
