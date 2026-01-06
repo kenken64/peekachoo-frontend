@@ -238,8 +238,15 @@ export class MenuScene extends Phaser.Scene {
                     to { transform: translateX(100%); opacity: 0; }
                 }
 
+                .btn-icon { display: none; }
+                .btn-text { display: inline; }
+
                 /* Mobile Responsive Styles */
                 @media (max-width: 768px) {
+                    .btn-text { display: none; }
+                    .btn-icon { display: inline; }
+                    #menu-donation, #menu-logout { padding: 0 6px; }
+
                     .menu-header {
                         padding: 15px 20px;
                         flex-wrap: wrap;
@@ -482,8 +489,14 @@ export class MenuScene extends Phaser.Scene {
                         </select>
                     </div>
                     <button type="button" class="nes-btn" id="menu-sound-toggle" style="font-size: 8px;" title="${I18nService.t('menu.toggleSound')}">${audioService.isMuted() ? '🔇' : '🔊'}</button>
-                    <button type="button" class="nes-btn is-warning" id="menu-donation" style="font-size: 8px;">${I18nService.t('menu.donation')}</button>
-                    <button type="button" class="nes-btn is-error" id="menu-logout" style="font-size: 8px;">${I18nService.t('menu.logout')}</button>
+                    <button type="button" class="nes-btn is-warning" id="menu-donation" style="font-size: 8px;">
+                        <span class="btn-text">${I18nService.t('menu.donation')}</span>
+                        <span class="btn-icon">🎁</span>
+                    </button>
+                    <button type="button" class="nes-btn is-error" id="menu-logout" style="font-size: 8px;">
+                        <span class="btn-text">${I18nService.t('menu.logout')}</span>
+                        <span class="btn-icon">🚪</span>
+                    </button>
                 </div>
             </div>
 

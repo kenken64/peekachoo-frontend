@@ -479,6 +479,9 @@ class QixScene extends Phaser.Scene {
 
             /* Mobile Responsive Styles for QixScene */
             @media (max-width: 768px) {
+                .qix-header-btn .btn-text { display: none; }
+                .qix-header-btn .btn-icon { display: inline; }
+                
                 #qix-header {
                     height: 36px !important;
                     padding: 0 10px !important;
