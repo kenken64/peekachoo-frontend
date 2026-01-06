@@ -6,10 +6,12 @@ declare global {
         _env_?: {
             API_URL?: string;
             DEBUG?: string;
+            RAZORPAY_KEY_ID?: string;
         };
         ENV_CONFIG?: {
             API_URL?: string;
             DEBUG?: string;
+            RAZORPAY_KEY_ID?: string;
         };
     }
 }
@@ -30,6 +32,21 @@ export const getApiUrl = (): string => {
     return 'http://localhost:3000/api';
 };
 
+// Get Razorpay Key ID
+export const getRazorpayKeyId = (): string => {
+    // Runtime injection
+    if (window._env_ && window._env_.RAZORPAY_KEY_ID) {
+        return window._env_.RAZORPAY_KEY_ID;
+    }
+    
+    // Build-time environment variable
+    if (process.env.RAZORPAY_KEY_ID) {
+        return process.env.RAZORPAY_KEY_ID;
+    }
+
+    return '';
+};
+
 // Check if debug mode is enabled
 export const isDebugEnabled = (): boolean => {
     // Runtime injection
@@ -46,7 +63,8 @@ export const isDebugEnabled = (): boolean => {
 
 export const config = {
     apiUrl: getApiUrl(),
-    debug: isDebugEnabled()
+    debug: isDebugEnabled(),
+    razorpayKeyId: getRazorpayKeyId()
 };
 
 // Logger utility - only logs when debug is enabled (errors always log)

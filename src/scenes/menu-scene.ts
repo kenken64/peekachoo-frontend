@@ -3,7 +3,7 @@ import * as AuthService from '../services/auth-service';
 import { GameService, Game } from '../services/game-service';
 import { ImageOverlay } from '../objects/image-overlay';
 import { websocketService } from '../services/websocket-service';
-import { logger } from '../config';
+import { logger, config } from '../config';
 import { audioService } from '../services/audio-service';
 import { I18nService } from '../services/i18n-service';
 
@@ -1057,7 +1057,7 @@ export class MenuScene extends Phaser.Scene {
                     const orderData = await AuthService.createRazorpayOrder(quantity);
                     
                     const options = {
-                        "key": "rzp_test_sg_hqvjt7HayPwnsJ",
+                        "key": config.razorpayKeyId,
                         "amount": orderData.amount,
                         "currency": orderData.currency,
                         "name": "Peekachoo Shield",
@@ -1087,7 +1087,7 @@ export class MenuScene extends Phaser.Scene {
                             }
                         },
                         "prefill": {
-                            "name": AuthService.getCurrentUser()?.username || "Guest",
+                            "name": AuthService.getUser()?.username || "Guest",
                         },
                         "theme": {
                             "color": "#3399cc"
