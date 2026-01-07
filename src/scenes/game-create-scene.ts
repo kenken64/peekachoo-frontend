@@ -11,6 +11,7 @@ export class GameCreateScene extends Phaser.Scene {
 	private isLoading: boolean = false;
 	private editGameId: string | null = null;
 	private isEditMode: boolean = false;
+	private searchResults: Pokemon[] = [];
 
 	constructor() {
 		super({ key: "GameCreateScene" });

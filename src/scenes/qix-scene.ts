@@ -75,6 +75,7 @@ class QixScene extends Phaser.Scene {
 	private isShieldActive: boolean = false;
 	private shieldGraphics: Phaser.GameObjects.Graphics;
 	private shieldButton: HTMLButtonElement | null = null;
+	private shieldTimer: Phaser.Time.TimerEvent | null = null;
 
 	constructor() {
 		super({
@@ -1996,6 +1997,7 @@ class QixScene extends Phaser.Scene {
 class PauseControl {
 	private paused: boolean = false;
 	private locked: boolean = false;
+	private winTime: number = 0;
 
 	isPaused(_time?: number): boolean {
 		return this.paused;
