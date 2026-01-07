@@ -1,31 +1,34 @@
-import 'phaser';
-import { LeaderboardService, LeaderboardEntry, LeaderboardPeriod } from '../services/leaderboard-service';
-import { I18nService } from '../services/i18n-service';
+import "phaser";
+import {
+	type LeaderboardEntry,
+	type LeaderboardPeriod,
+	LeaderboardService,
+} from "../services/leaderboard-service";
 
 export class LeaderboardScene extends Phaser.Scene {
-    private domContainer: HTMLDivElement | null = null;
-    private entries: LeaderboardEntry[] = [];
-    private period: LeaderboardPeriod = 'all_time';
-    private loading: boolean = false;
-    private currentPage: number = 0;
-    private totalPages: number = 1;
-    private pageSize: number = 30;
+	private domContainer: HTMLDivElement | null = null;
+	private entries: LeaderboardEntry[] = [];
+	private period: LeaderboardPeriod = "all_time";
+	private loading: boolean = false;
+	private currentPage: number = 0;
+	private totalPages: number = 1;
+	private pageSize: number = 30;
 
-    constructor() {
-        super({ key: 'LeaderboardScene' });
-    }
+	constructor() {
+		super({ key: "LeaderboardScene" });
+	}
 
-    create() {
-        this.entries = [];
-        this.currentPage = 0;
-        this.createDOMUI();
-        this.loadLeaderboard();
-    }
+	create() {
+		this.entries = [];
+		this.currentPage = 0;
+		this.createDOMUI();
+		this.loadLeaderboard();
+	}
 
-    private createDOMUI() {
-        this.domContainer = document.createElement('div');
-        this.domContainer.id = 'leaderboard-container';
-        this.domContainer.innerHTML = `
+	private createDOMUI() {
+		this.domContainer = document.createElement("div");
+		this.domContainer.id = "leaderboard-container";
+		this.domContainer.innerHTML = `
             <style>
                 #leaderboard-container {
                     position: fixed;
@@ -408,92 +411,106 @@ export class LeaderboardScene extends Phaser.Scene {
                 <div id="leaderboard-my-rank"></div>
             </div>
         `;
-        document.body.appendChild(this.domContainer);
+		document.body.appendChild(this.domContainer);
 
-        // Event listeners
-        document.getElementById('leaderboard-close')?.addEventListener('click', () => this.close());
+		// Event listeners
+		document
+			.getElementById("leaderboard-close")
+			?.addEventListener("click", () => this.close());
 
-        // Tab listeners
-        this.domContainer.querySelectorAll('.leaderboard-tab').forEach(tab => {
-            tab.addEventListener('click', () => {
-                const period = (tab as HTMLElement).dataset.period as LeaderboardPeriod;
-                this.switchPeriod(period);
-            });
-        });
+		// Tab listeners
+		this.domContainer.querySelectorAll(".leaderboard-tab").forEach((tab) => {
+			tab.addEventListener("click", () => {
+				const period = (tab as HTMLElement).dataset.period as LeaderboardPeriod;
+				this.switchPeriod(period);
+			});
+		});
 
-        // Pagination listeners
-        document.getElementById('leaderboard-prev')?.addEventListener('click', () => this.prevPage());
-        document.getElementById('leaderboard-next')?.addEventListener('click', () => this.nextPage());
-    }
+		// Pagination listeners
+		document
+			.getElementById("leaderboard-prev")
+			?.addEventListener("click", () => this.prevPage());
+		document
+			.getElementById("leaderboard-next")
+			?.addEventListener("click", () => this.nextPage());
+	}
 
-    private async loadLeaderboard() {
-        if (this.loading) return;
+	private async loadLeaderboard() {
+		if (this.loading) return;
 
-        this.loading = true;
-        this.showLoading();
+		this.loading = true;
+		this.showLoading();
 
-        try {
-            const result = await LeaderboardService.getGlobalLeaderboard({
-                period: this.period,
-                limit: this.pageSize,
-                offset: this.currentPage * this.pageSize,
-            });
+		try {
+			const result = await LeaderboardService.getGlobalLeaderboard({
+				period: this.period,
+				limit: this.pageSize,
+				offset: this.currentPage * this.pageSize,
+			});
 
-            this.entries = result.leaderboard;
-            this.totalPages = Math.ceil(result.pagination.total / this.pageSize);
+			this.entries = result.leaderboard;
+			this.totalPages = Math.ceil(result.pagination.total / this.pageSize);
 
-            this.renderEntries();
-            this.updatePagination();
-            this.loadMyRank();
-        } catch (error) {
-            console.error('[LeaderboardScene] Failed to load leaderboard:', error);
-            this.showError();
-        } finally {
-            this.loading = false;
-        }
-    }
+			this.renderEntries();
+			this.updatePagination();
+			this.loadMyRank();
+		} catch (error) {
+			console.error("[LeaderboardScene] Failed to load leaderboard:", error);
+			this.showError();
+		} finally {
+			this.loading = false;
+		}
+	}
 
-    private async loadMyRank() {
-        try {
-            const result = await LeaderboardService.getAroundMe({ period: this.period });
-            this.renderMyRank(result.player);
-        } catch (error) {
-            console.error('[LeaderboardScene] Failed to load my rank:', error);
-        }
-    }
+	private async loadMyRank() {
+		try {
+			const result = await LeaderboardService.getAroundMe({
+				period: this.period,
+			});
+			this.renderMyRank(result.player);
+		} catch (error) {
+			console.error("[LeaderboardScene] Failed to load my rank:", error);
+		}
+	}
 
-    private showLoading() {
-        const container = document.getElementById('leaderboard-entries');
-        if (container) {
-            container.innerHTML = '<div class="leaderboard-loading">Loading...</div>';
-        }
-    }
+	private showLoading() {
+		const container = document.getElementById("leaderboard-entries");
+		if (container) {
+			container.innerHTML = '<div class="leaderboard-loading">Loading...</div>';
+		}
+	}
 
-    private showError() {
-        const container = document.getElementById('leaderboard-entries');
-        if (container) {
-            container.innerHTML = '<div class="leaderboard-empty">Failed to load leaderboard</div>';
-        }
-    }
+	private showError() {
+		const container = document.getElementById("leaderboard-entries");
+		if (container) {
+			container.innerHTML =
+				'<div class="leaderboard-empty">Failed to load leaderboard</div>';
+		}
+	}
 
-    private renderEntries() {
-        const container = document.getElementById('leaderboard-entries');
-        if (!container) return;
+	private renderEntries() {
+		const container = document.getElementById("leaderboard-entries");
+		if (!container) return;
 
-        if (this.entries.length === 0) {
-            container.innerHTML = '<div class="leaderboard-empty">No entries yet. Be the first!</div>';
-            return;
-        }
+		if (this.entries.length === 0) {
+			container.innerHTML =
+				'<div class="leaderboard-empty">No entries yet. Be the first!</div>';
+			return;
+		}
 
-        container.innerHTML = this.entries.map(entry => this.renderEntry(entry)).join('');
-    }
+		container.innerHTML = this.entries
+			.map((entry) => this.renderEntry(entry))
+			.join("");
+	}
 
-    private renderEntry(entry: LeaderboardEntry): string {
-        const rankDisplay = this.getRankDisplay(entry.rank);
-        const topClass = entry.rank <= 3 ? `top-${entry.rank}` : '';
-        const onlineIndicator = entry.isOnline ? '<div class="leaderboard-online"></div>' : '';
+	private renderEntry(entry: LeaderboardEntry): string {
+		const rankDisplay = this.getRankDisplay(entry.rank);
+		const topClass = entry.rank <= 3 ? `top-${entry.rank}` : "";
+		const onlineIndicator = entry.isOnline
+			? '<div class="leaderboard-online"></div>'
+			: "";
 
-        return `
+		return `
             <div class="leaderboard-row ${topClass}">
                 <div class="leaderboard-rank">${rankDisplay}</div>
                 <div class="leaderboard-player">
@@ -505,18 +522,22 @@ export class LeaderboardScene extends Phaser.Scene {
                 <div class="leaderboard-streak">🔥${entry.bestStreak}</div>
             </div>
         `;
-    }
+	}
 
-    private renderMyRank(player: { rank: number; totalScore: number; percentile: number }) {
-        const container = document.getElementById('leaderboard-my-rank');
-        if (!container) return;
+	private renderMyRank(player: {
+		rank: number;
+		totalScore: number;
+		percentile: number;
+	}) {
+		const container = document.getElementById("leaderboard-my-rank");
+		if (!container) return;
 
-        if (player.rank === 0) {
-            container.innerHTML = '';
-            return;
-        }
+		if (player.rank === 0) {
+			container.innerHTML = "";
+			return;
+		}
 
-        container.innerHTML = `
+		container.innerHTML = `
             <div class="nes-container is-dark leaderboard-my-rank">
                 <div class="leaderboard-my-rank-title">YOUR POSITION</div>
                 <div class="leaderboard-my-rank-row">
@@ -529,76 +550,88 @@ export class LeaderboardScene extends Phaser.Scene {
                 </div>
             </div>
         `;
-    }
+	}
 
-    private getRankDisplay(rank: number): string {
-        switch (rank) {
-            case 1: return '🥇';
-            case 2: return '🥈';
-            case 3: return '🥉';
-            default: return `#${rank}`;
-        }
-    }
+	private getRankDisplay(rank: number): string {
+		switch (rank) {
+			case 1:
+				return "🥇";
+			case 2:
+				return "🥈";
+			case 3:
+				return "🥉";
+			default:
+				return `#${rank}`;
+		}
+	}
 
-    private formatNumber(num: number): string {
-        if (num >= 1000000) {
-            return (num / 1000000).toFixed(1) + 'M';
-        } else if (num >= 1000) {
-            return (num / 1000).toFixed(1) + 'K';
-        }
-        return num.toLocaleString();
-    }
+	private formatNumber(num: number): string {
+		if (num >= 1000000) {
+			return `${(num / 1000000).toFixed(1)}M`;
+		} else if (num >= 1000) {
+			return `${(num / 1000).toFixed(1)}K`;
+		}
+		return num.toLocaleString();
+	}
 
-    private updatePagination() {
-        const prevBtn = document.getElementById('leaderboard-prev') as HTMLButtonElement;
-        const nextBtn = document.getElementById('leaderboard-next') as HTMLButtonElement;
-        const pageInfo = document.getElementById('leaderboard-page-info');
+	private updatePagination() {
+		const prevBtn = document.getElementById(
+			"leaderboard-prev",
+		) as HTMLButtonElement;
+		const nextBtn = document.getElementById(
+			"leaderboard-next",
+		) as HTMLButtonElement;
+		const pageInfo = document.getElementById("leaderboard-page-info");
 
-        if (prevBtn) prevBtn.disabled = this.currentPage === 0;
-        if (nextBtn) nextBtn.disabled = this.currentPage >= this.totalPages - 1;
-        if (pageInfo) pageInfo.textContent = `Page ${this.currentPage + 1} of ${this.totalPages}`;
-    }
+		if (prevBtn) prevBtn.disabled = this.currentPage === 0;
+		if (nextBtn) nextBtn.disabled = this.currentPage >= this.totalPages - 1;
+		if (pageInfo)
+			pageInfo.textContent = `Page ${this.currentPage + 1} of ${this.totalPages}`;
+	}
 
-    private switchPeriod(period: LeaderboardPeriod) {
-        if (period === this.period) return;
+	private switchPeriod(period: LeaderboardPeriod) {
+		if (period === this.period) return;
 
-        // Update tabs UI
-        this.domContainer?.querySelectorAll('.leaderboard-tab').forEach(tab => {
-            tab.classList.toggle('active', (tab as HTMLElement).dataset.period === period);
-        });
+		// Update tabs UI
+		this.domContainer?.querySelectorAll(".leaderboard-tab").forEach((tab) => {
+			tab.classList.toggle(
+				"active",
+				(tab as HTMLElement).dataset.period === period,
+			);
+		});
 
-        this.period = period;
-        this.currentPage = 0;
-        this.loadLeaderboard();
-    }
+		this.period = period;
+		this.currentPage = 0;
+		this.loadLeaderboard();
+	}
 
-    private prevPage() {
-        if (this.currentPage > 0) {
-            this.currentPage--;
-            this.loadLeaderboard();
-        }
-    }
+	private prevPage() {
+		if (this.currentPage > 0) {
+			this.currentPage--;
+			this.loadLeaderboard();
+		}
+	}
 
-    private nextPage() {
-        if (this.currentPage < this.totalPages - 1) {
-            this.currentPage++;
-            this.loadLeaderboard();
-        }
-    }
+	private nextPage() {
+		if (this.currentPage < this.totalPages - 1) {
+			this.currentPage++;
+			this.loadLeaderboard();
+		}
+	}
 
-    private close() {
-        this.cleanup();
-        this.scene.start('MenuScene');
-    }
+	private close() {
+		this.cleanup();
+		this.scene.start("MenuScene");
+	}
 
-    private cleanup() {
-        if (this.domContainer && this.domContainer.parentNode) {
-            this.domContainer.parentNode.removeChild(this.domContainer);
-        }
-        this.domContainer = null;
-    }
+	private cleanup() {
+		if (this.domContainer?.parentNode) {
+			this.domContainer.parentNode.removeChild(this.domContainer);
+		}
+		this.domContainer = null;
+	}
 
-    shutdown() {
-        this.cleanup();
-    }
+	shutdown() {
+		this.cleanup();
+	}
 }

@@ -1,66 +1,72 @@
-import 'phaser';
-import { PokemonService, Pokemon } from '../services/pokemon-service';
-import { GameService, GameLevel, Game } from '../services/game-service';
-import * as AuthService from '../services/auth-service';
-import { I18nService } from '../services/i18n-service';
+import "phaser";
+import { type GameLevel, GameService } from "../services/game-service";
+import { I18nService } from "../services/i18n-service";
+import { type Pokemon, PokemonService } from "../services/pokemon-service";
 
 export class GameCreateScene extends Phaser.Scene {
-    private gameName: string = '';
-    private gameDescription: string = '';
-    private selectedLevels: GameLevel[] = [];
-    private searchResults: Pokemon[] = [];
-    private domContainer: HTMLDivElement | null = null;
-    private isLoading: boolean = false;
-    private editGameId: string | null = null;
-    private isEditMode: boolean = false;
+	private gameName: string = "";
+	private gameDescription: string = "";
+	private selectedLevels: GameLevel[] = [];
+	private domContainer: HTMLDivElement | null = null;
+	private isLoading: boolean = false;
+	private editGameId: string | null = null;
+	private isEditMode: boolean = false;
 
-    constructor() {
-        super({ key: 'GameCreateScene' });
-    }
+	constructor() {
+		super({ key: "GameCreateScene" });
+	}
 
-    init(data: { editGameId?: string }) {
-        this.editGameId = data?.editGameId || null;
-        this.isEditMode = !!this.editGameId;
-    }
+	init(data: { editGameId?: string }) {
+		this.editGameId = data?.editGameId || null;
+		this.isEditMode = !!this.editGameId;
+	}
 
-    create() {
-        this.createDOMUI();
-        if (this.isEditMode && this.editGameId) {
-            this.loadGameForEdit(this.editGameId);
-        }
-    }
+	create() {
+		this.createDOMUI();
+		if (this.isEditMode && this.editGameId) {
+			this.loadGameForEdit(this.editGameId);
+		}
+	}
 
-    private async loadGameForEdit(gameId: string) {
-        try {
-            const game = await GameService.getGameById(gameId);
-            if (game) {
-                this.gameName = game.name;
-                this.gameDescription = game.description || '';
-                this.selectedLevels = game.levels || [];
+	private async loadGameForEdit(gameId: string) {
+		try {
+			const game = await GameService.getGameById(gameId);
+			if (game) {
+				this.gameName = game.name;
+				this.gameDescription = game.description || "";
+				this.selectedLevels = game.levels || [];
 
-                // Update form fields
-                const nameInput = document.getElementById('gc-name') as HTMLInputElement;
-                const descInput = document.getElementById('gc-description') as HTMLTextAreaElement;
-                if (nameInput) nameInput.value = this.gameName;
-                if (descInput) descInput.value = this.gameDescription;
+				// Update form fields
+				const nameInput = document.getElementById(
+					"gc-name",
+				) as HTMLInputElement;
+				const descInput = document.getElementById(
+					"gc-description",
+				) as HTMLTextAreaElement;
+				if (nameInput) nameInput.value = this.gameName;
+				if (descInput) descInput.value = this.gameDescription;
 
-                this.renderLevels();
-                this.updateSaveButton();
-            }
-        } catch (error: any) {
-            this.showToast('Failed to load game: ' + error.message, 'error');
-            this.goBack();
-        }
-    }
+				this.renderLevels();
+				this.updateSaveButton();
+			}
+		} catch (error: any) {
+			this.showToast(`Failed to load game: ${error.message}`, "error");
+			this.goBack();
+		}
+	}
 
-    private createDOMUI() {
-        const headerTitle = this.isEditMode ? I18nService.t('create.editTitle') : I18nService.t('create.title');
-        const saveButtonText = this.isEditMode ? I18nService.t('create.update') : I18nService.t('create.save');
+	private createDOMUI() {
+		const headerTitle = this.isEditMode
+			? I18nService.t("create.editTitle")
+			: I18nService.t("create.title");
+		const saveButtonText = this.isEditMode
+			? I18nService.t("create.update")
+			: I18nService.t("create.save");
 
-        // Create container for DOM elements
-        this.domContainer = document.createElement('div');
-        this.domContainer.id = 'game-create-container';
-        this.domContainer.innerHTML = `
+		// Create container for DOM elements
+		this.domContainer = document.createElement("div");
+		this.domContainer.id = "game-create-container";
+		this.domContainer.innerHTML = `
             <style>
                 #game-create-container {
                     position: fixed;
@@ -313,9 +319,9 @@ export class GameCreateScene extends Phaser.Scene {
             </style>
 
             <div class="gc-header">
-                <h1>${this.isEditMode ? '✏️' : '🎮'} ${headerTitle}</h1>
+                <h1>${this.isEditMode ? "✏️" : "🎮"} ${headerTitle}</h1>
                 <div class="gc-header-buttons">
-                    <button type="button" class="nes-btn" id="gc-back-btn">${I18nService.t('create.back')}</button>
+                    <button type="button" class="nes-btn" id="gc-back-btn">${I18nService.t("create.back")}</button>
                     <button type="button" class="nes-btn is-primary" id="gc-save-btn" disabled>${saveButtonText}</button>
                 </div>
             </div>
@@ -323,394 +329,434 @@ export class GameCreateScene extends Phaser.Scene {
             <div class="gc-content">
                 <div class="gc-left">
                     <div class="nes-container is-dark gc-section">
-                        <h2>${I18nService.t('create.gameDetails')}</h2>
+                        <h2>${I18nService.t("create.gameDetails")}</h2>
                         <div class="nes-field">
-                            <label for="gc-name">${I18nService.t('create.name')}</label>
-                            <input type="text" class="nes-input is-dark" id="gc-name" placeholder="${I18nService.t('create.enterName')}" maxlength="50">
+                            <label for="gc-name">${I18nService.t("create.name")}</label>
+                            <input type="text" class="nes-input is-dark" id="gc-name" placeholder="${I18nService.t("create.enterName")}" maxlength="50">
                         </div>
                         <div class="nes-field">
-                            <label for="gc-description">${I18nService.t('create.descriptionOptional')}</label>
-                            <textarea class="nes-textarea is-dark" id="gc-description" placeholder="${I18nService.t('create.enterDescription')}" maxlength="200"></textarea>
+                            <label for="gc-description">${I18nService.t("create.descriptionOptional")}</label>
+                            <textarea class="nes-textarea is-dark" id="gc-description" placeholder="${I18nService.t("create.enterDescription")}" maxlength="200"></textarea>
                         </div>
                     </div>
 
                     <div class="nes-container is-dark gc-section">
-                        <h2>${I18nService.t('create.searchPokemon')}</h2>
-                        <button type="button" class="nes-btn is-warning" id="gc-sync-btn" style="width: 100%; margin-bottom: 15px; font-size: 8px;">🔄 ${I18nService.t('create.syncApi')}</button>
+                        <h2>${I18nService.t("create.searchPokemon")}</h2>
+                        <button type="button" class="nes-btn is-warning" id="gc-sync-btn" style="width: 100%; margin-bottom: 15px; font-size: 8px;">🔄 ${I18nService.t("create.syncApi")}</button>
                         <div class="nes-field">
-                            <label for="gc-search">${I18nService.t('create.search')}</label>
-                            <input type="text" class="nes-input is-dark" id="gc-search" placeholder="${I18nService.t('create.enterPokemonName')}">
+                            <label for="gc-search">${I18nService.t("create.search")}</label>
+                            <input type="text" class="nes-input is-dark" id="gc-search" placeholder="${I18nService.t("create.enterPokemonName")}">
                         </div>
                         <div class="gc-search-results" id="gc-search-results">
-                            <div class="gc-empty-state">${I18nService.t('create.enterPokemonName')}</div>
+                            <div class="gc-empty-state">${I18nService.t("create.enterPokemonName")}</div>
                         </div>
                     </div>
                 </div>
 
                 <div class="gc-right">
                     <div class="nes-container is-dark gc-section">
-                        <h2>${I18nService.t('create.gameLevels')} (${this.selectedLevels.length})</h2>
+                        <h2>${I18nService.t("create.gameLevels")} (${this.selectedLevels.length})</h2>
                         <div class="gc-levels-list" id="gc-levels-list">
-                            <div class="gc-empty-state">${I18nService.t('create.noLevels')}</div>
+                            <div class="gc-empty-state">${I18nService.t("create.noLevels")}</div>
                         </div>
                     </div>
                 </div>
             </div>
         `;
-        document.body.appendChild(this.domContainer);
+		document.body.appendChild(this.domContainer);
 
-        // Setup event listeners
-        this.setupEventListeners();
-    }
+		// Setup event listeners
+		this.setupEventListeners();
+	}
 
-    private setupEventListeners() {
-        const backBtn = document.getElementById('gc-back-btn');
-        const saveBtn = document.getElementById('gc-save-btn');
-        const nameInput = document.getElementById('gc-name') as HTMLInputElement;
-        const descInput = document.getElementById('gc-description') as HTMLTextAreaElement;
-        const searchInput = document.getElementById('gc-search') as HTMLInputElement;
-        const syncBtn = document.getElementById('gc-sync-btn');
+	private setupEventListeners() {
+		const backBtn = document.getElementById("gc-back-btn");
+		const saveBtn = document.getElementById("gc-save-btn");
+		const nameInput = document.getElementById("gc-name") as HTMLInputElement;
+		const descInput = document.getElementById(
+			"gc-description",
+		) as HTMLTextAreaElement;
+		const searchInput = document.getElementById(
+			"gc-search",
+		) as HTMLInputElement;
+		const syncBtn = document.getElementById("gc-sync-btn");
 
-        backBtn?.addEventListener('click', () => this.goBack());
-        saveBtn?.addEventListener('click', () => this.saveGame());
-        syncBtn?.addEventListener('click', () => this.syncPokemon());
+		backBtn?.addEventListener("click", () => this.goBack());
+		saveBtn?.addEventListener("click", () => this.saveGame());
+		syncBtn?.addEventListener("click", () => this.syncPokemon());
 
-        nameInput?.addEventListener('input', (e) => {
-            this.gameName = (e.target as HTMLInputElement).value;
-            this.updateSaveButton();
-        });
+		nameInput?.addEventListener("input", (e) => {
+			this.gameName = (e.target as HTMLInputElement).value;
+			this.updateSaveButton();
+		});
 
-        descInput?.addEventListener('input', (e) => {
-            this.gameDescription = (e.target as HTMLTextAreaElement).value;
-        });
+		descInput?.addEventListener("input", (e) => {
+			this.gameDescription = (e.target as HTMLTextAreaElement).value;
+		});
 
-        let searchTimeout: any;
-        searchInput?.addEventListener('input', (e) => {
-            const query = (e.target as HTMLInputElement).value;
-            clearTimeout(searchTimeout);
-            if (query.length >= 2) {
-                searchTimeout = setTimeout(() => this.searchPokemon(query), 300);
-            } else {
-                this.renderSearchResults([]);
-            }
-        });
-    }
+		let searchTimeout: any;
+		searchInput?.addEventListener("input", (e) => {
+			const query = (e.target as HTMLInputElement).value;
+			clearTimeout(searchTimeout);
+			if (query.length >= 2) {
+				searchTimeout = setTimeout(() => this.searchPokemon(query), 300);
+			} else {
+				this.renderSearchResults([]);
+			}
+		});
+	}
 
-    private async syncPokemon() {
-        const syncBtn = document.getElementById('gc-sync-btn') as HTMLButtonElement;
-        if (syncBtn) {
-            syncBtn.disabled = true;
-            syncBtn.textContent = `⏳ ${I18nService.t('create.syncing')}`;
-        }
+	private async syncPokemon() {
+		const syncBtn = document.getElementById("gc-sync-btn") as HTMLButtonElement;
+		if (syncBtn) {
+			syncBtn.disabled = true;
+			syncBtn.textContent = `⏳ ${I18nService.t("create.syncing")}`;
+		}
 
-        try {
-            const result = await PokemonService.syncPokemon(true); // syncAll = true
-            if (result.success) {
-                this.showToast(I18nService.t('create.synced', result.data.total), 'success');
-            } else {
-                this.showToast(I18nService.t('create.syncFailed', result.error), 'error');
-            }
-        } catch (error: any) {
-            this.showToast('Sync error: ' + error.message, 'error');
-        } finally {
-            if (syncBtn) {
-                syncBtn.disabled = false;
-                syncBtn.textContent = '🔄 Sync from API';
-            }
-        }
-    }
+		try {
+			const result = await PokemonService.syncPokemon(true); // syncAll = true
+			if (result.success) {
+				this.showToast(
+					I18nService.t("create.synced", result.data.total),
+					"success",
+				);
+			} else {
+				this.showToast(
+					I18nService.t("create.syncFailed", result.error),
+					"error",
+				);
+			}
+		} catch (error: any) {
+			this.showToast(`Sync error: ${error.message}`, "error");
+		} finally {
+			if (syncBtn) {
+				syncBtn.disabled = false;
+				syncBtn.textContent = "🔄 Sync from API";
+			}
+		}
+	}
 
-    private async searchPokemon(query: string) {
-        const resultsDiv = document.getElementById('gc-search-results');
-        if (resultsDiv) {
-            resultsDiv.innerHTML = '<div class="gc-loading">Searching...</div>';
-        }
+	private async searchPokemon(query: string) {
+		const resultsDiv = document.getElementById("gc-search-results");
+		if (resultsDiv) {
+			resultsDiv.innerHTML = '<div class="gc-loading">Searching...</div>';
+		}
 
-        try {
-            const results = await PokemonService.searchPokemon(query);
-            this.searchResults = results;
-            this.renderSearchResults(results);
-        } catch (error: any) {
-            if (resultsDiv) {
-                resultsDiv.innerHTML = `<div class="gc-empty-state">Error: ${error.message}</div>`;
-            }
-        }
-    }
+		try {
+			const results = await PokemonService.searchPokemon(query);
+			this.searchResults = results;
+			this.renderSearchResults(results);
+		} catch (error: any) {
+			if (resultsDiv) {
+				resultsDiv.innerHTML = `<div class="gc-empty-state">Error: ${error.message}</div>`;
+			}
+		}
+	}
 
-    private renderSearchResults(results: Pokemon[]) {
-        const resultsDiv = document.getElementById('gc-search-results');
-        if (!resultsDiv) return;
+	private renderSearchResults(results: Pokemon[]) {
+		const resultsDiv = document.getElementById("gc-search-results");
+		if (!resultsDiv) return;
 
-        if (results.length === 0) {
-            resultsDiv.innerHTML = '<div class="gc-empty-state">No Pokemon found.<br>Try syncing first!</div>';
-            return;
-        }
+		if (results.length === 0) {
+			resultsDiv.innerHTML =
+				'<div class="gc-empty-state">No Pokemon found.<br>Try syncing first!</div>';
+			return;
+		}
 
-        resultsDiv.innerHTML = results.map(pokemon => `
+		resultsDiv.innerHTML = results
+			.map(
+				(pokemon) => `
             <div class="nes-container is-dark gc-pokemon-item" data-pokemon-id="${pokemon.id}">
                 <img src="${pokemon.spriteUrl}" alt="${pokemon.name}" onerror="this.src='https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/0.png'">
                 <div class="gc-pokemon-info">
                     <div class="gc-pokemon-name">
                         ${pokemon.name}
-                        ${pokemon.nameJp ? `<br><span style="font-size: 0.8em; color: #aaa;">${pokemon.nameJp}</span>` : ''}
-                        ${pokemon.nameCn ? `<br><span style="font-size: 0.8em; color: #aaa;">${pokemon.nameCn}</span>` : ''}
+                        ${pokemon.nameJp ? `<br><span style="font-size: 0.8em; color: #aaa;">${pokemon.nameJp}</span>` : ""}
+                        ${pokemon.nameCn ? `<br><span style="font-size: 0.8em; color: #aaa;">${pokemon.nameCn}</span>` : ""}
                     </div>
-                    <div class="gc-pokemon-types">${pokemon.types.join(', ')}</div>
+                    <div class="gc-pokemon-types">${pokemon.types.join(", ")}</div>
                 </div>
                 <button type="button" class="nes-btn is-success gc-add-btn" data-pokemon-id="${pokemon.id}">Add</button>
             </div>
-        `).join('');
+        `,
+			)
+			.join("");
 
-        // Add click handlers
-        resultsDiv.querySelectorAll('.gc-add-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const pokemonId = parseInt((btn as HTMLElement).dataset.pokemonId || '0');
-                const pokemon = results.find(p => p.id === pokemonId);
-                if (pokemon) {
-                    this.addLevel(pokemon);
-                }
-            });
-        });
-    }
+		// Add click handlers
+		resultsDiv.querySelectorAll(".gc-add-btn").forEach((btn) => {
+			btn.addEventListener("click", (e) => {
+				e.stopPropagation();
+				const pokemonId = parseInt(
+					(btn as HTMLElement).dataset.pokemonId || "0",
+					10,
+				);
+				const pokemon = results.find((p) => p.id === pokemonId);
+				if (pokemon) {
+					this.addLevel(pokemon);
+				}
+			});
+		});
+	}
 
-    private addLevel(pokemon: Pokemon) {
-        // Check if already added
-        if (this.selectedLevels.some(l => l.pokemonId === pokemon.id)) {
-            this.showToast('Pokemon already added!', 'warning');
-            return;
-        }
+	private addLevel(pokemon: Pokemon) {
+		// Check if already added
+		if (this.selectedLevels.some((l) => l.pokemonId === pokemon.id)) {
+			this.showToast("Pokemon already added!", "warning");
+			return;
+		}
 
-        const level: GameLevel = {
-            levelNumber: this.selectedLevels.length + 1,
-            pokemonId: pokemon.id,
-            pokemonName: pokemon.name,
-            pokemonNameJP: pokemon.nameJp,
-            pokemonNameCN: pokemon.nameCn,
-            pokemonSprite: pokemon.spriteUrl,
-            difficulty: 1
-        };
+		const level: GameLevel = {
+			levelNumber: this.selectedLevels.length + 1,
+			pokemonId: pokemon.id,
+			pokemonName: pokemon.name,
+			pokemonNameJP: pokemon.nameJp,
+			pokemonNameCN: pokemon.nameCn,
+			pokemonSprite: pokemon.spriteUrl,
+			difficulty: 1,
+		};
 
-        this.selectedLevels.push(level);
-        this.renderLevels();
-        this.updateSaveButton();
-    }
+		this.selectedLevels.push(level);
+		this.renderLevels();
+		this.updateSaveButton();
+	}
 
-    private removeLevel(index: number) {
-        this.selectedLevels.splice(index, 1);
-        // Renumber levels
-        this.selectedLevels.forEach((level, i) => {
-            level.levelNumber = i + 1;
-        });
-        this.renderLevels();
-        this.updateSaveButton();
-    }
+	private removeLevel(index: number) {
+		this.selectedLevels.splice(index, 1);
+		// Renumber levels
+		this.selectedLevels.forEach((level, i) => {
+			level.levelNumber = i + 1;
+		});
+		this.renderLevels();
+		this.updateSaveButton();
+	}
 
-    private updateDifficulty(index: number, difficulty: number) {
-        if (this.selectedLevels[index]) {
-            this.selectedLevels[index].difficulty = difficulty;
-        }
-    }
+	private updateDifficulty(index: number, difficulty: number) {
+		if (this.selectedLevels[index]) {
+			this.selectedLevels[index].difficulty = difficulty;
+		}
+	}
 
-    private renderLevels() {
-        const levelsDiv = document.getElementById('gc-levels-list');
-        const sectionTitle = document.querySelector('.gc-right .gc-section h2');
+	private renderLevels() {
+		const levelsDiv = document.getElementById("gc-levels-list");
+		const sectionTitle = document.querySelector(".gc-right .gc-section h2");
 
-        if (sectionTitle) {
-            sectionTitle.textContent = `GAME LEVELS (${this.selectedLevels.length})`;
-        }
+		if (sectionTitle) {
+			sectionTitle.textContent = `GAME LEVELS (${this.selectedLevels.length})`;
+		}
 
-        if (!levelsDiv) return;
+		if (!levelsDiv) return;
 
-        if (this.selectedLevels.length === 0) {
-            levelsDiv.innerHTML = '<div class="gc-empty-state">No levels yet.<br>Search and add Pokemon</div>';
-            return;
-        }
+		if (this.selectedLevels.length === 0) {
+			levelsDiv.innerHTML =
+				'<div class="gc-empty-state">No levels yet.<br>Search and add Pokemon</div>';
+			return;
+		}
 
-        levelsDiv.innerHTML = this.selectedLevels.map((level, index) => `
+		levelsDiv.innerHTML = this.selectedLevels
+			.map(
+				(level, index) => `
             <div class="nes-container is-dark gc-level-item">
                 <div class="gc-level-number">${level.levelNumber}</div>
                 <img src="${level.pokemonSprite}" alt="${level.pokemonName}" onerror="this.src='https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/0.png'">
                 <div class="gc-level-info">
                     <div class="gc-level-name">
                         ${level.pokemonName}
-                        ${level.pokemonNameJP ? `<br><span style="font-size: 0.8em; color: #aaa;">${level.pokemonNameJP}</span>` : ''}
-                        ${level.pokemonNameCN ? `<br><span style="font-size: 0.8em; color: #aaa;">${level.pokemonNameCN}</span>` : ''}
+                        ${level.pokemonNameJP ? `<br><span style="font-size: 0.8em; color: #aaa;">${level.pokemonNameJP}</span>` : ""}
+                        ${level.pokemonNameCN ? `<br><span style="font-size: 0.8em; color: #aaa;">${level.pokemonNameCN}</span>` : ""}
                     </div>
                 </div>
                 <select class="nes-select is-dark" data-level-index="${index}" style="font-size: 8px;">
-                    <option value="1" ${level.difficulty === 1 ? 'selected' : ''}>Easy</option>
-                    <option value="2" ${level.difficulty === 2 ? 'selected' : ''}>Medium</option>
-                    <option value="3" ${level.difficulty === 3 ? 'selected' : ''}>Hard</option>
+                    <option value="1" ${level.difficulty === 1 ? "selected" : ""}>Easy</option>
+                    <option value="2" ${level.difficulty === 2 ? "selected" : ""}>Medium</option>
+                    <option value="3" ${level.difficulty === 3 ? "selected" : ""}>Hard</option>
                 </select>
                 <button type="button" class="nes-btn is-error gc-remove-btn" data-level-index="${index}">X</button>
             </div>
-        `).join('');
+        `,
+			)
+			.join("");
 
-        // Add event handlers
-        levelsDiv.querySelectorAll('.gc-remove-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const index = parseInt((btn as HTMLElement).dataset.levelIndex || '0');
-                this.removeLevel(index);
-            });
-        });
+		// Add event handlers
+		levelsDiv.querySelectorAll(".gc-remove-btn").forEach((btn) => {
+			btn.addEventListener("click", () => {
+				const index = parseInt(
+					(btn as HTMLElement).dataset.levelIndex || "0",
+					10,
+				);
+				this.removeLevel(index);
+			});
+		});
 
-        levelsDiv.querySelectorAll('.nes-select').forEach(select => {
-            select.addEventListener('change', (e) => {
-                const index = parseInt((select as HTMLSelectElement).dataset.levelIndex || '0');
-                const difficulty = parseInt((e.target as HTMLSelectElement).value);
-                this.updateDifficulty(index, difficulty);
-            });
-        });
+		levelsDiv.querySelectorAll(".nes-select").forEach((select) => {
+			select.addEventListener("change", (e) => {
+				const index = parseInt(
+					(select as HTMLSelectElement).dataset.levelIndex || "0",
+					10,
+				);
+				const difficulty = parseInt((e.target as HTMLSelectElement).value, 10);
+				this.updateDifficulty(index, difficulty);
+			});
+		});
 
-        // Add click handlers for images to show popup
-        levelsDiv.querySelectorAll('.gc-level-item img').forEach((img, index) => {
-            img.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const level = this.selectedLevels[index];
-                if (level) {
-                    this.showSpritePopup(level);
-                }
-            });
-        });
-    }
+		// Add click handlers for images to show popup
+		levelsDiv.querySelectorAll(".gc-level-item img").forEach((img, index) => {
+			img.addEventListener("click", (e) => {
+				e.stopPropagation();
+				const level = this.selectedLevels[index];
+				if (level) {
+					this.showSpritePopup(level);
+				}
+			});
+		});
+	}
 
-    private showSpritePopup(level: GameLevel) {
-        const overlay = document.createElement('div');
-        overlay.className = 'gc-popup-overlay';
-        overlay.innerHTML = `
+	private showSpritePopup(level: GameLevel) {
+		const overlay = document.createElement("div");
+		overlay.className = "gc-popup-overlay";
+		overlay.innerHTML = `
             <div class="nes-container is-dark with-title gc-popup-content">
                 <p class="title" style="color: #92cc41;">LEVEL ${level.levelNumber}</p>
                 <img src="${level.pokemonSprite}" alt="${level.pokemonName}" onerror="this.src='https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/0.png'">
                 <div class="gc-popup-name">${level.pokemonName}</div>
-                <div class="gc-popup-info">Difficulty: ${level.difficulty === 1 ? 'Easy' : level.difficulty === 2 ? 'Medium' : 'Hard'}</div>
+                <div class="gc-popup-info">Difficulty: ${level.difficulty === 1 ? "Easy" : level.difficulty === 2 ? "Medium" : "Hard"}</div>
                 <button type="button" class="nes-btn is-primary gc-popup-close">Close</button>
             </div>
         `;
 
-        // Close on overlay click
-        overlay.addEventListener('click', (e) => {
-            if (e.target === overlay) {
-                overlay.remove();
-            }
-        });
+		// Close on overlay click
+		overlay.addEventListener("click", (e) => {
+			if (e.target === overlay) {
+				overlay.remove();
+			}
+		});
 
-        // Close on button click
-        overlay.querySelector('.gc-popup-close')?.addEventListener('click', () => {
-            overlay.remove();
-        });
+		// Close on button click
+		overlay.querySelector(".gc-popup-close")?.addEventListener("click", () => {
+			overlay.remove();
+		});
 
-        // Close on Escape key
-        const escHandler = (e: KeyboardEvent) => {
-            if (e.key === 'Escape') {
-                overlay.remove();
-                document.removeEventListener('keydown', escHandler);
-            }
-        };
-        document.addEventListener('keydown', escHandler);
+		// Close on Escape key
+		const escHandler = (e: KeyboardEvent) => {
+			if (e.key === "Escape") {
+				overlay.remove();
+				document.removeEventListener("keydown", escHandler);
+			}
+		};
+		document.addEventListener("keydown", escHandler);
 
-        document.body.appendChild(overlay);
-    }
+		document.body.appendChild(overlay);
+	}
 
-    private updateSaveButton() {
-        const saveBtn = document.getElementById('gc-save-btn') as HTMLButtonElement;
-        if (saveBtn) {
-            const canSave = this.gameName.trim().length > 0 && this.selectedLevels.length > 0;
-            saveBtn.disabled = !canSave;
-        }
-    }
+	private updateSaveButton() {
+		const saveBtn = document.getElementById("gc-save-btn") as HTMLButtonElement;
+		if (saveBtn) {
+			const canSave =
+				this.gameName.trim().length > 0 && this.selectedLevels.length > 0;
+			saveBtn.disabled = !canSave;
+		}
+	}
 
-    private async saveGame() {
-        if (this.isLoading) return;
+	private async saveGame() {
+		if (this.isLoading) return;
 
-        const saveBtn = document.getElementById('gc-save-btn') as HTMLButtonElement;
-        const buttonText = this.isEditMode ? 'Update' : 'Save';
-        if (saveBtn) {
-            saveBtn.disabled = true;
-            saveBtn.textContent = this.isEditMode ? 'Updating...' : 'Saving...';
-        }
+		const saveBtn = document.getElementById("gc-save-btn") as HTMLButtonElement;
+		const buttonText = this.isEditMode ? "Update" : "Save";
+		if (saveBtn) {
+			saveBtn.disabled = true;
+			saveBtn.textContent = this.isEditMode ? "Updating..." : "Saving...";
+		}
 
-        this.isLoading = true;
+		this.isLoading = true;
 
-        try {
-            if (this.isEditMode && this.editGameId) {
-                await GameService.updateGame(
-                    this.editGameId,
-                    this.gameName.trim(),
-                    this.gameDescription.trim(),
-                    this.selectedLevels
-                );
-                this.showToast('Game updated!', 'success');
-            } else {
-                await GameService.createGame(
-                    this.gameName.trim(),
-                    this.gameDescription.trim(),
-                    this.selectedLevels
-                );
-                this.showToast('Game created!', 'success');
-            }
-            // Delay goBack slightly so toast is visible
-            setTimeout(() => this.goBack(), 500);
-        } catch (error: any) {
-            this.showToast('Save failed: ' + error.message, 'error');
-            if (saveBtn) {
-                saveBtn.disabled = false;
-                saveBtn.textContent = buttonText;
-            }
-        } finally {
-            this.isLoading = false;
-        }
-    }
+		try {
+			if (this.isEditMode && this.editGameId) {
+				await GameService.updateGame(
+					this.editGameId,
+					this.gameName.trim(),
+					this.gameDescription.trim(),
+					this.selectedLevels,
+				);
+				this.showToast("Game updated!", "success");
+			} else {
+				await GameService.createGame(
+					this.gameName.trim(),
+					this.gameDescription.trim(),
+					this.selectedLevels,
+				);
+				this.showToast("Game created!", "success");
+			}
+			// Delay goBack slightly so toast is visible
+			setTimeout(() => this.goBack(), 500);
+		} catch (error: any) {
+			this.showToast(`Save failed: ${error.message}`, "error");
+			if (saveBtn) {
+				saveBtn.disabled = false;
+				saveBtn.textContent = buttonText;
+			}
+		} finally {
+			this.isLoading = false;
+		}
+	}
 
-    private goBack() {
-        this.cleanup();
-        this.scene.start('MenuScene');
-    }
+	private goBack() {
+		this.cleanup();
+		this.scene.start("MenuScene");
+	}
 
-    private cleanup() {
-        if (this.domContainer && this.domContainer.parentNode) {
-            this.domContainer.parentNode.removeChild(this.domContainer);
-        }
-        this.domContainer = null;
-        this.selectedLevels = [];
-        this.searchResults = [];
-        this.gameName = '';
-        this.gameDescription = '';
-        this.editGameId = null;
-        this.isEditMode = false;
-    }
+	private cleanup() {
+		if (this.domContainer?.parentNode) {
+			this.domContainer.parentNode.removeChild(this.domContainer);
+		}
+		this.domContainer = null;
+		this.selectedLevels = [];
+		this.searchResults = [];
+		this.gameName = "";
+		this.gameDescription = "";
+		this.editGameId = null;
+		this.isEditMode = false;
+	}
 
-    shutdown() {
-        this.cleanup();
-    }
+	shutdown() {
+		this.cleanup();
+	}
 
-    private showToast(message: string, type: 'success' | 'error' | 'info' | 'warning' = 'info') {
-        // Get or create toast container
-        let container = document.getElementById('gc-toast-container');
-        if (!container) {
-            container = document.createElement('div');
-            container.id = 'gc-toast-container';
-            container.className = 'gc-toast-container';
-            document.body.appendChild(container);
-        }
+	private showToast(
+		message: string,
+		type: "success" | "error" | "info" | "warning" = "info",
+	) {
+		// Get or create toast container
+		let container = document.getElementById("gc-toast-container");
+		if (!container) {
+			container = document.createElement("div");
+			container.id = "gc-toast-container";
+			container.className = "gc-toast-container";
+			document.body.appendChild(container);
+		}
 
-        // Create toast element with NES style
-        const toast = document.createElement('div');
-        const balloonClass = type === 'success' ? 'is-success' : type === 'error' ? 'is-error' : type === 'warning' ? 'is-warning' : 'is-dark';
-        toast.className = `nes-balloon from-right ${balloonClass} gc-toast`;
-        toast.innerHTML = `<p>${message}</p>`;
-        container.appendChild(toast);
+		// Create toast element with NES style
+		const toast = document.createElement("div");
+		const balloonClass =
+			type === "success"
+				? "is-success"
+				: type === "error"
+					? "is-error"
+					: type === "warning"
+						? "is-warning"
+						: "is-dark";
+		toast.className = `nes-balloon from-right ${balloonClass} gc-toast`;
+		toast.innerHTML = `<p>${message}</p>`;
+		container.appendChild(toast);
 
-        // Auto remove after 3 seconds
-        setTimeout(() => {
-            toast.style.animation = 'gc-toast-slide-out 0.3s ease-in forwards';
-            setTimeout(() => {
-                toast.remove();
-                // Remove container if empty
-                if (container && container.children.length === 0) {
-                    container.remove();
-                }
-            }, 300);
-        }, 3000);
-    }
+		// Auto remove after 3 seconds
+		setTimeout(() => {
+			toast.style.animation = "gc-toast-slide-out 0.3s ease-in forwards";
+			setTimeout(() => {
+				toast.remove();
+				// Remove container if empty
+				if (container && container.children.length === 0) {
+					container.remove();
+				}
+			}, 300);
+		}, 3000);
+	}
 }

@@ -1,338 +1,352 @@
 import { config, customConfig } from "../main";
-import { ExtPolygon } from "./ext-polygon";
+import type { ExtPolygon } from "./ext-polygon";
 
 /**
  * Manages a separate HTML Canvas overlay to display the revealed image
  * using standard Canvas 2D clipping (more reliable than Phaser masks)
  */
 export class ImageOverlay {
-    private static instance: ImageOverlay | null = null;
-    
-    private canvas: HTMLCanvasElement;
-    private ctx: CanvasRenderingContext2D;
-    private image: HTMLImageElement;
-    private imageLoaded: boolean = false;
-    private polygons: ExtPolygon[] = [];
-    private currentImageSrc: string = 'assets/1.jpeg';
-    private isMobile: boolean;
+	private static instance: ImageOverlay | null = null;
 
-    private constructor() {
-        // Determine if mobile at initialization time
-        this.isMobile = window.innerWidth < 768;
-        
-        // Create the overlay canvas - only cover the play area, not the info bar or message area
-        this.canvas = document.createElement('canvas');
-        this.canvas.width = config.width as number;
-        this.canvas.height = customConfig.frameHeight + customConfig.margin * 2; // Only cover play area
-        this.canvas.style.position = 'absolute';
-        this.canvas.style.pointerEvents = 'none'; // Don't intercept mouse events
-        this.canvas.id = 'image-overlay-canvas';
-        
-        this.ctx = this.canvas.getContext('2d', { willReadFrequently: true })!;
+	private canvas: HTMLCanvasElement;
+	private ctx: CanvasRenderingContext2D;
+	private image: HTMLImageElement;
+	private imageLoaded: boolean = false;
+	private polygons: ExtPolygon[] = [];
+	private currentImageSrc: string = "assets/1.jpeg";
+	private isMobile: boolean;
 
-        // Load the image
-        this.image = new Image();
-        this.image.crossOrigin = 'anonymous'; // Allow loading from external URLs
-        this.image.onload = () => {
-            this.imageLoaded = true;
-            this.redraw();
-        };
-        this.image.src = this.currentImageSrc;
+	private constructor() {
+		// Determine if mobile at initialization time
+		this.isMobile = window.innerWidth < 768;
 
-        // Position the canvas over the Phaser game after a short delay
-        setTimeout(() => this.positionCanvas(), 100);
+		// Create the overlay canvas - only cover the play area, not the info bar or message area
+		this.canvas = document.createElement("canvas");
+		this.canvas.width = config.width as number;
+		this.canvas.height = customConfig.frameHeight + customConfig.margin * 2; // Only cover play area
+		this.canvas.style.position = "absolute";
+		this.canvas.style.pointerEvents = "none"; // Don't intercept mouse events
+		this.canvas.id = "image-overlay-canvas";
 
-        // Listen for resize events - only relevant for mobile
-        if (this.isMobile) {
-            window.addEventListener('resize', () => this.positionCanvasMobile());
-            window.addEventListener('orientationchange', () => {
-                setTimeout(() => this.positionCanvasMobile(), 200);
-            });
-        }
-    }
+		this.ctx = this.canvas.getContext("2d", { willReadFrequently: true })!;
 
-    /**
-     * Get the singleton instance of ImageOverlay
-     */
-    static getInstance(): ImageOverlay {
-        if (!ImageOverlay.instance) {
-            ImageOverlay.instance = new ImageOverlay();
-        }
-        return ImageOverlay.instance;
-    }
+		// Load the image
+		this.image = new Image();
+		this.image.crossOrigin = "anonymous"; // Allow loading from external URLs
+		this.image.onload = () => {
+			this.imageLoaded = true;
+			this.redraw();
+		};
+		this.image.src = this.currentImageSrc;
 
-    /**
-     * Set a new image to be revealed
-     * Returns a promise that resolves to true if loaded successfully, false if fallback used
-     */
-    setImage(imageSrc: string): Promise<boolean> {
-        if (imageSrc === this.currentImageSrc && this.imageLoaded) {
-            return Promise.resolve(true); // Already loaded
-        }
-        
-        this.currentImageSrc = imageSrc;
-        this.imageLoaded = false;
-        
-        return new Promise((resolve) => {
-            this.image = new Image();
-            this.image.crossOrigin = 'anonymous';
-            this.image.onload = () => {
-                this.imageLoaded = true;
-                this.redraw();
-                resolve(true);
-            };
-            this.image.onerror = () => {
-                console.error('Failed to load image:', imageSrc);
-                // Fallback to default image
-                this.image.src = 'assets/1.jpeg';
-                // We resolve false to indicate the requested image failed
-                // But we still load the fallback so the game doesn't crash
-                resolve(false);
-            };
-            this.image.src = imageSrc;
-        });
-    }
+		// Position the canvas over the Phaser game after a short delay
+		setTimeout(() => this.positionCanvas(), 100);
 
-    /**
-     * Get the current image source
-     */
-    getImageSrc(): string {
-        return this.currentImageSrc;
-    }
+		// Listen for resize events - only relevant for mobile
+		if (this.isMobile) {
+			window.addEventListener("resize", () => this.positionCanvasMobile());
+			window.addEventListener("orientationchange", () => {
+				setTimeout(() => this.positionCanvasMobile(), 200);
+			});
+		}
+	}
 
-    /**
-     * Get the current image URL (alias for getImageSrc)
-     */
-    getCurrentImageUrl(): string {
-        return this.currentImageSrc;
-    }
+	/**
+	 * Get the singleton instance of ImageOverlay
+	 */
+	static getInstance(): ImageOverlay {
+		if (!ImageOverlay.instance) {
+			ImageOverlay.instance = new ImageOverlay();
+		}
+		return ImageOverlay.instance;
+	}
 
-    /**
-     * Position the canvas - routes to mobile or desktop specific method
-     */
-    private positionCanvas(): void {
-        if (this.isMobile) {
-            this.positionCanvasMobile();
-        } else {
-            this.positionCanvasDesktop();
-        }
-    }
+	/**
+	 * Set a new image to be revealed
+	 * Returns a promise that resolves to true if loaded successfully, false if fallback used
+	 */
+	setImage(imageSrc: string): Promise<boolean> {
+		if (imageSrc === this.currentImageSrc && this.imageLoaded) {
+			return Promise.resolve(true); // Already loaded
+		}
 
-    /**
-     * Desktop positioning - simple absolute positioning matching Phaser canvas offset
-     */
-    private positionCanvasDesktop(): void {
-        const contentDiv = document.getElementById('content');
-        if (!contentDiv) return;
-        
-        // Remove any existing overlay canvas first
-        const existingCanvas = document.getElementById('image-overlay-canvas');
-        if (existingCanvas && existingCanvas !== this.canvas) {
-            existingCanvas.remove();
-        }
-        
-        // Set content container to relative for absolute positioning to work
-        contentDiv.style.position = 'relative';
-        contentDiv.style.display = 'inline-block';
-        
-        const phaserCanvas = contentDiv.querySelector('canvas:not(#image-overlay-canvas)') as HTMLCanvasElement;
-        if (phaserCanvas) {
-            // Match the Phaser canvas position exactly using offset
-            this.canvas.style.left = phaserCanvas.offsetLeft + 'px';
-            this.canvas.style.top = phaserCanvas.offsetTop + 'px';
-            // Desktop: no transforms, no z-index manipulation
-            this.canvas.style.transform = '';
-            this.canvas.style.transformOrigin = '';
-            this.canvas.style.width = '';
-            this.canvas.style.zIndex = '';
-            
-            if (!this.canvas.parentElement) {
-                contentDiv.appendChild(this.canvas);
-            }
-        }
-    }
+		this.currentImageSrc = imageSrc;
+		this.imageLoaded = false;
 
-    /**
-     * Mobile positioning - apply same CSS transform as Phaser canvas
-     */
-    private positionCanvasMobile(): void {
-        const contentDiv = document.getElementById('content');
-        if (!contentDiv) return;
-        
-        // Remove any existing overlay canvas first
-        const existingCanvas = document.getElementById('image-overlay-canvas');
-        if (existingCanvas && existingCanvas !== this.canvas) {
-            existingCanvas.remove();
-        }
-        
-        const phaserCanvas = contentDiv.querySelector('canvas:not(#image-overlay-canvas)') as HTMLCanvasElement;
-        if (!phaserCanvas) return;
-        
-        // Mobile: set content container positioning
-        contentDiv.style.position = 'relative';
-        
-        // Header height on mobile (must match main.ts resizeCanvas)
-        const mobileHeaderHeight = 36;
-        
-        // Calculate the same scale as main.ts resizeCanvas
-        const gameWidth = 800;
-        const gameHeight = 650;
-        const windowWidth = window.innerWidth;
-        const availableHeight = window.innerHeight - mobileHeaderHeight;
-        const scaleX = windowWidth / gameWidth;
-        const scaleY = availableHeight / gameHeight;
-        const scale = Math.min(scaleX, scaleY * 0.95);
-        
-        // Position below header and apply transform
-        this.canvas.style.left = '0';
-        this.canvas.style.top = `${mobileHeaderHeight}px`; // Position below header
-        this.canvas.style.width = `${gameWidth}px`;
-        this.canvas.style.transformOrigin = 'top left';
-        this.canvas.style.transform = `scale(${scale})`;
-        this.canvas.style.zIndex = '2';
-        
-        if (!this.canvas.parentElement) {
-            contentDiv.appendChild(this.canvas);
-        }
-    }
+		return new Promise((resolve) => {
+			this.image = new Image();
+			this.image.crossOrigin = "anonymous";
+			this.image.onload = () => {
+				this.imageLoaded = true;
+				this.redraw();
+				resolve(true);
+			};
+			this.image.onerror = () => {
+				console.error("Failed to load image:", imageSrc);
+				// Fallback to default image
+				this.image.src = "assets/1.jpeg";
+				// We resolve false to indicate the requested image failed
+				// But we still load the fallback so the game doesn't crash
+				resolve(false);
+			};
+			this.image.src = imageSrc;
+		});
+	}
 
-    /**
-     * Add a polygon to reveal and redraw the overlay
-     */
-    addPolygon(polygon: ExtPolygon): void {
-        this.polygons.push(polygon);
-        this.redraw();
-    }
+	/**
+	 * Get the current image source
+	 */
+	getImageSrc(): string {
+		return this.currentImageSrc;
+	}
 
-    /**
-     * Clear all polygons (e.g., on level reset)
-     */
-    reset(): void {
-        this.polygons = [];
-        this.show(); // Make sure overlay is visible again
-        this.redraw();
-    }
+	/**
+	 * Get the current image URL (alias for getImageSrc)
+	 */
+	getCurrentImageUrl(): string {
+		return this.currentImageSrc;
+	}
 
-    /**
-     * Completely reset the overlay state (e.g. on logout)
-     */
-    fullReset(): void {
-        this.polygons = [];
-        this.currentImageSrc = 'assets/1.jpeg';
-        this.imageLoaded = false;
-        this.image.src = this.currentImageSrc;
-        this.show();
-        this.redraw();
-    }
+	/**
+	 * Position the canvas - routes to mobile or desktop specific method
+	 */
+	private positionCanvas(): void {
+		if (this.isMobile) {
+			this.positionCanvasMobile();
+		} else {
+			this.positionCanvasDesktop();
+		}
+	}
 
-    /**
-     * Hide the overlay temporarily (e.g., when showing text)
-     */
-    hide(): void {
-        this.canvas.style.display = 'none';
-    }
+	/**
+	 * Desktop positioning - simple absolute positioning matching Phaser canvas offset
+	 */
+	private positionCanvasDesktop(): void {
+		const contentDiv = document.getElementById("content");
+		if (!contentDiv) return;
 
-    /**
-     * Show the overlay
-     */
-    show(): void {
-        this.canvas.style.display = 'block';
-        // Reposition to match Phaser canvas (important for mobile scaling)
-        this.positionCanvas();
-    }
+		// Remove any existing overlay canvas first
+		const existingCanvas = document.getElementById("image-overlay-canvas");
+		if (existingCanvas && existingCanvas !== this.canvas) {
+			existingCanvas.remove();
+		}
 
-    /**
-     * Reveal the entire image (no clipping) - used when level is complete
-     */
-    revealFullImage(): void {
-        if (!this.imageLoaded) return;
+		// Set content container to relative for absolute positioning to work
+		contentDiv.style.position = "relative";
+		contentDiv.style.display = "inline-block";
 
-        const width = config.width as number;
-        const height = customConfig.frameHeight + customConfig.margin * 2;
+		const phaserCanvas = contentDiv.querySelector(
+			"canvas:not(#image-overlay-canvas)",
+		) as HTMLCanvasElement;
+		if (phaserCanvas) {
+			// Match the Phaser canvas position exactly using offset
+			this.canvas.style.left = `${phaserCanvas.offsetLeft}px`;
+			this.canvas.style.top = `${phaserCanvas.offsetTop}px`;
+			// Desktop: no transforms, no z-index manipulation
+			this.canvas.style.transform = "";
+			this.canvas.style.transformOrigin = "";
+			this.canvas.style.width = "";
+			this.canvas.style.zIndex = "";
 
-        // Clear the canvas
-        this.ctx.clearRect(0, 0, width, height);
+			if (!this.canvas.parentElement) {
+				contentDiv.appendChild(this.canvas);
+			}
+		}
+	}
 
-        // Calculate image scaling to cover the play area
-        const scale = Math.max(width / this.image.width, height / this.image.height);
-        const scaledWidth = this.image.width * scale;
-        const scaledHeight = this.image.height * scale;
-        const offsetX = (width - scaledWidth) / 2;
-        const offsetY = (height - scaledHeight) / 2;
+	/**
+	 * Mobile positioning - apply same CSS transform as Phaser canvas
+	 */
+	private positionCanvasMobile(): void {
+		const contentDiv = document.getElementById("content");
+		if (!contentDiv) return;
 
-        // Draw the full image without any clipping
-        this.ctx.drawImage(this.image, offsetX, offsetY, scaledWidth, scaledHeight);
+		// Remove any existing overlay canvas first
+		const existingCanvas = document.getElementById("image-overlay-canvas");
+		if (existingCanvas && existingCanvas !== this.canvas) {
+			existingCanvas.remove();
+		}
 
-        // Draw a border around the play area
-        this.ctx.strokeStyle = '#FFFF00';
-        this.ctx.lineWidth = 3;
-        this.ctx.strokeRect(customConfig.margin, customConfig.margin, 
-            width - customConfig.margin * 2, customConfig.frameHeight);
-    }
+		const phaserCanvas = contentDiv.querySelector(
+			"canvas:not(#image-overlay-canvas)",
+		) as HTMLCanvasElement;
+		if (!phaserCanvas) return;
 
-    /**
-     * Redraw the entire overlay with all claimed polygons
-     */
-    private redraw(): void {
-        if (!this.imageLoaded) return;
+		// Mobile: set content container positioning
+		contentDiv.style.position = "relative";
 
-        const width = config.width as number;
-        const height = customConfig.frameHeight + customConfig.margin * 2;
-        const margin = customConfig.margin;
-        const frameHeight = customConfig.frameHeight;
+		// Header height on mobile (must match main.ts resizeCanvas)
+		const mobileHeaderHeight = 36;
 
-        // Clear the canvas
-        this.ctx.clearRect(0, 0, width, height);
+		// Calculate the same scale as main.ts resizeCanvas
+		const gameWidth = 800;
+		const gameHeight = 650;
+		const windowWidth = window.innerWidth;
+		const availableHeight = window.innerHeight - mobileHeaderHeight;
+		const scaleX = windowWidth / gameWidth;
+		const scaleY = availableHeight / gameHeight;
+		const scale = Math.min(scaleX, scaleY * 0.95);
 
-        if (this.polygons.length === 0) return;
+		// Position below header and apply transform
+		this.canvas.style.left = "0";
+		this.canvas.style.top = `${mobileHeaderHeight}px`; // Position below header
+		this.canvas.style.width = `${gameWidth}px`;
+		this.canvas.style.transformOrigin = "top left";
+		this.canvas.style.transform = `scale(${scale})`;
+		this.canvas.style.zIndex = "2";
 
-        // Save context state
-        this.ctx.save();
+		if (!this.canvas.parentElement) {
+			contentDiv.appendChild(this.canvas);
+		}
+	}
 
-        // Create a combined clipping path from all polygons
-        this.ctx.beginPath();
-        
-        for (const polygon of this.polygons) {
-            const points = polygon.polygon.points;
-            if (points.length < 3) continue;
+	/**
+	 * Add a polygon to reveal and redraw the overlay
+	 */
+	addPolygon(polygon: ExtPolygon): void {
+		this.polygons.push(polygon);
+		this.redraw();
+	}
 
-            this.ctx.moveTo(points[0].x, points[0].y);
-            for (let i = 1; i < points.length; i++) {
-                this.ctx.lineTo(points[i].x, points[i].y);
-            }
-            this.ctx.closePath();
-        }
+	/**
+	 * Clear all polygons (e.g., on level reset)
+	 */
+	reset(): void {
+		this.polygons = [];
+		this.show(); // Make sure overlay is visible again
+		this.redraw();
+	}
 
-        // Apply the clip
-        this.ctx.clip();
+	/**
+	 * Completely reset the overlay state (e.g. on logout)
+	 */
+	fullReset(): void {
+		this.polygons = [];
+		this.currentImageSrc = "assets/1.jpeg";
+		this.imageLoaded = false;
+		this.image.src = this.currentImageSrc;
+		this.show();
+		this.redraw();
+	}
 
-        // Calculate image scaling to cover the play area
-        const scale = Math.max(width / this.image.width, height / this.image.height);
-        const scaledWidth = this.image.width * scale;
-        const scaledHeight = this.image.height * scale;
-        const offsetX = (width - scaledWidth) / 2;
-        const offsetY = (height - scaledHeight) / 2;
+	/**
+	 * Hide the overlay temporarily (e.g., when showing text)
+	 */
+	hide(): void {
+		this.canvas.style.display = "none";
+	}
 
-        // Draw the image (only visible through clipped areas)
-        this.ctx.drawImage(this.image, offsetX, offsetY, scaledWidth, scaledHeight);
+	/**
+	 * Show the overlay
+	 */
+	show(): void {
+		this.canvas.style.display = "block";
+		// Reposition to match Phaser canvas (important for mobile scaling)
+		this.positionCanvas();
+	}
 
-        // Restore context state
-        this.ctx.restore();
+	/**
+	 * Reveal the entire image (no clipping) - used when level is complete
+	 */
+	revealFullImage(): void {
+		if (!this.imageLoaded) return;
 
-        // Draw outlines for all polygons
-        this.ctx.strokeStyle = '#000000';
-        this.ctx.lineWidth = 1;
-        for (const polygon of this.polygons) {
-            const points = polygon.polygon.points;
-            if (points.length < 3) continue;
+		const width = config.width as number;
+		const height = customConfig.frameHeight + customConfig.margin * 2;
 
-            this.ctx.beginPath();
-            this.ctx.moveTo(points[0].x, points[0].y);
-            for (let i = 1; i < points.length; i++) {
-                this.ctx.lineTo(points[i].x, points[i].y);
-            }
-            this.ctx.closePath();
-            this.ctx.stroke();
-        }
-    }
+		// Clear the canvas
+		this.ctx.clearRect(0, 0, width, height);
+
+		// Calculate image scaling to cover the play area
+		const scale = Math.max(
+			width / this.image.width,
+			height / this.image.height,
+		);
+		const scaledWidth = this.image.width * scale;
+		const scaledHeight = this.image.height * scale;
+		const offsetX = (width - scaledWidth) / 2;
+		const offsetY = (height - scaledHeight) / 2;
+
+		// Draw the full image without any clipping
+		this.ctx.drawImage(this.image, offsetX, offsetY, scaledWidth, scaledHeight);
+
+		// Draw a border around the play area
+		this.ctx.strokeStyle = "#FFFF00";
+		this.ctx.lineWidth = 3;
+		this.ctx.strokeRect(
+			customConfig.margin,
+			customConfig.margin,
+			width - customConfig.margin * 2,
+			customConfig.frameHeight,
+		);
+	}
+
+	/**
+	 * Redraw the entire overlay with all claimed polygons
+	 */
+	private redraw(): void {
+		if (!this.imageLoaded) return;
+
+		const width = config.width as number;
+		const height = customConfig.frameHeight + customConfig.margin * 2;
+		const _margin = customConfig.margin;
+		const _frameHeight = customConfig.frameHeight;
+
+		// Clear the canvas
+		this.ctx.clearRect(0, 0, width, height);
+
+		if (this.polygons.length === 0) return;
+
+		// Save context state
+		this.ctx.save();
+
+		// Create a combined clipping path from all polygons
+		this.ctx.beginPath();
+
+		for (const polygon of this.polygons) {
+			const points = polygon.polygon.points;
+			if (points.length < 3) continue;
+
+			this.ctx.moveTo(points[0].x, points[0].y);
+			for (let i = 1; i < points.length; i++) {
+				this.ctx.lineTo(points[i].x, points[i].y);
+			}
+			this.ctx.closePath();
+		}
+
+		// Apply the clip
+		this.ctx.clip();
+
+		// Calculate image scaling to cover the play area
+		const scale = Math.max(
+			width / this.image.width,
+			height / this.image.height,
+		);
+		const scaledWidth = this.image.width * scale;
+		const scaledHeight = this.image.height * scale;
+		const offsetX = (width - scaledWidth) / 2;
+		const offsetY = (height - scaledHeight) / 2;
+
+		// Draw the image (only visible through clipped areas)
+		this.ctx.drawImage(this.image, offsetX, offsetY, scaledWidth, scaledHeight);
+
+		// Restore context state
+		this.ctx.restore();
+
+		// Draw outlines for all polygons
+		this.ctx.strokeStyle = "#000000";
+		this.ctx.lineWidth = 1;
+		for (const polygon of this.polygons) {
+			const points = polygon.polygon.points;
+			if (points.length < 3) continue;
+
+			this.ctx.beginPath();
+			this.ctx.moveTo(points[0].x, points[0].y);
+			for (let i = 1; i < points.length; i++) {
+				this.ctx.lineTo(points[i].x, points[i].y);
+			}
+			this.ctx.closePath();
+			this.ctx.stroke();
+		}
+	}
 }

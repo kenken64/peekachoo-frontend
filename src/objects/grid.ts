@@ -1,203 +1,224 @@
-import * as Phaser from 'phaser';
+import * as Phaser from "phaser";
+
 declare type integer = number;
 
 import Graphics = Phaser.GameObjects.Graphics;
 import Rectangle = Phaser.Geom.Rectangle;
 import Point = Phaser.Geom.Point;
-import {config, customConfig} from "../main";
-import {Player} from "./player";
-import {ExtPoint} from "./ext-point";
-import QixScene from "../scenes/qix-scene";
-import {FilledPolygons} from "./filled-polygons";
-import {ExtRectangle} from "./ext-rectangle";
-import {CurrentLines} from "./current-lines";
-import {AllPoints} from "./all-points";
-import {Sparkies} from "./sparkies";
+
 import { logger } from "../config";
+import { config, customConfig } from "../main";
+import type QixScene from "../scenes/qix-scene";
 import { audioService } from "../services/audio-service";
+import { AllPoints } from "./all-points";
+import { CurrentLines } from "./current-lines";
+import { ExtPoint } from "./ext-point";
+import { ExtRectangle } from "./ext-rectangle";
+import { FilledPolygons } from "./filled-polygons";
+import type { Player } from "./player";
 
 export class Grid {
-    static FRAME_HEIGHT_PERCENT: number = .7;
+	static FRAME_HEIGHT_PERCENT: number = 0.7;
 
-    scene: QixScene;
-    filledPolygons: FilledPolygons;
-    currentLines: CurrentLines;
-    allPoints: AllPoints;
+	scene: QixScene;
+	filledPolygons: FilledPolygons;
+	currentLines: CurrentLines;
+	allPoints: AllPoints;
 
-    frameGraphics: Graphics;
-    frame: ExtRectangle;
-    frameArea: number;
+	frameGraphics: Graphics;
+	frame: ExtRectangle;
+	frameArea: number;
 
-    constructor(scene: QixScene) {
-        this.scene = scene;
-        this.filledPolygons = new FilledPolygons(scene);
-        this.currentLines = new CurrentLines(scene);
-        this.createFrame();
+	constructor(scene: QixScene) {
+		this.scene = scene;
+		this.filledPolygons = new FilledPolygons(scene);
+		this.currentLines = new CurrentLines(scene);
+		this.createFrame();
 
-        this.allPoints = new AllPoints(this.scene, this.frame.rectangle);
-    }
+		this.allPoints = new AllPoints(this.scene, this.frame.rectangle);
+	}
 
-    createFrame(): void {
-        this.frameGraphics = this.scene.add.graphics();
-        this.frameGraphics.lineStyle(1, customConfig.lineColor);
-        this.frameGraphics.fillStyle(customConfig.fillColor);
+	createFrame(): void {
+		this.frameGraphics = this.scene.add.graphics();
+		this.frameGraphics.lineStyle(1, customConfig.lineColor);
+		this.frameGraphics.fillStyle(customConfig.fillColor);
 
-        this.frame = new ExtRectangle(new Rectangle(
-            customConfig.margin,
-            customConfig.margin,
-            config.width as number - (2 * customConfig.margin),
-            customConfig.frameHeight));
+		this.frame = new ExtRectangle(
+			new Rectangle(
+				customConfig.margin,
+				customConfig.margin,
+				(config.width as number) - 2 * customConfig.margin,
+				customConfig.frameHeight,
+			),
+		);
 
-        this.frameArea = this.frame.rectangle.height * this.frame.rectangle.width;
-        this.frameGraphics.strokeRectShape(this.frame.rectangle);
-    }
+		this.frameArea = this.frame.rectangle.height * this.frame.rectangle.width;
+		this.frameGraphics.strokeRectShape(this.frame.rectangle);
+	}
 
-    update(player: Player) {
-        if (! player.moving()) {
-            return;
-        }
+	update(player: Player) {
+		if (!player.moving()) {
+			return;
+		}
 
-        if (this.movingAlongExistingLine(player)) {
-            return;
-        }
+		if (this.movingAlongExistingLine(player)) {
+			return;
+		}
 
-        this.currentLines.updateLine(player);
+		this.currentLines.updateLine(player);
 
-        this.checkAndUpdateForClosedLoop(player);
+		this.checkAndUpdateForClosedLoop(player);
 
-        return;
-    }
+		return;
+	}
 
-    movingAlongExistingLine(player: Player) {
-        const onExisting = this.onExistingLine(player);
+	movingAlongExistingLine(player: Player) {
+		const onExisting = this.onExistingLine(player);
 
-        if (onExisting && player.previousOnExisting) {
-            this.currentLines.reset();
-            return true;
-        } else {
-            player.previousOnExisting = onExisting;
-            return false;
-        }
-    }
+		if (onExisting && player.previousOnExisting) {
+			this.currentLines.reset();
+			return true;
+		} else {
+			player.previousOnExisting = onExisting;
+			return false;
+		}
+	}
 
-    checkAndUpdateForClosedLoop(player: Player): void {
-        // Check for closed loop
-        if (! this.onExistingLine(player)) {
-            return;
-        }
+	checkAndUpdateForClosedLoop(player: Player): void {
+		// Check for closed loop
+		if (!this.onExistingLine(player)) {
+			return;
+		}
 
-        this.currentLines.points.push(player.point());
-        const points = this.currentLines.points;
+		this.currentLines.points.push(player.point());
+		const points = this.currentLines.points;
 
-        // Check for not enough points or circular loop
-        if (points.length < 2 || points[0].equals(points[points.length - 1])) {
-            this.currentLines.reset();
-            return;
-        }
+		// Check for not enough points or circular loop
+		if (points.length < 2 || points[0].equals(points[points.length - 1])) {
+			this.currentLines.reset();
+			return;
+		}
 
-        const newPolygonPoints = this.allPoints.calculateNewClockwisePolygonPoints(this.currentLines.points);
+		const newPolygonPoints = this.allPoints.calculateNewClockwisePolygonPoints(
+			this.currentLines.points,
+		);
 
-        // Guard against invalid polygon points
-        if (!newPolygonPoints || newPolygonPoints.length < 3) {
-            logger.warn('Invalid polygon points calculated, resetting current lines');
-            this.currentLines.reset();
-            return;
-        }
+		// Guard against invalid polygon points
+		if (!newPolygonPoints || newPolygonPoints.length < 3) {
+			logger.warn("Invalid polygon points calculated, resetting current lines");
+			this.currentLines.reset();
+			return;
+		}
 
-        this.filledPolygons.drawFilledPolygon(newPolygonPoints);
-        this.allPoints.updateNewInnerPoints(newPolygonPoints);
+		this.filledPolygons.drawFilledPolygon(newPolygonPoints);
+		this.allPoints.updateNewInnerPoints(newPolygonPoints);
 
-        // Play territory claim sound
-        audioService.playSFX('claim');
+		// Play territory claim sound
+		audioService.playSFX("claim");
 
-        // this.qix.debug.highlightPoints(newPolygonPoints, 3, true, 300, 700);
-        this.scene.debug.drawPoints1(newPolygonPoints);
-        this.scene.debug.infoPoints('newPolygonPoints', newPolygonPoints);
+		// this.qix.debug.highlightPoints(newPolygonPoints, 3, true, 300, 700);
+		this.scene.debug.drawPoints1(newPolygonPoints);
+		this.scene.debug.infoPoints("newPolygonPoints", newPolygonPoints);
 
-        // this.qix.debug.debugHighlightPoints(this.allPoints.innerPolygonPointsClockwise, 4, true, 300, 700, 0xBB22AA);
-        this.scene.debug.drawPoints2(this.allPoints.innerPolygonPointsClockwise);
-        this.scene.debug.infoPoints('innerPolygonPointsClockwise', this.allPoints.innerPolygonPointsClockwise);
+		// this.qix.debug.debugHighlightPoints(this.allPoints.innerPolygonPointsClockwise, 4, true, 300, 700, 0xBB22AA);
+		this.scene.debug.drawPoints2(this.allPoints.innerPolygonPointsClockwise);
+		this.scene.debug.infoPoints(
+			"innerPolygonPointsClockwise",
+			this.allPoints.innerPolygonPointsClockwise,
+		);
 
-        // this.qix.debug.debugConsolePoints('points', this.currentLines.points);
+		// this.qix.debug.debugConsolePoints('points', this.currentLines.points);
 
-        this.currentLines.reset();
-    }
+		this.currentLines.reset();
+	}
 
-    onExistingLine(player: Player): boolean {
-        return this.frame.pointOnOutline(player.point().point) || this.filledPolygons.pointOnLine(player.point());
-    }
+	onExistingLine(player: Player): boolean {
+		return (
+			this.frame.pointOnOutline(player.point().point) ||
+			this.filledPolygons.pointOnLine(player.point())
+		);
+	}
 
-    firstPointAndLastPointSame(player: Player): boolean {
-        return this.frame.pointOnOutline(player.point().point) || this.filledPolygons.pointOnLine(player.point());
-    }
+	firstPointAndLastPointSame(player: Player): boolean {
+		return (
+			this.frame.pointOnOutline(player.point().point) ||
+			this.filledPolygons.pointOnLine(player.point())
+		);
+	}
 
-    isIllegalMove(player: Player, cursors: CursorKeys): boolean {
-        const newPosition = player.getMove(cursors);
-        newPosition.x += customConfig.playerRadius;
-        newPosition.y += customConfig.playerRadius;
+	isIllegalMove(player: Player, cursors: CursorKeys): boolean {
+		const newPosition = player.getMove(cursors);
+		newPosition.x += customConfig.playerRadius;
+		newPosition.y += customConfig.playerRadius;
 
-        const outOfBounds =
-            (newPosition.x < this.frame.rectangle.x) ||
-            (newPosition.x > this.frame.rectangle.x + this.frame.rectangle.width) ||
-            (newPosition.y < this.frame.rectangle.y) ||
-            (newPosition.y > this.frame.rectangle.y + this.frame.rectangle.height);
+		const outOfBounds =
+			newPosition.x < this.frame.rectangle.x ||
+			newPosition.x > this.frame.rectangle.x + this.frame.rectangle.width ||
+			newPosition.y < this.frame.rectangle.y ||
+			newPosition.y > this.frame.rectangle.y + this.frame.rectangle.height;
 
-        const withinFilledPolygon = this.filledPolygons.pointWithinPolygon(new ExtPoint(newPosition));
+		const withinFilledPolygon = this.filledPolygons.pointWithinPolygon(
+			new ExtPoint(newPosition),
+		);
 
-        const hittingCurrentLines = this.currentLines.lines.some((line) => {
-            return Phaser.Geom.Intersects.PointToLineSegment(newPosition, line);
-        });
+		const hittingCurrentLines = this.currentLines.lines.some((line) => {
+			return Phaser.Geom.Intersects.PointToLineSegment(newPosition, line);
+		});
 
-        return outOfBounds || withinFilledPolygon || hittingCurrentLines;
-    }
+		return outOfBounds || withinFilledPolygon || hittingCurrentLines;
+	}
 
-    getValidMove(player: Player, cursors: CursorKeys): Point | null {
-        const intendedTopLeft = player.getMove(cursors);
-        const intendedCenter = new Point(
-            intendedTopLeft.x + customConfig.playerRadius,
-            intendedTopLeft.y + customConfig.playerRadius
-        );
+	getValidMove(player: Player, cursors: CursorKeys): Point | null {
+		const intendedTopLeft = player.getMove(cursors);
+		const intendedCenter = new Point(
+			intendedTopLeft.x + customConfig.playerRadius,
+			intendedTopLeft.y + customConfig.playerRadius,
+		);
 
-        // Check if intended move is valid
-        if (!this.checkIllegalPoint(intendedCenter)) {
-            return intendedTopLeft;
-        }
+		// Check if intended move is valid
+		if (!this.checkIllegalPoint(intendedCenter)) {
+			return intendedTopLeft;
+		}
 
-        // If invalid, try clamping to frame (handles the "overshoot" issue with high speed)
-        const frame = this.frame.rectangle;
-        const clampedCenter = new Point(
-            Phaser.Math.Clamp(intendedCenter.x, frame.x, frame.x + frame.width),
-            Phaser.Math.Clamp(intendedCenter.y, frame.y, frame.y + frame.height)
-        );
+		// If invalid, try clamping to frame (handles the "overshoot" issue with high speed)
+		const frame = this.frame.rectangle;
+		const clampedCenter = new Point(
+			Phaser.Math.Clamp(intendedCenter.x, frame.x, frame.x + frame.width),
+			Phaser.Math.Clamp(intendedCenter.y, frame.y, frame.y + frame.height),
+		);
 
-        // If clamping changed the position, check if the clamped position is valid
-        if (clampedCenter.x !== intendedCenter.x || clampedCenter.y !== intendedCenter.y) {
-            if (!this.checkIllegalPoint(clampedCenter)) {
-                // Return top-left corresponding to clamped center
-                return new Point(
-                    clampedCenter.x - customConfig.playerRadius,
-                    clampedCenter.y - customConfig.playerRadius
-                );
-            }
-        }
+		// If clamping changed the position, check if the clamped position is valid
+		if (
+			clampedCenter.x !== intendedCenter.x ||
+			clampedCenter.y !== intendedCenter.y
+		) {
+			if (!this.checkIllegalPoint(clampedCenter)) {
+				// Return top-left corresponding to clamped center
+				return new Point(
+					clampedCenter.x - customConfig.playerRadius,
+					clampedCenter.y - customConfig.playerRadius,
+				);
+			}
+		}
 
-        return null;
-    }
+		return null;
+	}
 
-    private checkIllegalPoint(point: Point): boolean {
-        const outOfBounds =
-            (point.x < this.frame.rectangle.x) ||
-            (point.x > this.frame.rectangle.x + this.frame.rectangle.width) ||
-            (point.y < this.frame.rectangle.y) ||
-            (point.y > this.frame.rectangle.y + this.frame.rectangle.height);
+	private checkIllegalPoint(point: Point): boolean {
+		const outOfBounds =
+			point.x < this.frame.rectangle.x ||
+			point.x > this.frame.rectangle.x + this.frame.rectangle.width ||
+			point.y < this.frame.rectangle.y ||
+			point.y > this.frame.rectangle.y + this.frame.rectangle.height;
 
-        const withinFilledPolygon = this.filledPolygons.pointWithinPolygon(new ExtPoint(point));
+		const withinFilledPolygon = this.filledPolygons.pointWithinPolygon(
+			new ExtPoint(point),
+		);
 
-        const hittingCurrentLines = this.currentLines.lines.some((line) => {
-            return Phaser.Geom.Intersects.PointToLineSegment(point, line);
-        });
+		const hittingCurrentLines = this.currentLines.lines.some((line) => {
+			return Phaser.Geom.Intersects.PointToLineSegment(point, line);
+		});
 
-        return outOfBounds || withinFilledPolygon || hittingCurrentLines;
-    }
-
+		return outOfBounds || withinFilledPolygon || hittingCurrentLines;
+	}
 }

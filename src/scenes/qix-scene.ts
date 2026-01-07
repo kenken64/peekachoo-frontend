@@ -1,258 +1,275 @@
-import * as Phaser from 'phaser';
+import * as Phaser from "phaser";
+
 declare type integer = number;
 
-import {Player} from "../objects/player";
-import {Grid} from "../objects/grid";
-import {Info} from "../objects/info";
-import {Debug} from "../objects/debug";
-import {config, customConfig, resetGameConfig} from "../main";
-import {Levels} from "../objects/levels";
-import {QuizService, QuizQuestion} from "../services/quiz-service";
+import { config, customConfig, resetGameConfig } from "../main";
+import { Debug } from "../objects/debug";
+import { Grid } from "../objects/grid";
+import { Info } from "../objects/info";
+import { Levels } from "../objects/levels";
+import { Player } from "../objects/player";
+import { type QuizQuestion, QuizService } from "../services/quiz-service";
+
 import TimerEvent = Phaser.Time.TimerEvent;
 import Scene = Phaser.Scene;
-import {Sparkies} from "../objects/sparkies";
+
+import { Sparkies } from "../objects/sparkies";
+
 import Text = Phaser.GameObjects.Text;
-import {Qixes} from "../objects/qixes";
-import {ImageOverlay} from "../objects/image-overlay";
-import * as AuthService from "../services/auth-service";
-import { GameService, Game, GameLevel } from "../services/game-service";
-import { PokemonService } from "../services/pokemon-service";
-import { VirtualDpad } from "../objects/virtual-dpad";
-import { InputManager } from "../utils/input-manager";
-import { sessionStore } from "../stores/session-store";
-import { ScoreSubmissionResult } from "../services/leaderboard-service";
-import { websocketService } from "../services/websocket-service";
+
 import { logger } from "../config";
-import { audioService } from "../services/audio-service";
-import { I18nService } from "../services/i18n-service";
-import { PowerUp } from "../objects/power-up";
 import { ExtPoint } from "../objects/ext-point";
+import { ImageOverlay } from "../objects/image-overlay";
+import { PowerUp } from "../objects/power-up";
+import { Qixes } from "../objects/qixes";
+import { VirtualDpad } from "../objects/virtual-dpad";
+import { audioService } from "../services/audio-service";
+import * as AuthService from "../services/auth-service";
+import {
+	type Game,
+	type GameLevel,
+	GameService,
+} from "../services/game-service";
+import { I18nService } from "../services/i18n-service";
+import type { ScoreSubmissionResult } from "../services/leaderboard-service";
+import { PokemonService } from "../services/pokemon-service";
+import { websocketService } from "../services/websocket-service";
+import { sessionStore } from "../stores/session-store";
+import { InputManager } from "../utils/input-manager";
 
 interface GameSceneData {
-    gameId?: string;
-    levelIndex?: number;
-    customGame?: Game;
+	gameId?: string;
+	levelIndex?: number;
+	customGame?: Game;
 }
 
 class QixScene extends Phaser.Scene {
-    player: Player;
-    sparkies: Sparkies;
-    qixes: Qixes;
-    grid: Grid;
-    info: Info;
-    cursors: CursorKeys;
-    debug: Debug;
-    pauseControl: PauseControl;
-    levels = new Levels(this);
-    private headerContainer: HTMLDivElement | null = null;
-    private loadingContainer: HTMLDivElement | null = null;
-    private gameId: string | null = null;
-    private customGame: Game | null = null;
-    private currentLevelIndex: number = 0;
-    private virtualDpad: VirtualDpad | null = null;
-    private powerUps: PowerUp[] = [];
-    private lastPowerUpSpawnTime: number = 0;
-    private readonly POWERUP_SPAWN_INTERVAL = 5000; // Try to spawn every 5 seconds
-    private endlessModePokemon: { id: number; name: string; name_jp?: string; spriteUrl: string; types: string[]; isNew: boolean } | null = null;
+	player: Player;
+	sparkies: Sparkies;
+	qixes: Qixes;
+	grid: Grid;
+	info: Info;
+	cursors: CursorKeys;
+	debug: Debug;
+	pauseControl: PauseControl;
+	levels = new Levels(this);
+	private headerContainer: HTMLDivElement | null = null;
+	private loadingContainer: HTMLDivElement | null = null;
+	private gameId: string | null = null;
+	private customGame: Game | null = null;
+	private currentLevelIndex: number = 0;
+	private virtualDpad: VirtualDpad | null = null;
+	private powerUps: PowerUp[] = [];
+	private lastPowerUpSpawnTime: number = 0;
+	private readonly POWERUP_SPAWN_INTERVAL = 5000; // Try to spawn every 5 seconds
+	private endlessModePokemon: {
+		id: number;
+		name: string;
+		name_jp?: string;
+		spriteUrl: string;
+		types: string[];
+		isNew: boolean;
+	} | null = null;
 
-    private shieldKey: Phaser.Input.Keyboard.Key;
-    private isShieldActive: boolean = false;
-    private shieldGraphics: Phaser.GameObjects.Graphics;
-    private shieldTimer: Phaser.Time.TimerEvent;
-    private shieldButton: HTMLButtonElement | null = null;
+	private shieldKey: Phaser.Input.Keyboard.Key;
+	private isShieldActive: boolean = false;
+	private shieldGraphics: Phaser.GameObjects.Graphics;
+	private shieldButton: HTMLButtonElement | null = null;
 
-    constructor() {
-        super({
-            key: 'Qix'
-        });
-    }
+	constructor() {
+		super({
+			key: "Qix",
+		});
+	}
 
-    init(data: GameSceneData) {
-        this.gameId = data?.gameId || null;
-        this.customGame = data?.customGame || null;
-        this.currentLevelIndex = data?.levelIndex || 0;
+	init(data: GameSceneData) {
+		this.gameId = data?.gameId || null;
+		this.customGame = data?.customGame || null;
+		this.currentLevelIndex = data?.levelIndex || 0;
 
-        // Reset level state when starting a new game (no levelIndex means new game)
-        if (data?.levelIndex === undefined) {
-            resetGameConfig();
-            this.levels = new Levels(this);
-            // Start a new session for score tracking
-            this.initSession();
-        }
-    }
+		// Reset level state when starting a new game (no levelIndex means new game)
+		if (data?.levelIndex === undefined) {
+			resetGameConfig();
+			this.levels = new Levels(this);
+			// Start a new session for score tracking
+			this.initSession();
+		}
+	}
 
-    private sessionReady: Promise<void> | null = null;
-    private gameDataReady: Promise<void> | null = null;
-    private pokemonReady: Promise<void> | null = null;
+	private sessionReady: Promise<void> | null = null;
+	private gameDataReady: Promise<void> | null = null;
+	private pokemonReady: Promise<void> | null = null;
 
-    private initSession() {
-        this.sessionReady = this.doInitSession();
-    }
+	private initSession() {
+		this.sessionReady = this.doInitSession();
+	}
 
-    private async doInitSession() {
-        try {
-            await sessionStore.startSession(this.gameId);
-            logger.log('[QixScene] Session started:', sessionStore.getSessionId());
-        } catch (error) {
-            logger.error('[QixScene] Failed to start session:', error);
-        }
-    }
+	private async doInitSession() {
+		try {
+			await sessionStore.startSession(this.gameId);
+			logger.log("[QixScene] Session started:", sessionStore.getSessionId());
+		} catch (error) {
+			logger.error("[QixScene] Failed to start session:", error);
+		}
+	}
 
-    preload() {
-    }
+	preload() {}
 
-    create() {
-        this.powerUps = [];
-        this.lastPowerUpSpawnTime = 0;
-        
-        // Refresh user data immediately
-        this.refreshUserData();
-        
-        this.createHeader();
+	create() {
+		this.powerUps = [];
+		this.lastPowerUpSpawnTime = 0;
 
-        // Initialize pauseControl first to avoid undefined errors in update()
-        this.pauseControl = new PauseControl();
+		// Refresh user data immediately
+		this.refreshUserData();
 
-        // Register shutdown event handler for cleanup
-        this.events.on('shutdown', this.shutdown, this);
+		this.createHeader();
 
-        // Load custom game if gameId provided and not already loaded from restart
-        if (this.gameId && !this.customGame) {
-            this.showLoadingOverlay();
-            this.gameDataReady = this.loadCustomGame();
-        }
+		// Initialize pauseControl first to avoid undefined errors in update()
+		this.pauseControl = new PauseControl();
 
-        this.cursors = this.input.keyboard.createCursorKeys();
+		// Register shutdown event handler for cleanup
+		this.events.on("shutdown", this.shutdown, this);
 
-        // Add virtual D-pad for mobile devices
-        if (InputManager.isMobile()) {
-            this.virtualDpad = new VirtualDpad(this);
-            this.createShieldButton();
-        }
+		// Load custom game if gameId provided and not already loaded from restart
+		if (this.gameId && !this.customGame) {
+			this.showLoadingOverlay();
+			this.gameDataReady = this.loadCustomGame();
+		}
 
-        this.grid = new Grid(this);
-        this.player = new Player(this, customConfig.margin, customConfig.margin);
-        this.info = new Info(this);
-        this.debug = new Debug(this);
+		this.cursors = this.input.keyboard.createCursorKeys();
 
-        this.sparkies = new Sparkies(this);
-        this.qixes = new Qixes(this);
+		// Add virtual D-pad for mobile devices
+		if (InputManager.isMobile()) {
+			this.virtualDpad = new VirtualDpad(this);
+			this.createShieldButton();
+		}
 
-        // Play game music
-        audioService.playMusic('gameMusic');
+		this.grid = new Grid(this);
+		this.player = new Player(this, customConfig.margin, customConfig.margin);
+		this.info = new Info(this);
+		this.debug = new Debug(this);
 
-        // Set the first level image if custom game
-        this.updateLevelImage();
+		this.sparkies = new Sparkies(this);
+		this.qixes = new Qixes(this);
 
-        // Start tracking current level for scoring
-        this.startLevelTracking();
+		// Play game music
+		audioService.playMusic("gameMusic");
 
-        // Initialize Shield Key
-        this.shieldKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
-        this.isShieldActive = false;
-        
-        // Initialize Shield Graphics - Create it proactively
-        this.shieldGraphics = this.add.graphics();
-        this.shieldGraphics.setDepth(1001); // Above player
-    }
+		// Set the first level image if custom game
+		this.updateLevelImage();
 
-    private async refreshUserData() {
-        try {
-            const user = await AuthService.getCurrentUser();
-            if (user) {
-                this.updateHeaderUserInfo(user);
-                
-                // Update shield button for mobile if needed
-                if (InputManager.isMobile()) {
-                    this.createShieldButton();
-                }
-            }
-        } catch (error) {
-            console.error('[QixScene] Failed to refresh user data:', error);
-        }
-    }
+		// Start tracking current level for scoring
+		this.startLevelTracking();
 
-    private updateHeaderUserInfo(user: any) {
-        if (!this.headerContainer) return;
-        const usernameDiv = this.headerContainer.querySelector('.qix-username');
-        if (usernameDiv) {
-            const levelDisplay = user.level ? ` <span style="color: #FFD700; margin-left: 5px;">Lv.${user.level}</span>` : '';
-            const shieldsDisplay = ` <span style="color: #ff6b6b; margin-left: 10px;">🛡️ ${user.shields || 0}</span>`;
-            usernameDiv.innerHTML = `👤 <span style="color: #FFFFFF">${user.username}</span>${levelDisplay}${shieldsDisplay}`;
-        }
-    }
+		// Initialize Shield Key
+		this.shieldKey = this.input.keyboard.addKey(
+			Phaser.Input.Keyboard.KeyCodes.SPACE,
+		);
+		this.isShieldActive = false;
 
-    private async startLevelTracking() {
-        // Wait for session, game data, and Pokemon to be ready before tracking level
-        if (this.sessionReady) {
-            await this.sessionReady;
-        }
-        if (this.gameDataReady) {
-            await this.gameDataReady;
-        }
-        if (this.pokemonReady) {
-            await this.pokemonReady;
-        }
+		// Initialize Shield Graphics - Create it proactively
+		this.shieldGraphics = this.add.graphics();
+		this.shieldGraphics.setDepth(1001); // Above player
+	}
 
-        // Determine Pokemon info based on game mode
-        let pokemonId: number | undefined;
-        let pokemonName: string | undefined;
+	private async refreshUserData() {
+		try {
+			const user = await AuthService.getCurrentUser();
+			if (user) {
+				this.updateHeaderUserInfo(user);
 
-        if (this.customGame?.levels[this.currentLevelIndex]) {
-            // Custom game mode
-            const currentLevel = this.customGame.levels[this.currentLevelIndex];
-            pokemonId = currentLevel.pokemonId;
-            pokemonName = currentLevel.pokemonName;
-        } else if (this.endlessModePokemon) {
-            // Endless mode
-            pokemonId = this.endlessModePokemon.id;
-            pokemonName = this.endlessModePokemon.name;
-        }
+				// Update shield button for mobile if needed
+				if (InputManager.isMobile()) {
+					this.createShieldButton();
+				}
+			}
+		} catch (error) {
+			console.error("[QixScene] Failed to refresh user data:", error);
+		}
+	}
 
-        logger.log('[QixScene] Starting level tracking with Pokemon:', {
-            level: this.levels.currentLevel,
-            pokemonId,
-            pokemonName
-        });
+	private updateHeaderUserInfo(user: any) {
+		if (!this.headerContainer) return;
+		const usernameDiv = this.headerContainer.querySelector(".qix-username");
+		if (usernameDiv) {
+			const levelDisplay = user.level
+				? ` <span style="color: #FFD700; margin-left: 5px;">Lv.${user.level}</span>`
+				: "";
+			const shieldsDisplay = ` <span style="color: #ff6b6b; margin-left: 10px;">🛡️ ${user.shields || 0}</span>`;
+			usernameDiv.innerHTML = `👤 <span style="color: #FFFFFF">${user.username}</span>${levelDisplay}${shieldsDisplay}`;
+		}
+	}
 
-        sessionStore.startLevel(
-            this.levels.currentLevel,
-            pokemonId,
-            pokemonName
-        );
-        logger.log('[QixScene] Level tracking started for level:', this.levels.currentLevel);
-    }
+	private async startLevelTracking() {
+		// Wait for session, game data, and Pokemon to be ready before tracking level
+		if (this.sessionReady) {
+			await this.sessionReady;
+		}
+		if (this.gameDataReady) {
+			await this.gameDataReady;
+		}
+		if (this.pokemonReady) {
+			await this.pokemonReady;
+		}
 
-    private async loadCustomGame() {
-        try {
-            const game = await GameService.getGameById(this.gameId!);
-            if (game) {
-                this.customGame = game;
-                // Update the image now that game is loaded
-                this.updateLevelImage();
-                // Update header with game name
-                this.updateHeaderGameName();
-                // Increment play count (fire-and-forget, ignore errors)
-                GameService.incrementPlayCount(this.gameId!).catch(() => {});
-            } else {
-                this.showToast('Failed to load game data', 'error');
-                setTimeout(() => this.goToMenu(), 2000);
-            }
-        } catch (error) {
-            logger.error('Failed to load custom game:', error);
-            this.showToast('Error loading game', 'error');
-            setTimeout(() => this.goToMenu(), 2000);
-        } finally {
-            this.hideLoadingOverlay();
-        }
-    }
+		// Determine Pokemon info based on game mode
+		let pokemonId: number | undefined;
+		let pokemonName: string | undefined;
 
-    private showLoadingOverlay() {
-        if (this.loadingContainer) return;
+		if (this.customGame?.levels[this.currentLevelIndex]) {
+			// Custom game mode
+			const currentLevel = this.customGame.levels[this.currentLevelIndex];
+			pokemonId = currentLevel.pokemonId;
+			pokemonName = currentLevel.pokemonName;
+		} else if (this.endlessModePokemon) {
+			// Endless mode
+			pokemonId = this.endlessModePokemon.id;
+			pokemonName = this.endlessModePokemon.name;
+		}
 
-        this.loadingContainer = document.createElement('div');
-        this.loadingContainer.id = 'game-loading-overlay';
-        this.loadingContainer.style.cssText = `
+		logger.log("[QixScene] Starting level tracking with Pokemon:", {
+			level: this.levels.currentLevel,
+			pokemonId,
+			pokemonName,
+		});
+
+		sessionStore.startLevel(this.levels.currentLevel, pokemonId, pokemonName);
+		logger.log(
+			"[QixScene] Level tracking started for level:",
+			this.levels.currentLevel,
+		);
+	}
+
+	private async loadCustomGame() {
+		try {
+			const game = await GameService.getGameById(this.gameId!);
+			if (game) {
+				this.customGame = game;
+				// Update the image now that game is loaded
+				this.updateLevelImage();
+				// Update header with game name
+				this.updateHeaderGameName();
+				// Increment play count (fire-and-forget, ignore errors)
+				GameService.incrementPlayCount(this.gameId!).catch(() => {});
+			} else {
+				this.showToast("Failed to load game data", "error");
+				setTimeout(() => this.goToMenu(), 2000);
+			}
+		} catch (error) {
+			logger.error("Failed to load custom game:", error);
+			this.showToast("Error loading game", "error");
+			setTimeout(() => this.goToMenu(), 2000);
+		} finally {
+			this.hideLoadingOverlay();
+		}
+	}
+
+	private showLoadingOverlay() {
+		if (this.loadingContainer) return;
+
+		this.loadingContainer = document.createElement("div");
+		this.loadingContainer.id = "game-loading-overlay";
+		this.loadingContainer.style.cssText = `
             position: fixed;
             top: 0;
             left: 0;
@@ -268,180 +285,205 @@ class QixScene extends Phaser.Scene {
             font-family: "Press Start 2P", cursive;
         `;
 
-        this.loadingContainer.innerHTML = `
+		this.loadingContainer.innerHTML = `
             <div style="font-size: 20px; margin-bottom: 20px;">LOADING GAME...</div>
             <div class="nes-progress is-primary" style="width: 300px; height: 20px;"></div>
         `;
 
-        document.body.appendChild(this.loadingContainer);
-        
-        // Pause the game while loading
-        if (this.pauseControl) {
-            this.pauseControl.pause();
-        }
-    }
+		document.body.appendChild(this.loadingContainer);
 
-    private hideLoadingOverlay() {
-        if (this.loadingContainer) {
-            this.loadingContainer.remove();
-            this.loadingContainer = null;
-        }
-        
-        // Unpause the game
-        if (this.pauseControl) {
-            this.pauseControl.unpause();
-        }
-    }
+		// Pause the game while loading
+		if (this.pauseControl) {
+			this.pauseControl.pause();
+		}
+	}
 
-    private showToast(message: string, type: 'success' | 'error' | 'info' | 'warning' = 'info') {
-        // Get or create toast container
-        let container = document.getElementById('qix-toast-container');
-        if (!container) {
-            container = document.createElement('div');
-            container.id = 'qix-toast-container';
-            container.className = 'qix-toast-container';
-            document.body.appendChild(container);
-        }
+	private hideLoadingOverlay() {
+		if (this.loadingContainer) {
+			this.loadingContainer.remove();
+			this.loadingContainer = null;
+		}
 
-        // Create toast element with NES style
-        const toast = document.createElement('div');
-        const balloonClass = type === 'success' ? 'is-success' : type === 'error' ? 'is-error' : type === 'warning' ? 'is-warning' : 'is-dark';
-        toast.className = `nes-balloon from-right ${balloonClass} qix-toast`;
-        toast.innerHTML = `<p>${message}</p>`;
-        container.appendChild(toast);
+		// Unpause the game
+		if (this.pauseControl) {
+			this.pauseControl.unpause();
+		}
+	}
 
-        // Auto remove after 3 seconds
-        setTimeout(() => {
-            toast.style.animation = 'qix-toast-slide-out 0.3s ease-in forwards';
-            setTimeout(() => {
-                toast.remove();
-                // Remove container if empty
-                if (container && container.children.length === 0) {
-                    container.remove();
-                }
-            }, 300);
-        }, 3000);
-    }
+	private showToast(
+		message: string,
+		type: "success" | "error" | "info" | "warning" = "info",
+	) {
+		// Get or create toast container
+		let container = document.getElementById("qix-toast-container");
+		if (!container) {
+			container = document.createElement("div");
+			container.id = "qix-toast-container";
+			container.className = "qix-toast-container";
+			document.body.appendChild(container);
+		}
 
-    private updateHeaderGameName() {
-        const gameNameEl = document.querySelector('.qix-gamename span');
-        if (gameNameEl && this.customGame) {
-            gameNameEl.textContent = this.customGame.name;
-        }
-    }
+		// Create toast element with NES style
+		const toast = document.createElement("div");
+		const balloonClass =
+			type === "success"
+				? "is-success"
+				: type === "error"
+					? "is-error"
+					: type === "warning"
+						? "is-warning"
+						: "is-dark";
+		toast.className = `nes-balloon from-right ${balloonClass} qix-toast`;
+		toast.innerHTML = `<p>${message}</p>`;
+		container.appendChild(toast);
 
-    /**
-     * Update the overlay image based on current level
-     */
-    updateLevelImage() {
-        // Reset endless mode pokemon state
-        this.endlessModePokemon = null;
-        
-        // If we have a gameId but no customGame data yet, it means we are still loading.
-        // We should NOT start endless mode.
-        if (this.gameId && !this.customGame) {
-            logger.log('[QixScene] Waiting for custom game data to load...');
-            return;
-        }
+		// Auto remove after 3 seconds
+		setTimeout(() => {
+			toast.style.animation = "qix-toast-slide-out 0.3s ease-in forwards";
+			setTimeout(() => {
+				toast.remove();
+				// Remove container if empty
+				if (container && container.children.length === 0) {
+					container.remove();
+				}
+			}, 300);
+		}, 3000);
+	}
 
-        if (this.customGame && this.customGame.levels.length > 0) {
-            const levelIndex = Math.min(this.currentLevelIndex, this.customGame.levels.length - 1);
-            const level = this.customGame.levels[levelIndex];
-            logger.log('[QixScene] Setting Custom Game Level Image:', {
-                gameName: this.customGame.name,
-                levelIndex,
-                pokemonName: level.pokemonName,
-                spriteUrl: level.pokemonSprite
-            });
-            if (level && level.pokemonSprite) {
-                ImageOverlay.getInstance().setImage(level.pokemonSprite);
-            }
-        } else {
-            logger.log('[QixScene] Setting Endless Mode Image (fetching random)...');
-            // Endless mode - fetch random unrevealed Pokemon from backend
-            this.pokemonReady = this.fetchRandomPokemon();
-        }
-    }
+	private updateHeaderGameName() {
+		const gameNameEl = document.querySelector(".qix-gamename span");
+		if (gameNameEl && this.customGame) {
+			gameNameEl.textContent = this.customGame.name;
+		}
+	}
 
-    /**
-     * Fetch a random unrevealed Pokemon from the backend for endless mode
-     */
-    private async fetchRandomPokemon(retryCount = 0): Promise<void> {
-        if (retryCount > 3) {
-            logger.warn('[QixScene] Max retries reached for fetching Pokemon');
-            ImageOverlay.getInstance().setImage('assets/1.jpeg');
-            return;
-        }
+	/**
+	 * Update the overlay image based on current level
+	 */
+	updateLevelImage() {
+		// Reset endless mode pokemon state
+		this.endlessModePokemon = null;
 
-        try {
-            const pokemon = await PokemonService.getRandomUnrevealed();
-            if (pokemon && pokemon.spriteUrl) {
-                // Try to load the image
-                const success = await ImageOverlay.getInstance().setImage(pokemon.spriteUrl);
-                
-                if (success) {
-                    this.endlessModePokemon = pokemon;
-                    // Use Japanese name if available and language is JP, otherwise fallback to English name
-                    const displayName = (I18nService.getLang() === 'jp' && pokemon.name_jp) ? pokemon.name_jp : pokemon.name;
-                    logger.log('[QixScene] Loaded random Pokemon for Reveal:', {
-                        name: pokemon.name,
-                        nameJP: pokemon.name_jp,
-                        displayName,
-                        spriteUrl: pokemon.spriteUrl,
-                        isNew: pokemon.isNew
-                    });
-                } else {
-                    logger.warn('[QixScene] Failed to load image for Pokemon:', pokemon.name, 'Retrying...');
-                    // If image failed to load, try another Pokemon
-                    await this.fetchRandomPokemon(retryCount + 1);
-                }
-            } else {
-                // Fallback to default image if no Pokemon available
-                logger.warn('[QixScene] No random Pokemon available, using default');
-                ImageOverlay.getInstance().setImage('assets/1.jpeg');
-            }
-        } catch (error) {
-            logger.error('[QixScene] Failed to fetch random Pokemon:', error);
-            // Fallback to default image on error
-            ImageOverlay.getInstance().setImage('assets/1.jpeg');
-        }
-    }
+		// If we have a gameId but no customGame data yet, it means we are still loading.
+		// We should NOT start endless mode.
+		if (this.gameId && !this.customGame) {
+			logger.log("[QixScene] Waiting for custom game data to load...");
+			return;
+		}
 
-    /**
-     * Called when advancing to next level
-     */
-    advanceLevel() {
-        this.currentLevelIndex++;
-        this.updateLevelImage();
-    }
+		if (this.customGame && this.customGame.levels.length > 0) {
+			const levelIndex = Math.min(
+				this.currentLevelIndex,
+				this.customGame.levels.length - 1,
+			);
+			const level = this.customGame.levels[levelIndex];
+			logger.log("[QixScene] Setting Custom Game Level Image:", {
+				gameName: this.customGame.name,
+				levelIndex,
+				pokemonName: level.pokemonName,
+				spriteUrl: level.pokemonSprite,
+			});
+			if (level?.pokemonSprite) {
+				ImageOverlay.getInstance().setImage(level.pokemonSprite);
+			}
+		} else {
+			logger.log("[QixScene] Setting Endless Mode Image (fetching random)...");
+			// Endless mode - fetch random unrevealed Pokemon from backend
+			this.pokemonReady = this.fetchRandomPokemon();
+		}
+	}
 
-    /**
-     * Get the current custom game level (if any)
-     */
-    getCurrentCustomLevel(): GameLevel | null {
-        if (this.customGame && this.customGame.levels.length > 0) {
-            const levelIndex = Math.min(this.currentLevelIndex, this.customGame.levels.length - 1);
-            return this.customGame.levels[levelIndex];
-        }
-        return null;
-    }
+	/**
+	 * Fetch a random unrevealed Pokemon from the backend for endless mode
+	 */
+	private async fetchRandomPokemon(retryCount = 0): Promise<void> {
+		if (retryCount > 3) {
+			logger.warn("[QixScene] Max retries reached for fetching Pokemon");
+			ImageOverlay.getInstance().setImage("assets/1.jpeg");
+			return;
+		}
 
-    /**
-     * Check if playing a custom game
-     */
-    isCustomGame(): boolean {
-        return this.customGame !== null;
-    }
+		try {
+			const pokemon = await PokemonService.getRandomUnrevealed();
+			if (pokemon?.spriteUrl) {
+				// Try to load the image
+				const success = await ImageOverlay.getInstance().setImage(
+					pokemon.spriteUrl,
+				);
 
-    private injectResponsiveStyles(): void {
-        // Only inject once
-        if (document.getElementById('qix-scene-responsive-styles')) {
-            return;
-        }
+				if (success) {
+					this.endlessModePokemon = pokemon;
+					// Use Japanese name if available and language is JP, otherwise fallback to English name
+					const displayName =
+						I18nService.getLang() === "jp" && pokemon.name_jp
+							? pokemon.name_jp
+							: pokemon.name;
+					logger.log("[QixScene] Loaded random Pokemon for Reveal:", {
+						name: pokemon.name,
+						nameJP: pokemon.name_jp,
+						displayName,
+						spriteUrl: pokemon.spriteUrl,
+						isNew: pokemon.isNew,
+					});
+				} else {
+					logger.warn(
+						"[QixScene] Failed to load image for Pokemon:",
+						pokemon.name,
+						"Retrying...",
+					);
+					// If image failed to load, try another Pokemon
+					await this.fetchRandomPokemon(retryCount + 1);
+				}
+			} else {
+				// Fallback to default image if no Pokemon available
+				logger.warn("[QixScene] No random Pokemon available, using default");
+				ImageOverlay.getInstance().setImage("assets/1.jpeg");
+			}
+		} catch (error) {
+			logger.error("[QixScene] Failed to fetch random Pokemon:", error);
+			// Fallback to default image on error
+			ImageOverlay.getInstance().setImage("assets/1.jpeg");
+		}
+	}
 
-        const style = document.createElement('style');
-        style.id = 'qix-scene-responsive-styles';
-        style.textContent = `
+	/**
+	 * Called when advancing to next level
+	 */
+	advanceLevel() {
+		this.currentLevelIndex++;
+		this.updateLevelImage();
+	}
+
+	/**
+	 * Get the current custom game level (if any)
+	 */
+	getCurrentCustomLevel(): GameLevel | null {
+		if (this.customGame && this.customGame.levels.length > 0) {
+			const levelIndex = Math.min(
+				this.currentLevelIndex,
+				this.customGame.levels.length - 1,
+			);
+			return this.customGame.levels[levelIndex];
+		}
+		return null;
+	}
+
+	/**
+	 * Check if playing a custom game
+	 */
+	isCustomGame(): boolean {
+		return this.customGame !== null;
+	}
+
+	private injectResponsiveStyles(): void {
+		// Only inject once
+		if (document.getElementById("qix-scene-responsive-styles")) {
+			return;
+		}
+
+		const style = document.createElement("style");
+		style.id = "qix-scene-responsive-styles";
+		style.textContent = `
             /* Default state - hide icons, show text */
             .qix-header-btn .btn-icon {
                 display: none;
@@ -719,24 +761,24 @@ class QixScene extends Phaser.Scene {
                 }
             }
         `;
-        document.head.appendChild(style);
-    }
+		document.head.appendChild(style);
+	}
 
-    private createHeader(): void {
-        // Remove existing header if present
-        if (this.headerContainer) {
-            this.headerContainer.remove();
-        }
+	private createHeader(): void {
+		// Remove existing header if present
+		if (this.headerContainer) {
+			this.headerContainer.remove();
+		}
 
-        // Inject responsive styles for QixScene
-        this.injectResponsiveStyles();
+		// Inject responsive styles for QixScene
+		this.injectResponsiveStyles();
 
-        const user = AuthService.getUser();
-        const username = user?.username || 'Guest';
+		const user = AuthService.getUser();
+		const username = user?.username || "Guest";
 
-        this.headerContainer = document.createElement('div');
-        this.headerContainer.id = 'qix-header';
-        this.headerContainer.style.cssText = `
+		this.headerContainer = document.createElement("div");
+		this.headerContainer.id = "qix-header";
+		this.headerContainer.style.cssText = `
             position: absolute;
             top: 0;
             left: 0;
@@ -752,20 +794,20 @@ class QixScene extends Phaser.Scene {
             border-bottom: 2px solid #CCAAFF;
         `;
 
-        // Left side: Back button and username
-        const leftDiv = document.createElement('div');
-        leftDiv.className = 'qix-header-left';
-        leftDiv.style.cssText = `
+		// Left side: Back button and username
+		const leftDiv = document.createElement("div");
+		leftDiv.className = "qix-header-left";
+		leftDiv.style.cssText = `
             display: flex;
             align-items: center;
             gap: 15px;
         `;
 
-        // Back to menu button
-        const backBtn = document.createElement('button');
-        backBtn.className = 'qix-header-btn qix-back-btn';
-        backBtn.innerHTML = `<span class="btn-text">← ${I18nService.t('game.menu')}</span><span class="btn-icon">←</span>`;
-        backBtn.style.cssText = `
+		// Back to menu button
+		const backBtn = document.createElement("button");
+		backBtn.className = "qix-header-btn qix-back-btn";
+		backBtn.innerHTML = `<span class="btn-text">← ${I18nService.t("game.menu")}</span><span class="btn-icon">←</span>`;
+		backBtn.style.cssText = `
             padding: 6px 12px;
             font-size: 12px;
             font-weight: bold;
@@ -776,33 +818,35 @@ class QixScene extends Phaser.Scene {
             cursor: pointer;
             transition: background 0.2s;
         `;
-        backBtn.addEventListener('mouseenter', () => {
-            backBtn.style.background = '#777';
-        });
-        backBtn.addEventListener('mouseleave', () => {
-            backBtn.style.background = '#555';
-        });
-        backBtn.addEventListener('click', () => {
-            this.goToMenu();
-        });
+		backBtn.addEventListener("mouseenter", () => {
+			backBtn.style.background = "#777";
+		});
+		backBtn.addEventListener("mouseleave", () => {
+			backBtn.style.background = "#555";
+		});
+		backBtn.addEventListener("click", () => {
+			this.goToMenu();
+		});
 
-        // Username display
-        const usernameDiv = document.createElement('div');
-        usernameDiv.className = 'qix-username';
-        usernameDiv.style.cssText = `
+		// Username display
+		const usernameDiv = document.createElement("div");
+		usernameDiv.className = "qix-username";
+		usernameDiv.style.cssText = `
             color: #CCAAFF;
             font-family: Arial, sans-serif;
             font-size: 14px;
             font-weight: bold;
         `;
-        const levelDisplay = user?.level ? ` <span style="color: #FFD700; margin-left: 5px;">Lv.${user.level}</span>` : '';
-        const shieldsDisplay = ` <span style="color: #ff6b6b; margin-left: 10px;">🛡️ ${user?.shields || 0}</span>`;
-        usernameDiv.innerHTML = `👤 <span style="color: #FFFFFF">${username}</span>${levelDisplay}${shieldsDisplay}`;
+		const levelDisplay = user?.level
+			? ` <span style="color: #FFD700; margin-left: 5px;">Lv.${user.level}</span>`
+			: "";
+		const shieldsDisplay = ` <span style="color: #ff6b6b; margin-left: 10px;">🛡️ ${user?.shields || 0}</span>`;
+		usernameDiv.innerHTML = `👤 <span style="color: #FFFFFF">${username}</span>${levelDisplay}${shieldsDisplay}`;
 
-        // Game Name display
-        const gameNameDiv = document.createElement('div');
-        gameNameDiv.className = 'qix-gamename';
-        gameNameDiv.style.cssText = `
+		// Game Name display
+		const gameNameDiv = document.createElement("div");
+		gameNameDiv.className = "qix-gamename";
+		gameNameDiv.style.cssText = `
             color: #92cc41;
             font-family: Arial, sans-serif;
             font-size: 14px;
@@ -811,28 +855,30 @@ class QixScene extends Phaser.Scene {
             border-left: 1px solid #555;
             padding-left: 15px;
         `;
-        const gameName = this.customGame ? this.customGame.name : I18nService.t('menu.play');
-        gameNameDiv.innerHTML = `🎮 <span style="color: #FFFFFF">${gameName}</span>`;
+		const gameName = this.customGame
+			? this.customGame.name
+			: I18nService.t("menu.play");
+		gameNameDiv.innerHTML = `🎮 <span style="color: #FFFFFF">${gameName}</span>`;
 
-        leftDiv.appendChild(backBtn);
-        leftDiv.appendChild(usernameDiv);
-        leftDiv.appendChild(gameNameDiv);
+		leftDiv.appendChild(backBtn);
+		leftDiv.appendChild(usernameDiv);
+		leftDiv.appendChild(gameNameDiv);
 
-        // Right side container for help and logout
-        const rightDiv = document.createElement('div');
-        rightDiv.className = 'qix-header-right';
-        rightDiv.style.cssText = `
+		// Right side container for help and logout
+		const rightDiv = document.createElement("div");
+		rightDiv.className = "qix-header-right";
+		rightDiv.style.cssText = `
             display: flex;
             align-items: center;
             gap: 10px;
         `;
 
-        // How to Play button
-        const helpBtn = document.createElement('button');
-        helpBtn.className = 'qix-header-btn qix-help-btn';
-        // Remove text "How to Play" to reduce clutter on desktop, just show icon
-        helpBtn.innerHTML = `<span class="btn-text">❓</span><span class="btn-icon">❓</span>`;
-        helpBtn.style.cssText = `
+		// How to Play button
+		const helpBtn = document.createElement("button");
+		helpBtn.className = "qix-header-btn qix-help-btn";
+		// Remove text "How to Play" to reduce clutter on desktop, just show icon
+		helpBtn.innerHTML = `<span class="btn-text">❓</span><span class="btn-icon">❓</span>`;
+		helpBtn.style.cssText = `
             padding: 6px 12px;
             font-size: 12px;
             font-weight: bold;
@@ -843,21 +889,21 @@ class QixScene extends Phaser.Scene {
             cursor: pointer;
             transition: background 0.2s;
         `;
-        helpBtn.addEventListener('mouseenter', () => {
-            helpBtn.style.background = '#5dade2';
-        });
-        helpBtn.addEventListener('mouseleave', () => {
-            helpBtn.style.background = '#3498db';
-        });
-        helpBtn.addEventListener('click', () => {
-            this.showHowToPlay();
-        });
+		helpBtn.addEventListener("mouseenter", () => {
+			helpBtn.style.background = "#5dade2";
+		});
+		helpBtn.addEventListener("mouseleave", () => {
+			helpBtn.style.background = "#3498db";
+		});
+		helpBtn.addEventListener("click", () => {
+			this.showHowToPlay();
+		});
 
-        // Logout button
-        const logoutBtn = document.createElement('button');
-        logoutBtn.className = 'qix-header-btn qix-logout-btn';
-        logoutBtn.innerHTML = `<span class="btn-text">${I18nService.t('menu.logout')}</span><span class="btn-icon">⬅</span>`;
-        logoutBtn.style.cssText = `
+		// Logout button
+		const logoutBtn = document.createElement("button");
+		logoutBtn.className = "qix-header-btn qix-logout-btn";
+		logoutBtn.innerHTML = `<span class="btn-text">${I18nService.t("menu.logout")}</span><span class="btn-icon">⬅</span>`;
+		logoutBtn.style.cssText = `
             padding: 6px 16px;
             font-size: 12px;
             font-weight: bold;
@@ -868,38 +914,41 @@ class QixScene extends Phaser.Scene {
             cursor: pointer;
             transition: opacity 0.2s;
         `;
-        logoutBtn.addEventListener('mouseenter', () => {
-            logoutBtn.style.opacity = '0.8';
-        });
-        logoutBtn.addEventListener('mouseleave', () => {
-            logoutBtn.style.opacity = '1';
-        });
-        logoutBtn.addEventListener('click', () => {
-            this.handleLogout();
-        });
+		logoutBtn.addEventListener("mouseenter", () => {
+			logoutBtn.style.opacity = "0.8";
+		});
+		logoutBtn.addEventListener("mouseleave", () => {
+			logoutBtn.style.opacity = "1";
+		});
+		logoutBtn.addEventListener("click", () => {
+			this.handleLogout();
+		});
 
-        rightDiv.appendChild(helpBtn);
-        rightDiv.appendChild(logoutBtn);
+		rightDiv.appendChild(helpBtn);
+		rightDiv.appendChild(logoutBtn);
 
-        this.headerContainer.appendChild(leftDiv);
-        this.headerContainer.appendChild(rightDiv);
+		this.headerContainer.appendChild(leftDiv);
+		this.headerContainer.appendChild(rightDiv);
 
-        const gameContainer = document.getElementById('content');
-        if (gameContainer) {
-            gameContainer.style.position = 'relative';
-            gameContainer.style.paddingTop = '42px'; // Add space for header
-            gameContainer.insertBefore(this.headerContainer, gameContainer.firstChild);
-        }
-    }
+		const gameContainer = document.getElementById("content");
+		if (gameContainer) {
+			gameContainer.style.position = "relative";
+			gameContainer.style.paddingTop = "42px"; // Add space for header
+			gameContainer.insertBefore(
+				this.headerContainer,
+				gameContainer.firstChild,
+			);
+		}
+	}
 
-    private showHowToPlay(): void {
-        // Pause the game
-        this.pauseControl.pause();
-        
-        // Create modal overlay
-        const modalOverlay = document.createElement('div');
-        modalOverlay.id = 'how-to-play-modal';
-        modalOverlay.style.cssText = `
+	private showHowToPlay(): void {
+		// Pause the game
+		this.pauseControl.pause();
+
+		// Create modal overlay
+		const modalOverlay = document.createElement("div");
+		modalOverlay.id = "how-to-play-modal";
+		modalOverlay.style.cssText = `
             position: fixed;
             top: 0;
             left: 0;
@@ -912,9 +961,9 @@ class QixScene extends Phaser.Scene {
             z-index: 2000;
         `;
 
-        // Modal content
-        const modal = document.createElement('div');
-        modal.style.cssText = `
+		// Modal content
+		const modal = document.createElement("div");
+		modal.style.cssText = `
             background: linear-gradient(to bottom, #2a2a4a, #1a1a2e);
             border: 3px solid #CCAAFF;
             border-radius: 15px;
@@ -927,41 +976,41 @@ class QixScene extends Phaser.Scene {
             font-family: Arial, sans-serif;
         `;
 
-        modal.innerHTML = `
+		modal.innerHTML = `
             <h2 style="color: #FFD700; text-align: center; margin-top: 0; font-size: 28px;">
-                ${I18nService.t('game.howToPlayTitle')}
+                ${I18nService.t("game.howToPlayTitle")}
             </h2>
             
-            <h3 style="color: #CCAAFF; margin-bottom: 10px;">🕹️ ${I18nService.t('game.controls')}</h3>
+            <h3 style="color: #CCAAFF; margin-bottom: 10px;">🕹️ ${I18nService.t("game.controls")}</h3>
             <ul style="line-height: 1.8; margin-bottom: 20px;">
-                ${I18nService.t('game.controlsList')}
+                ${I18nService.t("game.controlsList")}
             </ul>
             
-            <h3 style="color: #CCAAFF; margin-bottom: 10px;">🎯 ${I18nService.t('game.objective')}</h3>
+            <h3 style="color: #CCAAFF; margin-bottom: 10px;">🎯 ${I18nService.t("game.objective")}</h3>
             <p style="line-height: 1.6; margin-bottom: 20px;">
-                ${I18nService.t('game.objectiveText')}
+                ${I18nService.t("game.objectiveText")}
             </p>
             
-            <h3 style="color: #CCAAFF; margin-bottom: 10px;">📜 ${I18nService.t('game.rules')}</h3>
+            <h3 style="color: #CCAAFF; margin-bottom: 10px;">📜 ${I18nService.t("game.rules")}</h3>
             <ul style="line-height: 1.8; margin-bottom: 20px;">
-                ${I18nService.t('game.rulesList')}
+                ${I18nService.t("game.rulesList")}
             </ul>
             
-            <h3 style="color: #CCAAFF; margin-bottom: 10px;">⚠️ ${I18nService.t('game.dangers')}</h3>
+            <h3 style="color: #CCAAFF; margin-bottom: 10px;">⚠️ ${I18nService.t("game.dangers")}</h3>
             <ul style="line-height: 1.8; margin-bottom: 20px;">
-                ${I18nService.t('game.dangersList')}
+                ${I18nService.t("game.dangersList")}
             </ul>
             
-            <h3 style="color: #CCAAFF; margin-bottom: 10px;">💡 ${I18nService.t('game.tips')}</h3>
+            <h3 style="color: #CCAAFF; margin-bottom: 10px;">💡 ${I18nService.t("game.tips")}</h3>
             <ul style="line-height: 1.8; margin-bottom: 25px;">
-                ${I18nService.t('game.tipsList')}
+                ${I18nService.t("game.tipsList")}
             </ul>
         `;
 
-        // Close button
-        const closeBtn = document.createElement('button');
-        closeBtn.textContent = I18nService.t('game.gotIt');
-        closeBtn.style.cssText = `
+		// Close button
+		const closeBtn = document.createElement("button");
+		closeBtn.textContent = I18nService.t("game.gotIt");
+		closeBtn.style.cssText = `
             display: block;
             width: 100%;
             padding: 12px 24px;
@@ -974,193 +1023,200 @@ class QixScene extends Phaser.Scene {
             cursor: pointer;
             transition: background 0.2s;
         `;
-        closeBtn.addEventListener('mouseenter', () => {
-            closeBtn.style.background = '#66BB6A';
-        });
-        closeBtn.addEventListener('mouseleave', () => {
-            closeBtn.style.background = '#4CAF50';
-        });
-        closeBtn.addEventListener('click', () => {
-            modalOverlay.remove();
-            this.pauseControl.unpause();
-        });
+		closeBtn.addEventListener("mouseenter", () => {
+			closeBtn.style.background = "#66BB6A";
+		});
+		closeBtn.addEventListener("mouseleave", () => {
+			closeBtn.style.background = "#4CAF50";
+		});
+		closeBtn.addEventListener("click", () => {
+			modalOverlay.remove();
+			this.pauseControl.unpause();
+		});
 
-        modal.appendChild(closeBtn);
-        modalOverlay.appendChild(modal);
-        document.body.appendChild(modalOverlay);
+		modal.appendChild(closeBtn);
+		modalOverlay.appendChild(modal);
+		document.body.appendChild(modalOverlay);
 
-        // Also close on clicking outside
-        modalOverlay.addEventListener('click', (e) => {
-            if (e.target === modalOverlay) {
-                modalOverlay.remove();
-                this.pauseControl.unpause();
-            }
-        });
-    }
+		// Also close on clicking outside
+		modalOverlay.addEventListener("click", (e) => {
+			if (e.target === modalOverlay) {
+				modalOverlay.remove();
+				this.pauseControl.unpause();
+			}
+		});
+	}
 
-    private async goToMenu(): Promise<void> {
-        // End the current session
-        if (sessionStore.hasActiveSession()) {
-            try {
-                await sessionStore.endSession();
-            } catch (error) {
-                logger.error('[QixScene] Failed to end session:', error);
-            }
-        }
-        this.cleanupHeader();
+	private async goToMenu(): Promise<void> {
+		// End the current session
+		if (sessionStore.hasActiveSession()) {
+			try {
+				await sessionStore.endSession();
+			} catch (error) {
+				logger.error("[QixScene] Failed to end session:", error);
+			}
+		}
+		this.cleanupHeader();
 
-        if (this.shieldButton) {
-            this.shieldButton.remove();
-            this.shieldButton = null;
-        }
+		if (this.shieldButton) {
+			this.shieldButton.remove();
+			this.shieldButton = null;
+		}
 
-        // Clean up virtual D-pad if it exists
-        if (this.virtualDpad) {
-            this.virtualDpad.destroy();
-            this.virtualDpad = null;
-        }
+		// Clean up virtual D-pad if it exists
+		if (this.virtualDpad) {
+			this.virtualDpad.destroy();
+			this.virtualDpad = null;
+		}
 
-        this.scene.start('MenuScene');
-    }
+		this.scene.start("MenuScene");
+	}
 
-    private async handleLogout(): Promise<void> {
-        // End session before logging out
-        if (sessionStore.hasActiveSession()) {
-            try {
-                await sessionStore.endSession();
-            } catch (error) {
-                logger.error('[QixScene] Failed to end session:', error);
-            }
-        }
+	private async handleLogout(): Promise<void> {
+		// End session before logging out
+		if (sessionStore.hasActiveSession()) {
+			try {
+				await sessionStore.endSession();
+			} catch (error) {
+				logger.error("[QixScene] Failed to end session:", error);
+			}
+		}
 
-        // Disconnect WebSocket
-        websocketService.disconnect();
+		// Disconnect WebSocket
+		websocketService.disconnect();
 
-        AuthService.logout();
-        this.cleanupHeader();
+		AuthService.logout();
+		this.cleanupHeader();
 
-        if (this.shieldButton) {
-            this.shieldButton.remove();
-            this.shieldButton = null;
-        }
+		if (this.shieldButton) {
+			this.shieldButton.remove();
+			this.shieldButton = null;
+		}
 
-        // Clean up virtual D-pad if it exists
-        if (this.virtualDpad) {
-            this.virtualDpad.destroy();
-            this.virtualDpad = null;
-        }
-        // Reset the image overlay
-        ImageOverlay.getInstance().reset();
-        ImageOverlay.getInstance().hide();
-        // Reset padding when logging out
-        const gameContainer = document.getElementById('content');
-        if (gameContainer) {
-            gameContainer.style.paddingTop = '0';
-        }
-        this.scene.start('LoginScene');
-    }
+		// Clean up virtual D-pad if it exists
+		if (this.virtualDpad) {
+			this.virtualDpad.destroy();
+			this.virtualDpad = null;
+		}
+		// Reset the image overlay
+		ImageOverlay.getInstance().reset();
+		ImageOverlay.getInstance().hide();
+		// Reset padding when logging out
+		const gameContainer = document.getElementById("content");
+		if (gameContainer) {
+			gameContainer.style.paddingTop = "0";
+		}
+		this.scene.start("LoginScene");
+	}
 
-    private cleanupHeader(): void {
-        if (this.headerContainer && this.headerContainer.parentNode) {
-            this.headerContainer.parentNode.removeChild(this.headerContainer);
-            this.headerContainer = null;
-        }
-    }
+	private cleanupHeader(): void {
+		if (this.headerContainer?.parentNode) {
+			this.headerContainer.parentNode.removeChild(this.headerContainer);
+			this.headerContainer = null;
+		}
+	}
 
-    shutdown(): void {
-        this.cleanupHeader();
-        
-        if (this.shieldButton) {
-            this.shieldButton.remove();
-            this.shieldButton = null;
-        }
+	shutdown(): void {
+		this.cleanupHeader();
 
-        this.powerUps.forEach(p => p.destroy());
-        this.powerUps = [];
+		if (this.shieldButton) {
+			this.shieldButton.remove();
+			this.shieldButton = null;
+		}
 
-        // Clean up virtual D-pad if it exists
-        if (this.virtualDpad) {
-            this.virtualDpad.destroy();
-            this.virtualDpad = null;
-        }
+		this.powerUps.forEach((p) => {
+			p.destroy();
+		});
+		this.powerUps = [];
 
-        // Reset the image overlay when leaving the scene
-        ImageOverlay.getInstance().reset();
-        ImageOverlay.getInstance().hide();
+		// Clean up virtual D-pad if it exists
+		if (this.virtualDpad) {
+			this.virtualDpad.destroy();
+			this.virtualDpad = null;
+		}
 
-        // Reset padding when leaving game scene
-        const gameContainer = document.getElementById('content');
-        if (gameContainer) {
-            gameContainer.style.paddingTop = '0';
-        }
-    }
+		// Reset the image overlay when leaving the scene
+		ImageOverlay.getInstance().reset();
+		ImageOverlay.getInstance().hide();
 
-    private async activateShield() {
-        if (this.isShieldActive) return;
-        
-        const user = AuthService.getUser();
-        if (!user || !user.shields || user.shields <= 0) {
-            this.showToast("No shields available!", 'error');
-            return;
-        }
+		// Reset padding when leaving game scene
+		const gameContainer = document.getElementById("content");
+		if (gameContainer) {
+			gameContainer.style.paddingTop = "0";
+		}
+	}
 
-        try {
-            const result = await AuthService.consumeShield();
-            if (result.success) {
-                this.isShieldActive = true;
-                this.showToast("Shield Activated! (6s)", 'success');
-                
-                // Update header immediately
-                const updatedUser = AuthService.getUser();
-                if (updatedUser) {
-                    this.updateHeaderUserInfo(updatedUser);
-                }
+	private async activateShield() {
+		if (this.isShieldActive) return;
 
-                // Update shield button if exists
-                if (this.shieldButton) {
-                    if (updatedUser && updatedUser.shields > 0) {
-                        const badge = this.shieldButton.querySelector('#shield-badge');
-                        if (badge) badge.textContent = updatedUser.shields.toString();
-                    } else {
-                        this.shieldButton.remove();
-                        this.shieldButton = null;
-                    }
-                }
+		const user = AuthService.getUser();
+		if (!user || !user.shields || user.shields <= 0) {
+			this.showToast("No shields available!", "error");
+			return;
+		}
 
-                // Ensure graphics exists and is visible
-                if (!this.shieldGraphics) {
-                    this.shieldGraphics = this.add.graphics();
-                    this.shieldGraphics.setDepth(1001);
-                }
-                this.shieldGraphics.clear();
-                
-                // Timer to deactivate
-                this.shieldTimer = this.time.delayedCall(6000, () => {
-                    this.isShieldActive = false;
-                    if (this.shieldGraphics) {
-                        this.shieldGraphics.clear();
-                    }
-                    this.showToast("Shield Deactivated", 'warning');
-                }, [], this);
-            }
-        } catch (error) {
-            console.error("Shield activation failed", error);
-            this.showToast("Failed to activate shield", 'error');
-        }
-    }
+		try {
+			const result = await AuthService.consumeShield();
+			if (result.success) {
+				this.isShieldActive = true;
+				this.showToast("Shield Activated! (6s)", "success");
 
-    private createShieldButton() {
-        const user = AuthService.getUser();
-        if (!user || !user.shields || user.shields <= 0) return;
+				// Update header immediately
+				const updatedUser = AuthService.getUser();
+				if (updatedUser) {
+					this.updateHeaderUserInfo(updatedUser);
+				}
 
-        if (this.shieldButton) {
-            this.shieldButton.remove();
-        }
+				// Update shield button if exists
+				if (this.shieldButton) {
+					if (updatedUser && updatedUser.shields > 0) {
+						const badge = this.shieldButton.querySelector("#shield-badge");
+						if (badge) badge.textContent = updatedUser.shields.toString();
+					} else {
+						this.shieldButton.remove();
+						this.shieldButton = null;
+					}
+				}
 
-        this.shieldButton = document.createElement('button');
-        this.shieldButton.id = 'shield-btn';
-        this.shieldButton.innerHTML = '🛡️';
-        this.shieldButton.style.cssText = `
+				// Ensure graphics exists and is visible
+				if (!this.shieldGraphics) {
+					this.shieldGraphics = this.add.graphics();
+					this.shieldGraphics.setDepth(1001);
+				}
+				this.shieldGraphics.clear();
+
+				// Timer to deactivate
+				this.shieldTimer = this.time.delayedCall(
+					6000,
+					() => {
+						this.isShieldActive = false;
+						if (this.shieldGraphics) {
+							this.shieldGraphics.clear();
+						}
+						this.showToast("Shield Deactivated", "warning");
+					},
+					[],
+					this,
+				);
+			}
+		} catch (error) {
+			console.error("Shield activation failed", error);
+			this.showToast("Failed to activate shield", "error");
+		}
+	}
+
+	private createShieldButton() {
+		const user = AuthService.getUser();
+		if (!user || !user.shields || user.shields <= 0) return;
+
+		if (this.shieldButton) {
+			this.shieldButton.remove();
+		}
+
+		this.shieldButton = document.createElement("button");
+		this.shieldButton.id = "shield-btn";
+		this.shieldButton.innerHTML = "🛡️";
+		this.shieldButton.style.cssText = `
             position: fixed;
             bottom: 60px;
             right: 40px;
@@ -1182,11 +1238,11 @@ class QixScene extends Phaser.Scene {
             -webkit-tap-highlight-color: transparent;
         `;
 
-        // Add count badge
-        const badge = document.createElement('div');
-        badge.id = 'shield-badge';
-        badge.textContent = user.shields.toString();
-        badge.style.cssText = `
+		// Add count badge
+		const badge = document.createElement("div");
+		badge.id = "shield-badge";
+		badge.textContent = user.shields.toString();
+		badge.style.cssText = `
             position: absolute;
             top: -5px;
             right: -5px;
@@ -1201,287 +1257,311 @@ class QixScene extends Phaser.Scene {
             align-items: center;
             border: 1px solid white;
         `;
-        this.shieldButton.appendChild(badge);
+		this.shieldButton.appendChild(badge);
 
-        this.shieldButton.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            this.activateShield();
-        });
-        
-        // Also add click for testing on desktop with mobile emulation
-        this.shieldButton.addEventListener('click', (e) => {
-            e.preventDefault();
-            this.activateShield();
-        });
+		this.shieldButton.addEventListener("touchstart", (e) => {
+			e.preventDefault();
+			this.activateShield();
+		});
 
-        document.body.appendChild(this.shieldButton);
-    }
+		// Also add click for testing on desktop with mobile emulation
+		this.shieldButton.addEventListener("click", (e) => {
+			e.preventDefault();
+			this.activateShield();
+		});
 
-    update(time: number, delta: number) {
-        // Guard against uninitialized state
-        if (!this.pauseControl || !this.grid || !this.player) {
-            return;
-        }
+		document.body.appendChild(this.shieldButton);
+	}
 
-        if (this.pauseControl.isPaused(time)) {
-            return;
-        }
+	update(time: number, _delta: number) {
+		// Guard against uninitialized state
+		if (!this.pauseControl || !this.grid || !this.player) {
+			return;
+		}
 
-        // Shield Input
-        if (Phaser.Input.Keyboard.JustDown(this.shieldKey)) {
-            this.activateShield();
-        }
+		if (this.pauseControl.isPaused(time)) {
+			return;
+		}
 
-        // Update Shield Graphics
-        if (this.isShieldActive && this.shieldGraphics && this.player) {
-             this.shieldGraphics.clear();
-             // Cyan glow with fill for better visibility
-             this.shieldGraphics.lineStyle(4, 0x00FFFF, 0.8);
-             this.shieldGraphics.fillStyle(0x00FFFF, 0.3);
-             
-             // Dynamic radius calculation
-             const isMobile = window.innerWidth < 768;
-             const baseRadius = customConfig.playerRadius;
-             // Player effective radius is larger on mobile (approx 2x or min 10)
-             const playerEffectiveRadius = isMobile ? Math.max(baseRadius * 2, 10) : baseRadius;
-             const shieldRadius = playerEffectiveRadius + 15;
-             
-             this.shieldGraphics.fillCircle(this.player.x(), this.player.y(), shieldRadius);
-             this.shieldGraphics.strokeCircle(this.player.x(), this.player.y(), shieldRadius);
-        }
+		// Shield Input
+		if (Phaser.Input.Keyboard.JustDown(this.shieldKey)) {
+			this.activateShield();
+		}
 
-        // Combine keyboard and virtual D-pad inputs
-        const activeCursors = this.virtualDpad
-            ? InputManager.combine(this.cursors, this.virtualDpad.getCursors())
-            : this.cursors;
+		// Update Shield Graphics
+		if (this.isShieldActive && this.shieldGraphics && this.player) {
+			this.shieldGraphics.clear();
+			// Cyan glow with fill for better visibility
+			this.shieldGraphics.lineStyle(4, 0x00ffff, 0.8);
+			this.shieldGraphics.fillStyle(0x00ffff, 0.3);
 
-        const validPosition = this.grid.getValidMove(this.player, activeCursors);
-        if (!validPosition) {
-            return;
-        }
+			// Dynamic radius calculation
+			const isMobile = window.innerWidth < 768;
+			const baseRadius = customConfig.playerRadius;
+			// Player effective radius is larger on mobile (approx 2x or min 10)
+			const playerEffectiveRadius = isMobile
+				? Math.max(baseRadius * 2, 10)
+				: baseRadius;
+			const shieldRadius = playerEffectiveRadius + 15;
 
-        this.player.moveTo(validPosition);
-        this.sparkies.update();
-        this.qixes.update();
-        this.grid.update(this.player);
-        this.info.updateGameText();
+			this.shieldGraphics.fillCircle(
+				this.player.x(),
+				this.player.y(),
+				shieldRadius,
+			);
+			this.shieldGraphics.strokeCircle(
+				this.player.x(),
+				this.player.y(),
+				shieldRadius,
+			);
+		}
 
-        if (this.checkForWin()) {
-            this.passLevel(time);
-        }
+		// Combine keyboard and virtual D-pad inputs
+		const activeCursors = this.virtualDpad
+			? InputManager.combine(this.cursors, this.virtualDpad.getCursors())
+			: this.cursors;
 
-        if (this.checkForLoss()) {
-            this.loseLife(time);
-        }
+		const validPosition = this.grid.getValidMove(this.player, activeCursors);
+		if (!validPosition) {
+			return;
+		}
 
-        // Power-up logic
-        if (time > this.lastPowerUpSpawnTime + this.POWERUP_SPAWN_INTERVAL) {
-            this.spawnPowerUp();
-            this.lastPowerUpSpawnTime = time;
-        }
+		this.player.moveTo(validPosition);
+		this.sparkies.update();
+		this.qixes.update();
+		this.grid.update(this.player);
+		this.info.updateGameText();
 
-        // Check power-up collisions
-        this.checkPowerUpCollisions();
-    }
+		if (this.checkForWin()) {
+			this.passLevel(time);
+		}
 
-    private spawnPowerUp() {
-        // Max 1 power-up at a time
-        if (this.powerUps.length > 0) return;
+		if (this.checkForLoss()) {
+			this.loseLife(time);
+		}
 
-        // Try to find a valid spawn position (not in filled area)
-        // We'll try 10 times then give up for this frame
-        for (let i = 0; i < 10; i++) {
-            const margin = customConfig.margin;
-            const width = config.width as number - (2 * margin);
-            const height = customConfig.frameHeight;
-            
-            const x = margin + Math.random() * width;
-            const y = margin + Math.random() * height;
+		// Power-up logic
+		if (time > this.lastPowerUpSpawnTime + this.POWERUP_SPAWN_INTERVAL) {
+			this.spawnPowerUp();
+			this.lastPowerUpSpawnTime = time;
+		}
 
-            // Check if point is inside any filled polygon
-            const point = ExtPoint.createWithCoordinates(x, y);
-            if (this.grid.filledPolygons.pointWithinPolygon(point)) {
-                continue; // Try again
-            }
-            
-            // Create power-up
-            const powerUp = new PowerUp(this, x, y);
-            this.powerUps.push(powerUp);
-            break;
-        }
-    }
+		// Check power-up collisions
+		this.checkPowerUpCollisions();
+	}
 
-    private checkPowerUpCollisions() {
-        const playerRadius = customConfig.playerRadius * 2; // Use a slightly larger radius for collection
-        
-        for (let i = this.powerUps.length - 1; i >= 0; i--) {
-            const powerUp = this.powerUps[i];
-            
-            if (!powerUp.isActive) {
-                this.powerUps.splice(i, 1);
-                continue;
-            }
+	private spawnPowerUp() {
+		// Max 1 power-up at a time
+		if (this.powerUps.length > 0) return;
 
-            const distance = Phaser.Math.Distance.Between(
-                this.player.x(), this.player.y(),
-                powerUp.x, powerUp.y
-            );
+		// Try to find a valid spawn position (not in filled area)
+		// We'll try 10 times then give up for this frame
+		for (let i = 0; i < 10; i++) {
+			const margin = customConfig.margin;
+			const width = (config.width as number) - 2 * margin;
+			const height = customConfig.frameHeight;
 
-            if (distance < playerRadius + 15) { // 15 is approx powerup radius
-                // Collected by player!
-                powerUp.collect();
-                this.powerUps.splice(i, 1);
-                
-                // Activate speed boost
-                this.player.activateSpeedBoost(this, 20000);
-                
-                // Show feedback
-                this.showToast(I18nService.t('game.speedUp'), 'success');
-                audioService.playSFX('levelComplete'); // Reuse sound or add new one
-            } else {
-                // Check if covered by filled area
-                const powerUpPoint = ExtPoint.createWithCoordinates(powerUp.x, powerUp.y);
-                if (this.grid.filledPolygons.pointWithinPolygon(powerUpPoint)) {
-                    // Covered by area - remove and force respawn
-                    powerUp.collect();
-                    this.powerUps.splice(i, 1);
-                    this.lastPowerUpSpawnTime = 0; // Trigger immediate respawn
-                }
-            }
-        }
-    }
+			const x = margin + Math.random() * width;
+			const y = margin + Math.random() * height;
 
-    checkForLoss(): boolean {
-        if (this.isShieldActive) return false;
-        return this.sparkies.checkForCollisionWithPlayer() || this.qixes.checkForCollisionWithCurrentLines();
-    }
+			// Check if point is inside any filled polygon
+			const point = ExtPoint.createWithCoordinates(x, y);
+			if (this.grid.filledPolygons.pointWithinPolygon(point)) {
+				continue; // Try again
+			}
 
-    loseLife(time: number) {
-        this.pauseControl.pauseForWin(time);
-        this.cameras.main.shake(300, .005);
-        this.pauseControl.pauseForWin(time);
-        this.cameras.main.shake(300, .005);
+			// Create power-up
+			const powerUp = new PowerUp(this, x, y);
+			this.powerUps.push(powerUp);
+			break;
+		}
+	}
 
-        // Play death sound
-        audioService.playSFX('death');
+	private checkPowerUpCollisions() {
+		const playerRadius = customConfig.playerRadius * 2; // Use a slightly larger radius for collection
 
-        // Record death for score tracking
-        sessionStore.recordDeath();
+		for (let i = this.powerUps.length - 1; i >= 0; i--) {
+			const powerUp = this.powerUps[i];
 
-        // Hide overlay so text is visible
-        ImageOverlay.getInstance().hide();
-        let winText = this.createWinText(I18nService.t('game.ouch'), "#000000");
+			if (!powerUp.isActive) {
+				this.powerUps.splice(i, 1);
+				continue;
+			}
 
-        const _this = this;
-        setTimeout(function () {
-            winText.destroy();
-            // Restart same level with game data preserved
-            _this.scene.restart({
-                gameId: _this.gameId,
-                customGame: _this.customGame,
-                levelIndex: _this.currentLevelIndex
-            });
-        }, customConfig.levelWinPauseMs / 2);
-    }
+			const distance = Phaser.Math.Distance.Between(
+				this.player.x(),
+				this.player.y(),
+				powerUp.x,
+				powerUp.y,
+			);
 
-    checkForWin(): boolean {
-        return (this.grid.filledPolygons.percentArea() >= this.levels.coverageTarget);
-    }
+			if (distance < playerRadius + 15) {
+				// 15 is approx powerup radius
+				// Collected by player!
+				powerUp.collect();
+				this.powerUps.splice(i, 1);
 
-    private getTextOptions() {
-        const screenWidth = window.innerWidth;
-        const isMobile = screenWidth <= 480;
-        const isTablet = screenWidth <= 768 && screenWidth > 480;
-        const fontSize = isMobile ? '18px' : isTablet ? '24px' : '30px';
-        const padding = isMobile ? { x: 6, y: 6 } : { x: 10, y: 10 };
+				// Activate speed boost
+				this.player.activateSpeedBoost(this, 20000);
 
-        return {
-            fontFamily: 'Courier',
-            fontSize,
-            color: '#FFFF00',
-            align: 'center',
-            radiusX: '10px',
-            radiusY: '10px',
-            padding
-        };
-    }
+				// Show feedback
+				this.showToast(I18nService.t("game.speedUp"), "success");
+				audioService.playSFX("levelComplete"); // Reuse sound or add new one
+			} else {
+				// Check if covered by filled area
+				const powerUpPoint = ExtPoint.createWithCoordinates(
+					powerUp.x,
+					powerUp.y,
+				);
+				if (this.grid.filledPolygons.pointWithinPolygon(powerUpPoint)) {
+					// Covered by area - remove and force respawn
+					powerUp.collect();
+					this.powerUps.splice(i, 1);
+					this.lastPowerUpSpawnTime = 0; // Trigger immediate respawn
+				}
+			}
+		}
+	}
 
-    passLevel(time: number) {
-        this.pauseControl.pauseForWin(time);
-        this.cameras.main.shake(300, .005);
+	checkForLoss(): boolean {
+		if (this.isShieldActive) return false;
+		return (
+			this.sparkies.checkForCollisionWithPlayer() ||
+			this.qixes.checkForCollisionWithCurrentLines()
+		);
+	}
 
-        // Play level complete sound
-        audioService.playSFX('levelComplete');
+	loseLife(time: number) {
+		this.pauseControl.pauseForWin(time);
+		this.cameras.main.shake(300, 0.005);
+		this.pauseControl.pauseForWin(time);
+		this.cameras.main.shake(300, 0.005);
 
-        // Update territory percentage for score calculation
-        const territoryPercentage = this.grid.filledPolygons.percentArea();
-        sessionStore.updateTerritory(territoryPercentage);
+		// Play death sound
+		audioService.playSFX("death");
 
-        // First, reveal the full image so player can see it
-        ImageOverlay.getInstance().revealFullImage();
-        let winText = this.createWinText(I18nService.t('game.levelComplete', this.levels.currentLevel), "#000000");
+		// Record death for score tracking
+		sessionStore.recordDeath();
 
-        const _this = this;
+		// Hide overlay so text is visible
+		ImageOverlay.getInstance().hide();
+		const winText = this.createWinText(I18nService.t("game.ouch"), "#000000");
+		setTimeout(() => {
+			winText.destroy();
+			// Restart same level with game data preserved
+			this.scene.restart({
+				gameId: this.gameId,
+				customGame: this.customGame,
+				levelIndex: this.currentLevelIndex,
+			});
+		}, customConfig.levelWinPauseMs / 2);
+	}
 
-        // Check if this is the last level in a custom game
-        const isLastCustomLevel = this.customGame &&
-            (this.currentLevelIndex >= this.customGame.levels.length - 1);
+	checkForWin(): boolean {
+		return this.grid.filledPolygons.percentArea() >= this.levels.coverageTarget;
+	}
 
-        // Show full image for a moment, then show quiz
-        setTimeout(function () {
-            winText.destroy();
+	private getTextOptions() {
+		const screenWidth = window.innerWidth;
+		const isMobile = screenWidth <= 480;
+		const isTablet = screenWidth <= 768 && screenWidth > 480;
+		const fontSize = isMobile ? "18px" : isTablet ? "24px" : "30px";
+		const padding = isMobile ? { x: 6, y: 6 } : { x: 10, y: 10 };
 
-            // Show the quiz dialog
-            _this.showQuizDialog(isLastCustomLevel);
-        }, customConfig.levelWinPauseMs);
-    }
+		return {
+			fontFamily: "Courier",
+			fontSize,
+			color: "#FFFF00",
+			align: "center",
+			radiusX: "10px",
+			radiusY: "10px",
+			padding,
+		};
+	}
 
-    private async showQuizDialog(isLastLevel: boolean) {
-        // Get current Pokemon info
-        const currentPokemon = this.customGame ?
-            this.customGame.levels[this.currentLevelIndex] :
-            (this.endlessModePokemon ? {
-                pokemonName: this.endlessModePokemon.name,
-                pokemonSprite: this.endlessModePokemon.spriteUrl,
-                pokemonNameJP: this.endlessModePokemon.name_jp
-            } : { pokemonName: 'Mystery Pokemon', pokemonSprite: ImageOverlay.getInstance().getCurrentImageUrl() });
+	passLevel(time: number) {
+		this.pauseControl.pauseForWin(time);
+		this.cameras.main.shake(300, 0.005);
 
-        logger.log('[QixScene] Generating Quiz for:', {
-            gameMode: this.customGame ? 'Custom' : 'Endless',
-            pokemonName: currentPokemon.pokemonName,
-            pokemonNameJP: (currentPokemon as any).pokemonNameJP,
-            spriteUrl: currentPokemon.pokemonSprite
-        });
+		// Play level complete sound
+		audioService.playSFX("levelComplete");
 
-        try {
-            // Generate quiz question
-            const allPokemonNames = this.customGame ?
-                this.customGame.levels.map(l => l.pokemonName) :
-                [];
+		// Update territory percentage for score calculation
+		const territoryPercentage = this.grid.filledPolygons.percentArea();
+		sessionStore.updateTerritory(territoryPercentage);
 
-            const quiz = await QuizService.generateQuiz(
-                currentPokemon.pokemonName,
-                currentPokemon.pokemonSprite,
-                allPokemonNames,
-                (currentPokemon as any).pokemonNameJP
-            );
+		// First, reveal the full image so player can see it
+		ImageOverlay.getInstance().revealFullImage();
+		const winText = this.createWinText(
+			I18nService.t("game.levelComplete", this.levels.currentLevel),
+			"#000000",
+		);
 
-            // Create quiz UI
-            this.createQuizUI(quiz, isLastLevel);
-        } catch (error) {
-            logger.error('Failed to generate quiz:', error);
-            // If quiz fails, just proceed to next level
-            this.proceedToNextLevel(isLastLevel);
-        }
-    }
+		// Check if this is the last level in a custom game
+		const isLastCustomLevel =
+			this.customGame &&
+			this.currentLevelIndex >= this.customGame.levels.length - 1;
 
-    private createQuizUI(quiz: QuizQuestion, isLastLevel: boolean) {
-        const isMobile = window.innerWidth <= 480;
+		// Show full image for a moment, then show quiz
+		setTimeout(() => {
+			winText.destroy();
 
-        // Create DOM container for quiz
-        const quizContainer = document.createElement('div');
-        quizContainer.id = 'quiz-container';
-        quizContainer.style.cssText = `
+			// Show the quiz dialog
+			this.showQuizDialog(isLastCustomLevel);
+		}, customConfig.levelWinPauseMs);
+	}
+
+	private async showQuizDialog(isLastLevel: boolean) {
+		// Get current Pokemon info
+		const currentPokemon = this.customGame
+			? this.customGame.levels[this.currentLevelIndex]
+			: this.endlessModePokemon
+				? {
+						pokemonName: this.endlessModePokemon.name,
+						pokemonSprite: this.endlessModePokemon.spriteUrl,
+						pokemonNameJP: this.endlessModePokemon.name_jp,
+					}
+				: {
+						pokemonName: "Mystery Pokemon",
+						pokemonSprite: ImageOverlay.getInstance().getCurrentImageUrl(),
+					};
+
+		logger.log("[QixScene] Generating Quiz for:", {
+			gameMode: this.customGame ? "Custom" : "Endless",
+			pokemonName: currentPokemon.pokemonName,
+			pokemonNameJP: (currentPokemon as any).pokemonNameJP,
+			spriteUrl: currentPokemon.pokemonSprite,
+		});
+
+		try {
+			// Generate quiz question
+			const allPokemonNames = this.customGame
+				? this.customGame.levels.map((l) => l.pokemonName)
+				: [];
+
+			const quiz = await QuizService.generateQuiz(
+				currentPokemon.pokemonName,
+				currentPokemon.pokemonSprite,
+				allPokemonNames,
+				(currentPokemon as any).pokemonNameJP,
+			);
+
+			// Create quiz UI
+			this.createQuizUI(quiz, isLastLevel);
+		} catch (error) {
+			logger.error("Failed to generate quiz:", error);
+			// If quiz fails, just proceed to next level
+			this.proceedToNextLevel(isLastLevel);
+		}
+	}
+
+	private createQuizUI(quiz: QuizQuestion, isLastLevel: boolean) {
+		const isMobile = window.innerWidth <= 480;
+
+		// Create DOM container for quiz
+		const quizContainer = document.createElement("div");
+		quizContainer.id = "quiz-container";
+		quizContainer.style.cssText = `
             position: fixed;
             top: 0;
             left: 0;
@@ -1494,121 +1574,132 @@ class QixScene extends Phaser.Scene {
             z-index: 2000;
         `;
 
-        const quizBox = document.createElement('div');
-        quizBox.className = 'nes-container is-dark with-title';
-        quizBox.style.cssText = `
+		const quizBox = document.createElement("div");
+		quizBox.className = "nes-container is-dark with-title";
+		quizBox.style.cssText = `
             max-width: 600px;
             width: 90%;
             max-height: 90vh;
             overflow-y: auto;
-            padding: ${isMobile ? '15px' : '30px'};
+            padding: ${isMobile ? "15px" : "30px"};
         `;
 
-        const title = document.createElement('p');
-        title.className = 'title';
-        title.textContent = I18nService.t('game.quizTime');
-        title.style.cssText = `color: #92cc41; font-size: ${isMobile ? '14px' : '16px'}; text-align: center;`;
-        quizBox.appendChild(title);
+		const title = document.createElement("p");
+		title.className = "title";
+		title.textContent = I18nService.t("game.quizTime");
+		title.style.cssText = `color: #92cc41; font-size: ${isMobile ? "14px" : "16px"}; text-align: center;`;
+		quizBox.appendChild(title);
 
-        // Show Pokemon image
-        const pokemonImg = document.createElement('img');
-        pokemonImg.src = quiz.spriteUrl;
-        pokemonImg.style.cssText = `
+		// Show Pokemon image
+		const pokemonImg = document.createElement("img");
+		pokemonImg.src = quiz.spriteUrl;
+		pokemonImg.style.cssText = `
             display: block;
-            margin: ${isMobile ? '10px' : '20px'} auto;
-            width: ${isMobile ? '100px' : '150px'};
-            height: ${isMobile ? '100px' : '150px'};
+            margin: ${isMobile ? "10px" : "20px"} auto;
+            width: ${isMobile ? "100px" : "150px"};
+            height: ${isMobile ? "100px" : "150px"};
             image-rendering: pixelated;
         `;
-        quizBox.appendChild(pokemonImg);
+		quizBox.appendChild(pokemonImg);
 
-        // Question
-        const question = document.createElement('p');
-        question.textContent = quiz.question;
-        question.style.cssText = `font-size: ${isMobile ? '14px' : '16px'}; text-align: center; margin: ${isMobile ? '10px' : '20px'} 0; color: #fff;`;
-        quizBox.appendChild(question);
+		// Question
+		const question = document.createElement("p");
+		question.textContent = quiz.question;
+		question.style.cssText = `font-size: ${isMobile ? "14px" : "16px"}; text-align: center; margin: ${isMobile ? "10px" : "20px"} 0; color: #fff;`;
+		quizBox.appendChild(question);
 
-        // Choices
-        const choicesContainer = document.createElement('div');
-        choicesContainer.style.cssText = `display: flex; flex-direction: column; gap: ${isMobile ? '10px' : '15px'}; margin: ${isMobile ? '10px' : '20px'} 0;`;
+		// Choices
+		const choicesContainer = document.createElement("div");
+		choicesContainer.style.cssText = `display: flex; flex-direction: column; gap: ${isMobile ? "10px" : "15px"}; margin: ${isMobile ? "10px" : "20px"} 0;`;
 
-        quiz.choices.forEach((choice, index) => {
-            const btn = document.createElement('button');
-            btn.type = 'button';
-            btn.className = 'nes-btn';
-            btn.textContent = choice.toUpperCase();
-            btn.style.cssText = `width: 100%; font-size: ${isMobile ? '12px' : '14px'}; text-transform: capitalize;`;
+		quiz.choices.forEach((choice, _index) => {
+			const btn = document.createElement("button");
+			btn.type = "button";
+			btn.className = "nes-btn";
+			btn.textContent = choice.toUpperCase();
+			btn.style.cssText = `width: 100%; font-size: ${isMobile ? "12px" : "14px"}; text-transform: capitalize;`;
 
-            btn.addEventListener('click', () => {
-                this.handleQuizAnswer(choice, quiz.correctAnswer, isLastLevel, quizContainer);
-            });
+			btn.addEventListener("click", () => {
+				this.handleQuizAnswer(
+					choice,
+					quiz.correctAnswer,
+					isLastLevel,
+					quizContainer,
+				);
+			});
 
-            choicesContainer.appendChild(btn);
-        });
+			choicesContainer.appendChild(btn);
+		});
 
-        quizBox.appendChild(choicesContainer);
-        quizContainer.appendChild(quizBox);
-        document.body.appendChild(quizContainer);
-    }
+		quizBox.appendChild(choicesContainer);
+		quizContainer.appendChild(quizBox);
+		document.body.appendChild(quizContainer);
+	}
 
-    private handleQuizAnswer(selectedAnswer: string, correctAnswer: string, isLastLevel: boolean, quizContainer: HTMLDivElement) {
-        logger.log('[QixScene] Quiz answer check:', {
-            selectedAnswer,
-            correctAnswer,
-            selectedLower: selectedAnswer.toLowerCase(),
-            correctLower: correctAnswer.toLowerCase()
-        });
-        const isCorrect = selectedAnswer.toLowerCase() === correctAnswer.toLowerCase();
-        logger.log('[QixScene] Is correct:', isCorrect);
+	private handleQuizAnswer(
+		selectedAnswer: string,
+		correctAnswer: string,
+		isLastLevel: boolean,
+		quizContainer: HTMLDivElement,
+	) {
+		logger.log("[QixScene] Quiz answer check:", {
+			selectedAnswer,
+			correctAnswer,
+			selectedLower: selectedAnswer.toLowerCase(),
+			correctLower: correctAnswer.toLowerCase(),
+		});
+		const isCorrect =
+			selectedAnswer.toLowerCase() === correctAnswer.toLowerCase();
+		logger.log("[QixScene] Is correct:", isCorrect);
 
-        // Play quiz result sound
-        audioService.playSFX(isCorrect ? 'quizCorrect' : 'quizWrong');
+		// Play quiz result sound
+		audioService.playSFX(isCorrect ? "quizCorrect" : "quizWrong");
 
-        // Record quiz attempt
-        sessionStore.recordQuizAttempt();
+		// Record quiz attempt
+		sessionStore.recordQuizAttempt();
 
-        // Show feedback using toast instead of blocking overlay
-        if (isCorrect) {
-            this.showToast(I18nService.t('game.quizCorrect'), 'success');
-            
-            // Wait a moment before proceeding
-            setTimeout(() => {
-                // Remove quiz and proceed
-                quizContainer.remove();
-                // Submit score for completed level
-                this.submitLevelScore(isLastLevel);
-            }, 1500);
-        } else {
-            this.showToast(I18nService.t('game.quizWrong'), 'error');
-            // No delay needed for wrong answer, let player try again immediately
-        }
-    }
+		// Show feedback using toast instead of blocking overlay
+		if (isCorrect) {
+			this.showToast(I18nService.t("game.quizCorrect"), "success");
 
-    private async submitLevelScore(isLastLevel: boolean) {
-        logger.log('[QixScene] submitLevelScore called, isLastLevel:', isLastLevel);
-        try {
-            logger.log('[QixScene] Calling sessionStore.completeLevel()...');
-            const result = await sessionStore.completeLevel();
-            logger.log('[QixScene] completeLevel result:', result);
-            if (result) {
-                logger.log('[QixScene] Score submitted:', result.breakdown.totalScore);
-                // Show score breakdown toast
-                this.showScoreToast(result);
-            } else {
-                logger.warn('[QixScene] completeLevel returned null/undefined');
-            }
-        } catch (error) {
-            logger.error('[QixScene] Failed to submit score:', error);
-        }
+			// Wait a moment before proceeding
+			setTimeout(() => {
+				// Remove quiz and proceed
+				quizContainer.remove();
+				// Submit score for completed level
+				this.submitLevelScore(isLastLevel);
+			}, 1500);
+		} else {
+			this.showToast(I18nService.t("game.quizWrong"), "error");
+			// No delay needed for wrong answer, let player try again immediately
+		}
+	}
 
-        // Proceed to next level after score submission
-        this.proceedToNextLevel(isLastLevel);
-    }
+	private async submitLevelScore(isLastLevel: boolean) {
+		logger.log("[QixScene] submitLevelScore called, isLastLevel:", isLastLevel);
+		try {
+			logger.log("[QixScene] Calling sessionStore.completeLevel()...");
+			const result = await sessionStore.completeLevel();
+			logger.log("[QixScene] completeLevel result:", result);
+			if (result) {
+				logger.log("[QixScene] Score submitted:", result.breakdown.totalScore);
+				// Show score breakdown toast
+				this.showScoreToast(result);
+			} else {
+				logger.warn("[QixScene] completeLevel returned null/undefined");
+			}
+		} catch (error) {
+			logger.error("[QixScene] Failed to submit score:", error);
+		}
 
-    private showScoreToast(result: ScoreSubmissionResult) {
-        const toast = document.createElement('div');
-        toast.className = 'nes-container is-dark score-toast';
-        toast.style.cssText = `
+		// Proceed to next level after score submission
+		this.proceedToNextLevel(isLastLevel);
+	}
+
+	private showScoreToast(result: ScoreSubmissionResult) {
+		const toast = document.createElement("div");
+		toast.className = "nes-container is-dark score-toast";
+		toast.style.cssText = `
             position: fixed;
             top: 60px;
             right: 20px;
@@ -1619,11 +1710,11 @@ class QixScene extends Phaser.Scene {
             max-width: 280px;
         `;
 
-        // Add responsive styles
-        const responsiveStyle = document.createElement('style');
-        responsiveStyle.id = 'score-toast-responsive';
-        if (!document.getElementById('score-toast-responsive')) {
-            responsiveStyle.textContent = `
+		// Add responsive styles
+		const responsiveStyle = document.createElement("style");
+		responsiveStyle.id = "score-toast-responsive";
+		if (!document.getElementById("score-toast-responsive")) {
+			responsiveStyle.textContent = `
                 @media (max-width: 480px) {
                     .score-toast {
                         top: 50px !important;
@@ -1635,46 +1726,46 @@ class QixScene extends Phaser.Scene {
                     }
                 }
             `;
-            document.head.appendChild(responsiveStyle);
-        }
+			document.head.appendChild(responsiveStyle);
+		}
 
-        const { breakdown, rankings, achievements, pokemon } = result;
-        let achievementsHtml = '';
-        if (achievements.unlocked.length > 0) {
-            achievementsHtml = `
+		const { breakdown, rankings, achievements, pokemon } = result;
+		let achievementsHtml = "";
+		if (achievements.unlocked.length > 0) {
+			achievementsHtml = `
                 <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #444;">
                     <div style="color: #ffd700;">Achievement Unlocked!</div>
-                    ${achievements.unlocked.map(a => `<div>${a.icon} ${a.name}</div>`).join('')}
+                    ${achievements.unlocked.map((a) => `<div>${a.icon} ${a.name}</div>`).join("")}
                 </div>
             `;
-        }
+		}
 
-        let rankChangeHtml = '';
-        if (rankings.rankChange !== 0) {
-            const direction = rankings.rankChange > 0 ? '↑' : '↓';
-            const color = rankings.rankChange > 0 ? '#92cc41' : '#e76e55';
-            rankChangeHtml = `<span style="color: ${color};">${direction}${Math.abs(rankings.rankChange)}</span>`;
-        }
+		let rankChangeHtml = "";
+		if (rankings.rankChange !== 0) {
+			const direction = rankings.rankChange > 0 ? "↑" : "↓";
+			const color = rankings.rankChange > 0 ? "#92cc41" : "#e76e55";
+			rankChangeHtml = `<span style="color: ${color};">${direction}${Math.abs(rankings.rankChange)}</span>`;
+		}
 
-        toast.innerHTML = `
+		toast.innerHTML = `
             <div style="color: #92cc41; font-size: 14px; margin-bottom: 8px;">
                 +${breakdown.totalScore.toLocaleString()} pts
             </div>
             <div style="color: #888; font-size: 9px;">
                 Territory: ${breakdown.territoryScore} | Time: +${breakdown.timeBonus} | Lives: +${breakdown.lifeBonus}
             </div>
-            ${breakdown.streakBonus > 0 ? `<div style="color: #ffd700;">Streak Bonus: +${breakdown.streakBonus}</div>` : ''}
-            ${rankings.isNewPersonalBest ? '<div style="color: #92cc41;">New Personal Best!</div>' : ''}
+            ${breakdown.streakBonus > 0 ? `<div style="color: #ffd700;">Streak Bonus: +${breakdown.streakBonus}</div>` : ""}
+            ${rankings.isNewPersonalBest ? '<div style="color: #92cc41;">New Personal Best!</div>' : ""}
             <div style="margin-top: 5px;">Rank: #${rankings.globalRank} ${rankChangeHtml}</div>
-            ${pokemon.isNewReveal ? `<div style="color: #ffd700;">New Pokemon: ${pokemon.pokemonName}!</div>` : ''}
+            ${pokemon.isNewReveal ? `<div style="color: #ffd700;">New Pokemon: ${pokemon.pokemonName}!</div>` : ""}
             ${achievementsHtml}
         `;
 
-        document.body.appendChild(toast);
+		document.body.appendChild(toast);
 
-        // Add animation styles
-        const style = document.createElement('style');
-        style.textContent = `
+		// Add animation styles
+		const style = document.createElement("style");
+		style.textContent = `
             @keyframes slideIn {
                 from { transform: translateX(100%); opacity: 0; }
                 to { transform: translateX(0); opacity: 1; }
@@ -1684,217 +1775,253 @@ class QixScene extends Phaser.Scene {
                 to { transform: translateX(100%); opacity: 0; }
             }
         `;
-        document.head.appendChild(style);
+		document.head.appendChild(style);
 
-        // Remove toast after 4 seconds
-        setTimeout(() => {
-            toast.style.animation = 'slideOut 0.3s ease-in forwards';
-            setTimeout(() => {
-                toast.remove();
-                style.remove();
-            }, 300);
-        }, 4000);
-    }
+		// Remove toast after 4 seconds
+		setTimeout(() => {
+			toast.style.animation = "slideOut 0.3s ease-in forwards";
+			setTimeout(() => {
+				toast.remove();
+				style.remove();
+			}, 300);
+		}, 4000);
+	}
 
-    private proceedToNextLevel(isLastLevel: boolean) {
-        // Hide overlay so text is visible
-        ImageOverlay.getInstance().hide();
+	private proceedToNextLevel(isLastLevel: boolean) {
+		// Hide overlay so text is visible
+		ImageOverlay.getInstance().hide();
 
-        if (isLastLevel) {
-            // Game complete! Show congratulations
-            this.showGameComplete();
-        } else {
-            const winText = this.createWinText(I18nService.t('game.sweet', this.levels.currentLevel + 1), "#000000");
+		if (isLastLevel) {
+			// Game complete! Show congratulations
+			this.showGameComplete();
+		} else {
+			const winText = this.createWinText(
+				I18nService.t("game.sweet", this.levels.currentLevel + 1),
+				"#000000",
+			);
 
-            setTimeout(() => {
-                winText.destroy();
-                this.levels.nextLevel();
-                // Pass game data to next level
-                // Note: currentLevelIndex already incremented by nextLevel() -> advanceLevel()
-                this.scene.restart({
-                    gameId: this.gameId,
-                    customGame: this.customGame,
-                    levelIndex: this.currentLevelIndex
-                });
-            }, customConfig.levelWinPauseMs / 2);
-        }
-    }
+			setTimeout(() => {
+				winText.destroy();
+				this.levels.nextLevel();
+				// Pass game data to next level
+				// Note: currentLevelIndex already incremented by nextLevel() -> advanceLevel()
+				this.scene.restart({
+					gameId: this.gameId,
+					customGame: this.customGame,
+					levelIndex: this.currentLevelIndex,
+				});
+			}, customConfig.levelWinPauseMs / 2);
+		}
+	}
 
-    private async showGameComplete(): Promise<void> {
-        // End the session and get final stats
-        let finalScore = sessionStore.getTotalScore();
-        let levelsCompleted = sessionStore.getLevelsCompleted();
+	private async showGameComplete(): Promise<void> {
+		// End the session and get final stats
+		const finalScore = sessionStore.getTotalScore();
+		const levelsCompleted = sessionStore.getLevelsCompleted();
 
-        if (sessionStore.hasActiveSession()) {
-            try {
-                await sessionStore.endSession();
-            } catch (error) {
-                logger.error('[QixScene] Failed to end session:', error);
-            }
-        }
+		if (sessionStore.hasActiveSession()) {
+			try {
+				await sessionStore.endSession();
+			} catch (error) {
+				logger.error("[QixScene] Failed to end session:", error);
+			}
+		}
 
-        // Hide the game overlay
-        ImageOverlay.getInstance().hide();
+		// Hide the game overlay
+		ImageOverlay.getInstance().hide();
 
-        // Determine if mobile for responsive sizing
-        const screenWidth = window.innerWidth;
-        const isMobile = screenWidth <= 480;
-        const isTablet = screenWidth <= 768 && screenWidth > 480;
+		// Determine if mobile for responsive sizing
+		const screenWidth = window.innerWidth;
+		const isMobile = screenWidth <= 480;
+		const isTablet = screenWidth <= 768 && screenWidth > 480;
 
-        // Responsive font sizes
-        const fontSizes = {
-            congrats: isMobile ? '22px' : isTablet ? '28px' : '36px',
-            message: isMobile ? '14px' : isTablet ? '18px' : '24px',
-            levels: isMobile ? '12px' : isTablet ? '16px' : '20px',
-            score: isMobile ? '14px' : isTablet ? '18px' : '22px',
-            button: isMobile ? '12px' : isTablet ? '14px' : '18px'
-        };
+		// Responsive font sizes
+		const fontSizes = {
+			congrats: isMobile ? "22px" : isTablet ? "28px" : "36px",
+			message: isMobile ? "14px" : isTablet ? "18px" : "24px",
+			levels: isMobile ? "12px" : isTablet ? "16px" : "20px",
+			score: isMobile ? "14px" : isTablet ? "18px" : "22px",
+			button: isMobile ? "12px" : isTablet ? "14px" : "18px",
+		};
 
-        // Responsive spacing
-        const spacing = {
-            congratsY: isMobile ? -70 : isTablet ? -85 : -100,
-            messageY: isMobile ? -30 : isTablet ? -35 : -40,
-            levelsY: 0,
-            scoreY: isMobile ? 30 : isTablet ? 35 : 40,
-            buttonY: isMobile ? 65 : isTablet ? 75 : 90
-        };
+		// Responsive spacing
+		const spacing = {
+			congratsY: isMobile ? -70 : isTablet ? -85 : -100,
+			messageY: isMobile ? -30 : isTablet ? -35 : -40,
+			levelsY: 0,
+			scoreY: isMobile ? 30 : isTablet ? 35 : 40,
+			buttonY: isMobile ? 65 : isTablet ? 75 : 90,
+		};
 
-        // Responsive button size
-        const buttonWidth = isMobile ? 150 : isTablet ? 175 : 200;
-        const buttonHeight = isMobile ? 38 : isTablet ? 44 : 50;
+		// Responsive button size
+		const buttonWidth = isMobile ? 150 : isTablet ? 175 : 200;
+		const buttonHeight = isMobile ? 38 : isTablet ? 44 : 50;
 
-        // Create dark overlay
-        const overlay = this.add.graphics();
-        overlay.fillStyle(0x000000, 0.8);
-        overlay.fillRect(0, 0, config.width as number, customConfig.frameHeight as number);
-        overlay.setDepth(999);
+		// Create dark overlay
+		const overlay = this.add.graphics();
+		overlay.fillStyle(0x000000, 0.8);
+		overlay.fillRect(
+			0,
+			0,
+			config.width as number,
+			customConfig.frameHeight as number,
+		);
+		overlay.setDepth(999);
 
-        // Congratulations text
-        const centerX = (config.width as number) / 2;
-        const centerY = (customConfig.frameHeight as number) / 2;
+		// Congratulations text
+		const centerX = (config.width as number) / 2;
+		const centerY = (customConfig.frameHeight as number) / 2;
 
-        const congratsText = this.add.text(centerX, centerY + spacing.congratsY, I18nService.t('game.congrats'), {
-            fontFamily: 'Arial',
-            fontSize: fontSizes.congrats,
-            color: '#FFD700',
-            align: 'center'
-        });
-        congratsText.setOrigin(0.5);
-        congratsText.setDepth(1000);
+		const congratsText = this.add.text(
+			centerX,
+			centerY + spacing.congratsY,
+			I18nService.t("game.congrats"),
+			{
+				fontFamily: "Arial",
+				fontSize: fontSizes.congrats,
+				color: "#FFD700",
+				align: "center",
+			},
+		);
+		congratsText.setOrigin(0.5);
+		congratsText.setDepth(1000);
 
-        const gameName = this.customGame?.name || 'the game';
-        const messageText = this.add.text(centerX, centerY + spacing.messageY, I18nService.t('game.completed', gameName), {
-            fontFamily: 'Arial',
-            fontSize: fontSizes.message,
-            color: '#FFFFFF',
-            align: 'center'
-        });
-        messageText.setOrigin(0.5);
-        messageText.setDepth(1000);
+		const gameName = this.customGame?.name || "the game";
+		const messageText = this.add.text(
+			centerX,
+			centerY + spacing.messageY,
+			I18nService.t("game.completed", gameName),
+			{
+				fontFamily: "Arial",
+				fontSize: fontSizes.message,
+				color: "#FFFFFF",
+				align: "center",
+			},
+		);
+		messageText.setOrigin(0.5);
+		messageText.setDepth(1000);
 
-        const levelsText = this.add.text(centerX, centerY + spacing.levelsY, I18nService.t('game.pokemonRevealed', this.customGame?.levels.length || levelsCompleted), {
-            fontFamily: 'Arial',
-            fontSize: fontSizes.levels,
-            color: '#CCAAFF',
-            align: 'center'
-        });
-        levelsText.setOrigin(0.5);
-        levelsText.setDepth(1000);
+		const levelsText = this.add.text(
+			centerX,
+			centerY + spacing.levelsY,
+			I18nService.t(
+				"game.pokemonRevealed",
+				this.customGame?.levels.length || levelsCompleted,
+			),
+			{
+				fontFamily: "Arial",
+				fontSize: fontSizes.levels,
+				color: "#CCAAFF",
+				align: "center",
+			},
+		);
+		levelsText.setOrigin(0.5);
+		levelsText.setDepth(1000);
 
-        // Show final score
-        const scoreText = this.add.text(centerX, centerY + spacing.scoreY, I18nService.t('game.finalScore', finalScore.toLocaleString()), {
-            fontFamily: 'Arial',
-            fontSize: fontSizes.score,
-            color: '#92cc41',
-            align: 'center'
-        });
-        scoreText.setOrigin(0.5);
-        scoreText.setDepth(1000);
+		// Show final score
+		const scoreText = this.add.text(
+			centerX,
+			centerY + spacing.scoreY,
+			I18nService.t("game.finalScore", finalScore.toLocaleString()),
+			{
+				fontFamily: "Arial",
+				fontSize: fontSizes.score,
+				color: "#92cc41",
+				align: "center",
+			},
+		);
+		scoreText.setOrigin(0.5);
+		scoreText.setDepth(1000);
 
-        // Create return to menu button using Graphics (Phaser 3.10 compatible)
-        const buttonX = centerX - buttonWidth / 2;
-        const buttonY = centerY + spacing.buttonY;
+		// Create return to menu button using Graphics (Phaser 3.10 compatible)
+		const buttonX = centerX - buttonWidth / 2;
+		const buttonY = centerY + spacing.buttonY;
 
-        const buttonBg = this.add.graphics();
-        buttonBg.fillStyle(0x4CAF50, 1);
-        buttonBg.fillRect(buttonX, buttonY, buttonWidth, buttonHeight);
-        buttonBg.setDepth(1000);
-        buttonBg.setInteractive(new Phaser.Geom.Rectangle(buttonX, buttonY, buttonWidth, buttonHeight), Phaser.Geom.Rectangle.Contains);
+		const buttonBg = this.add.graphics();
+		buttonBg.fillStyle(0x4caf50, 1);
+		buttonBg.fillRect(buttonX, buttonY, buttonWidth, buttonHeight);
+		buttonBg.setDepth(1000);
+		buttonBg.setInteractive(
+			new Phaser.Geom.Rectangle(buttonX, buttonY, buttonWidth, buttonHeight),
+			Phaser.Geom.Rectangle.Contains,
+		);
 
-        const buttonText = this.add.text(centerX, buttonY + buttonHeight / 2, I18nService.t('game.returnMenu'), {
-            fontFamily: 'Arial',
-            fontSize: fontSizes.button,
-            color: '#FFFFFF',
-            align: 'center'
-        });
-        buttonText.setOrigin(0.5);
-        buttonText.setDepth(1001);
+		const buttonText = this.add.text(
+			centerX,
+			buttonY + buttonHeight / 2,
+			I18nService.t("game.returnMenu"),
+			{
+				fontFamily: "Arial",
+				fontSize: fontSizes.button,
+				color: "#FFFFFF",
+				align: "center",
+			},
+		);
+		buttonText.setOrigin(0.5);
+		buttonText.setDepth(1001);
 
-        // Hover effects
-        buttonBg.on('pointerover', () => {
-            buttonBg.clear();
-            buttonBg.fillStyle(0x66BB6A, 1);
-            buttonBg.fillRect(buttonX, buttonY, buttonWidth, buttonHeight);
-        });
+		// Hover effects
+		buttonBg.on("pointerover", () => {
+			buttonBg.clear();
+			buttonBg.fillStyle(0x66bb6a, 1);
+			buttonBg.fillRect(buttonX, buttonY, buttonWidth, buttonHeight);
+		});
 
-        buttonBg.on('pointerout', () => {
-            buttonBg.clear();
-            buttonBg.fillStyle(0x4CAF50, 1);
-            buttonBg.fillRect(buttonX, buttonY, buttonWidth, buttonHeight);
-        });
+		buttonBg.on("pointerout", () => {
+			buttonBg.clear();
+			buttonBg.fillStyle(0x4caf50, 1);
+			buttonBg.fillRect(buttonX, buttonY, buttonWidth, buttonHeight);
+		});
 
-        buttonBg.on('pointerdown', () => {
-            this.cleanupHeader();
-            this.scene.start('MenuScene');
-        });
-    }
+		buttonBg.on("pointerdown", () => {
+			this.cleanupHeader();
+			this.scene.start("MenuScene");
+		});
+	}
 
-    createWinText(message: string, color: string): Text {
-        const screenWidth = window.innerWidth;
-        const isMobile = screenWidth <= 480;
-        const x = isMobile ? ((config.width as number) / 4) : ((config.width as number) / 3);
-        const y = ((customConfig.frameHeight as number) / 2) - (isMobile ? 25 : 35);
-        let winText = this.add.text(x, y, message, this.getTextOptions());
-        winText.setShadow(3, 3, color, 2, true, true);
-        winText.setDepth(1000);
-        return winText;
-    }
+	createWinText(message: string, color: string): Text {
+		const screenWidth = window.innerWidth;
+		const isMobile = screenWidth <= 480;
+		const x = isMobile
+			? (config.width as number) / 4
+			: (config.width as number) / 3;
+		const y = (customConfig.frameHeight as number) / 2 - (isMobile ? 25 : 35);
+		const winText = this.add.text(x, y, message, this.getTextOptions());
+		winText.setShadow(3, 3, color, 2, true, true);
+		winText.setDepth(1000);
+		return winText;
+	}
 }
 
 class PauseControl {
-    private paused: boolean = false;
-    private locked: boolean = false;
-    private winTime: number;
+	private paused: boolean = false;
+	private locked: boolean = false;
 
-    constructor() {
-    }
+	isPaused(_time?: number): boolean {
+		return this.paused;
+	}
 
-    isPaused(time?: number): boolean {
-        return this.paused;
-    }
+	pauseForWin(time: number): void {
+		this.paused = true;
+		this.locked = true;
+		this.winTime = time;
+	}
 
-    pauseForWin(time: number): void {
-        this.paused = true;
-        this.locked = true;
-        this.winTime = time;
-    }
+	pause(): void {
+		this.paused = true;
+	}
 
-    pause(): void {
-        this.paused = true;
-    }
+	unpause(): void {
+		if (!this.locked) {
+			this.paused = false;
+		}
+	}
 
-    unpause(): void {
-        if (!this.locked) {
-            this.paused = false;
-        }
-    }
-
-    togglePause(): void {
-        if (!this.locked) {
-            this.paused = !this.paused;
-        }
-    }
-
+	togglePause(): void {
+		if (!this.locked) {
+			this.paused = !this.paused;
+		}
+	}
 }
 
 export default QixScene;
