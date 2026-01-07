@@ -1,54 +1,59 @@
-import 'phaser';
-import * as AuthService from '../services/auth-service';
-import { GameService, Game } from '../services/game-service';
-import { ImageOverlay } from '../objects/image-overlay';
-import { websocketService } from '../services/websocket-service';
-import { logger, config } from '../config';
-import { audioService } from '../services/audio-service';
-import { I18nService } from '../services/i18n-service';
+import "phaser";
+import { config, logger } from "../config";
+import { ImageOverlay } from "../objects/image-overlay";
+import { audioService } from "../services/audio-service";
+import * as AuthService from "../services/auth-service";
+import { type Game, GameService } from "../services/game-service";
+import { I18nService } from "../services/i18n-service";
+import { websocketService } from "../services/websocket-service";
 
 export class MenuScene extends Phaser.Scene {
-    private domContainer: HTMLDivElement | null = null;
-    private myGames: Game[] = [];
-    private publishedGames: Game[] = [];
+	private domContainer: HTMLDivElement | null = null;
+	private myGames: Game[] = [];
+	private publishedGames: Game[] = [];
 
-    constructor() {
-        super({ key: 'MenuScene' });
-    }
+	constructor() {
+		super({ key: "MenuScene" });
+	}
 
-    create() {
-        // Reset state on scene create to ensure fresh data for current user
-        this.myGames = [];
-        this.publishedGames = [];
-        this.domContainer = null;
+	create() {
+		// Reset state on scene create to ensure fresh data for current user
+		this.myGames = [];
+		this.publishedGames = [];
+		this.domContainer = null;
 
-        // Debug: Log current user info
-        const currentUser = AuthService.getUser();
-        const currentToken = AuthService.getToken();
-        logger.log('[MenuScene] Creating menu for user:', currentUser?.username, 'Token:', currentToken?.substring(0, 20) + '...');
+		// Debug: Log current user info
+		const currentUser = AuthService.getUser();
+		const currentToken = AuthService.getToken();
+		logger.log(
+			"[MenuScene] Creating menu for user:",
+			currentUser?.username,
+			"Token:",
+			`${currentToken?.substring(0, 20)}...`,
+		);
 
-        // Refresh user data (background fetch)
-        this.refreshUserData();
+		// Refresh user data (background fetch)
+		this.refreshUserData();
 
-        // Listen for wake event to refresh data when returning from game
-        this.events.on('wake', () => {
-             this.refreshUserData();
-             this.loadGames();
-        });
+		// Listen for wake event to refresh data when returning from game
+		this.events.on("wake", () => {
+			this.refreshUserData();
+			this.loadGames();
+		});
 
-        // Play menu music
-        audioService.playMusic('menuMusic');
+		// Play menu music
+		audioService.playMusic("menuMusic");
 
-        this.createDOMUI();
-        this.loadGames();
-    }
+		this.createDOMUI();
+		this.loadGames();
+	}
 
-    private createDOMUI() {
-        const user = AuthService.getUser();
+	private createDOMUI() {
+		const user = AuthService.getUser();
 
-        this.domContainer = document.createElement('div');
-        this.domContainer.id = 'menu-container';
-        this.domContainer.innerHTML = `
+		this.domContainer = document.createElement("div");
+		this.domContainer.id = "menu-container";
+		this.domContainer.innerHTML = `
             <style>
                 #menu-container {
                     position: fixed;
@@ -476,25 +481,25 @@ export class MenuScene extends Phaser.Scene {
             </style>
 
             <div class="menu-header">
-                <h1>🎮 ${I18nService.t('app.title')}</h1>
+                <h1>🎮 ${I18nService.t("app.title")}</h1>
                 <div class="menu-user-info">
-                    <span class="menu-username">👤 ${user?.username || 'Player'}</span>
-                    ${user?.level ? `<span class="menu-level" style="color: #FFD700;">Lv.${user.level}</span>` : ''}
+                    <span class="menu-username">👤 ${user?.username || "Player"}</span>
+                    ${user?.level ? `<span class="menu-level" style="color: #FFD700;">Lv.${user.level}</span>` : ""}
                     <span class="menu-shields" style="color: #ff6b6b;">🛡️ ${user?.shields || 0}</span>
                     <div class="nes-select is-dark menu-lang-select-container" style="width: auto; display: inline-block; margin: 0;">
                         <select id="menu-lang-select" style="font-size: 8px; padding: 0 25px 0 10px; height: 28px; min-width: 140px;">
-                            <option value="en" ${I18nService.getLang() === 'en' ? 'selected' : ''}>🇺🇸 English</option>
-                            <option value="jp" ${I18nService.getLang() === 'jp' ? 'selected' : ''}>🇯🇵 日本語</option>
-                            <option value="cn" ${I18nService.getLang() === 'cn' ? 'selected' : ''}>🇨🇳 中文</option>
+                            <option value="en" ${I18nService.getLang() === "en" ? "selected" : ""}>🇺🇸 English</option>
+                            <option value="jp" ${I18nService.getLang() === "jp" ? "selected" : ""}>🇯🇵 日本語</option>
+                            <option value="cn" ${I18nService.getLang() === "cn" ? "selected" : ""}>🇨🇳 中文</option>
                         </select>
                     </div>
-                    <button type="button" class="nes-btn" id="menu-sound-toggle" style="font-size: 8px;" title="${I18nService.t('menu.toggleSound')}">${audioService.isMuted() ? '🔇' : '🔊'}</button>
+                    <button type="button" class="nes-btn" id="menu-sound-toggle" style="font-size: 8px;" title="${I18nService.t("menu.toggleSound")}">${audioService.isMuted() ? "🔇" : "🔊"}</button>
                     <button type="button" class="nes-btn is-warning" id="menu-donation" style="font-size: 8px;">
-                        <span class="btn-text">${I18nService.t('menu.donation')}</span>
+                        <span class="btn-text">${I18nService.t("menu.donation")}</span>
                         <span class="btn-icon">🎁</span>
                     </button>
                     <button type="button" class="nes-btn is-error" id="menu-logout" style="font-size: 8px;">
-                        <span class="btn-text">${I18nService.t('menu.logout')}</span>
+                        <span class="btn-text">${I18nService.t("menu.logout")}</span>
                         <span class="btn-icon">🚪</span>
                     </button>
                 </div>
@@ -504,300 +509,348 @@ export class MenuScene extends Phaser.Scene {
                 <div class="menu-actions">
                     <button type="button" class="nes-btn is-primary menu-action-btn" id="menu-play">
                         <span class="menu-btn-icon">🕹️</span>
-                        <span>${I18nService.t('menu.play')}</span>
+                        <span>${I18nService.t("menu.play")}</span>
                     </button>
                     <button type="button" class="nes-btn is-success menu-action-btn" id="menu-create">
                         <span class="menu-btn-icon">✨</span>
-                        <span>${I18nService.t('menu.create')}</span>
+                        <span>${I18nService.t("menu.create")}</span>
                     </button>
                 </div>
                 <div class="menu-actions" style="margin-top: -20px;">
                     <button type="button" class="nes-btn is-warning menu-action-btn" id="menu-leaderboard">
                         <span class="menu-btn-icon">🏆</span>
-                        <span>${I18nService.t('menu.leaderboard')}</span>
+                        <span>${I18nService.t("menu.leaderboard")}</span>
                     </button>
                     <button type="button" class="nes-btn menu-action-btn" id="menu-stats" style="background: #9b59b6; border-color: #8e44ad;">
                         <span class="menu-btn-icon">📊</span>
-                        <span>${I18nService.t('menu.stats')}</span>
+                        <span>${I18nService.t("menu.stats")}</span>
                     </button>
                     <button type="button" class="nes-btn is-error menu-action-btn" id="menu-purchase-shield">
                         <span class="menu-btn-icon">🛡️</span>
-                        <span>${I18nService.t('menu.purchaseShield')}</span>
+                        <span>${I18nService.t("menu.purchaseShield")}</span>
                     </button>
                 </div>
 
                 <div class="menu-section">
-                    <h2>📁 ${I18nService.t('menu.myGames')}</h2>
+                    <h2>📁 ${I18nService.t("menu.myGames")}</h2>
                     <div id="menu-my-games" class="menu-games-grid">
-                        <div class="menu-loading">${I18nService.t('menu.loading')}</div>
+                        <div class="menu-loading">${I18nService.t("menu.loading")}</div>
                     </div>
                 </div>
 
                 <div class="menu-section">
-                    <h2>🌍 ${I18nService.t('menu.communityGames')}</h2>
+                    <h2>🌍 ${I18nService.t("menu.communityGames")}</h2>
                     <div id="menu-published-games" class="menu-games-grid">
-                        <div class="menu-loading">${I18nService.t('menu.loading')}</div>
+                        <div class="menu-loading">${I18nService.t("menu.loading")}</div>
                     </div>
                 </div>
             </div>
         `;
-        document.body.appendChild(this.domContainer);
+		document.body.appendChild(this.domContainer);
 
-        // Setup event listeners
-        document.getElementById('menu-logout')?.addEventListener('click', () => this.logout());
-        document.getElementById('menu-play')?.addEventListener('click', () => this.playClassic());
-        document.getElementById('menu-create')?.addEventListener('click', () => this.createGame());
-        document.getElementById('menu-leaderboard')?.addEventListener('click', () => this.openLeaderboard());
-        document.getElementById('menu-stats')?.addEventListener('click', () => this.openStats());
-        document.getElementById('menu-purchase-shield')?.addEventListener('click', () => this.showPurchasePopup());
-        document.getElementById('menu-donation')?.addEventListener('click', () => this.showDonationPopup());
-        document.getElementById('menu-sound-toggle')?.addEventListener('click', () => this.toggleSound());
-        document.getElementById('menu-lang-select')?.addEventListener('change', (e) => {
-            const lang = (e.target as HTMLSelectElement).value;
-            this.changeLanguage(lang);
-        });
+		// Setup event listeners
+		document
+			.getElementById("menu-logout")
+			?.addEventListener("click", () => this.logout());
+		document
+			.getElementById("menu-play")
+			?.addEventListener("click", () => this.playClassic());
+		document
+			.getElementById("menu-create")
+			?.addEventListener("click", () => this.createGame());
+		document
+			.getElementById("menu-leaderboard")
+			?.addEventListener("click", () => this.openLeaderboard());
+		document
+			.getElementById("menu-stats")
+			?.addEventListener("click", () => this.openStats());
+		document
+			.getElementById("menu-purchase-shield")
+			?.addEventListener("click", () => this.showPurchasePopup());
+		document
+			.getElementById("menu-donation")
+			?.addEventListener("click", () => this.showDonationPopup());
+		document
+			.getElementById("menu-sound-toggle")
+			?.addEventListener("click", () => this.toggleSound());
+		document
+			.getElementById("menu-lang-select")
+			?.addEventListener("change", (e) => {
+				const lang = (e.target as HTMLSelectElement).value;
+				this.changeLanguage(lang);
+			});
 
-        // Initial user data refresh
-        this.refreshUserData();
-    }
+		// Initial user data refresh
+		this.refreshUserData();
+	}
 
-    private async refreshUserData() {
-        try {
-            const user = await AuthService.getCurrentUser();
-            if (user && this.domContainer) {
-                const usernameEl = this.domContainer.querySelector('.menu-username');
-                const levelEl = this.domContainer.querySelector('.menu-level');
-                const shieldsEl = this.domContainer.querySelector('.menu-shields');
+	private async refreshUserData() {
+		try {
+			const user = await AuthService.getCurrentUser();
+			if (user && this.domContainer) {
+				const usernameEl = this.domContainer.querySelector(".menu-username");
+				const levelEl = this.domContainer.querySelector(".menu-level");
+				const shieldsEl = this.domContainer.querySelector(".menu-shields");
 
-                if (usernameEl) usernameEl.textContent = `👤 ${user.username}`;
-                if (levelEl) levelEl.textContent = `Lv.${user.level || 0}`;
-                if (shieldsEl) shieldsEl.textContent = `🛡️ ${user.shields || 0}`;
-            }
-        } catch (error) {
-            console.error("Failed to refresh user data", error);
-        }
-    }
+				if (usernameEl) usernameEl.textContent = `👤 ${user.username}`;
+				if (levelEl) levelEl.textContent = `Lv.${user.level || 0}`;
+				if (shieldsEl) shieldsEl.textContent = `🛡️ ${user.shields || 0}`;
+			}
+		} catch (error) {
+			console.error("Failed to refresh user data", error);
+		}
+	}
 
-    private toggleSound() {
-        const isMuted = audioService.toggleMute();
-        const btn = document.getElementById('menu-sound-toggle');
-        if (btn) {
-            btn.textContent = isMuted ? '🔇' : '🔊';
-        }
-        // Play a click sound to confirm (only if unmuting)
-        if (!isMuted) {
-            audioService.playSFX('menuClick');
-        }
-    }
+	private toggleSound() {
+		const isMuted = audioService.toggleMute();
+		const btn = document.getElementById("menu-sound-toggle");
+		if (btn) {
+			btn.textContent = isMuted ? "🔇" : "🔊";
+		}
+		// Play a click sound to confirm (only if unmuting)
+		if (!isMuted) {
+			audioService.playSFX("menuClick");
+		}
+	}
 
-    private async loadGames() {
-        try {
-            logger.log('[MenuScene] Loading games with token:', AuthService.getToken()?.substring(0, 20) + '...');
-            const [myGames, publishedGames] = await Promise.all([
-                GameService.getMyGames(),
-                GameService.getPublishedGames()
-            ]);
+	private async loadGames() {
+		try {
+			logger.log(
+				"[MenuScene] Loading games with token:",
+				`${AuthService.getToken()?.substring(0, 20)}...`,
+			);
+			const [myGames, publishedGames] = await Promise.all([
+				GameService.getMyGames(),
+				GameService.getPublishedGames(),
+			]);
 
-            logger.log('[MenuScene] Loaded', myGames.length, 'my games,', publishedGames.length, 'published games');
+			logger.log(
+				"[MenuScene] Loaded",
+				myGames.length,
+				"my games,",
+				publishedGames.length,
+				"published games",
+			);
 
-            this.myGames = myGames;
-            this.publishedGames = publishedGames;
+			this.myGames = myGames;
+			this.publishedGames = publishedGames;
 
-            this.renderMyGames();
-            this.renderPublishedGames();
-        } catch (error: any) {
-            logger.error('[MenuScene] Failed to load games:', error);
-        }
-    }
+			this.renderMyGames();
+			this.renderPublishedGames();
+		} catch (error: any) {
+			logger.error("[MenuScene] Failed to load games:", error);
+		}
+	}
 
-    private renderMyGames() {
-        const container = document.getElementById('menu-my-games');
-        if (!container) return;
+	private renderMyGames() {
+		const container = document.getElementById("menu-my-games");
+		if (!container) return;
 
-        if (this.myGames.length === 0) {
-            container.innerHTML = `<div class="nes-container is-dark menu-empty">${I18nService.t('menu.noMyGames')}</div>`;
-            return;
-        }
+		if (this.myGames.length === 0) {
+			container.innerHTML = `<div class="nes-container is-dark menu-empty">${I18nService.t("menu.noMyGames")}</div>`;
+			return;
+		}
 
-        container.innerHTML = this.myGames.map(game => this.renderGameCard(game, true)).join('');
-        this.attachGameCardListeners(container, true);
-    }
+		container.innerHTML = this.myGames
+			.map((game) => this.renderGameCard(game, true))
+			.join("");
+		this.attachGameCardListeners(container, true);
+	}
 
-    private renderPublishedGames() {
-        const container = document.getElementById('menu-published-games');
-        if (!container) return;
+	private renderPublishedGames() {
+		const container = document.getElementById("menu-published-games");
+		if (!container) return;
 
-        if (this.publishedGames.length === 0) {
-            container.innerHTML = `<div class="nes-container is-dark menu-empty">${I18nService.t('menu.noCommunityGames')}</div>`;
-            return;
-        }
+		if (this.publishedGames.length === 0) {
+			container.innerHTML = `<div class="nes-container is-dark menu-empty">${I18nService.t("menu.noCommunityGames")}</div>`;
+			return;
+		}
 
-        container.innerHTML = this.publishedGames.map(game => this.renderGameCard(game, false)).join('');
-        this.attachGameCardListeners(container, false);
-    }
+		container.innerHTML = this.publishedGames
+			.map((game) => this.renderGameCard(game, false))
+			.join("");
+		this.attachGameCardListeners(container, false);
+	}
 
-    private renderGameCard(game: Game, isOwner: boolean): string {
-        const levelPreviews = game.levels.slice(0, 4).map(level =>
-            `<img class="menu-game-level-img" src="${level.pokemonSprite}" alt="${level.pokemonName}" onerror="this.style.display='none'">`
-        ).join('');
+	private renderGameCard(game: Game, isOwner: boolean): string {
+		const levelPreviews = game.levels
+			.slice(0, 4)
+			.map(
+				(level) =>
+					`<img class="menu-game-level-img" src="${level.pokemonSprite}" alt="${level.pokemonName}" onerror="this.style.display='none'">`,
+			)
+			.join("");
 
-        const statusBadge = isOwner
-            ? `<span class="nes-badge ${game.isPublished ? 'is-primary' : 'is-dark'}" style="font-size: 8px;"><span class="${game.isPublished ? 'is-primary' : 'is-dark'}">${game.isPublished ? I18nService.t('menu.published') : I18nService.t('menu.draft')}</span></span>`
-            : '';
+		const statusBadge = isOwner
+			? `<span class="nes-badge ${game.isPublished ? "is-primary" : "is-dark"}" style="font-size: 8px;"><span class="${game.isPublished ? "is-primary" : "is-dark"}">${game.isPublished ? I18nService.t("menu.published") : I18nService.t("menu.draft")}</span></span>`
+			: "";
 
-        // Show active players count if any (for owner's published games)
-        const activePlayers = isOwner && game.isPublished && game.activePlayerCount && game.activePlayerCount > 0
-            ? `<span style="color: #92cc41; margin-left: 10px;">${I18nService.t('menu.playing', game.activePlayerCount)}</span>`
-            : '';
+		// Show active players count if any (for owner's published games)
+		const activePlayers =
+			isOwner &&
+			game.isPublished &&
+			game.activePlayerCount &&
+			game.activePlayerCount > 0
+				? `<span style="color: #92cc41; margin-left: 10px;">${I18nService.t("menu.playing", game.activePlayerCount)}</span>`
+				: "";
 
-        const ownerActions = isOwner ? `
+		const ownerActions = isOwner
+			? `
             <div class="menu-game-actions">
-                <button type="button" class="nes-btn is-success menu-game-btn" data-action="play" data-game-id="${game.id}">${I18nService.t('menu.playBtn')}</button>
-                <button type="button" class="nes-btn is-warning menu-game-btn" data-action="edit" data-game-id="${game.id}">${I18nService.t('menu.editBtn')}</button>
-                <button type="button" class="nes-btn ${game.isPublished ? 'is-dark' : 'is-primary'} menu-game-btn" data-action="publish" data-game-id="${game.id}">${game.isPublished ? I18nService.t('menu.unpublishBtn') : I18nService.t('menu.publishBtn')}</button>
-                <button type="button" class="nes-btn is-error menu-game-btn" data-action="delete" data-game-id="${game.id}">${I18nService.t('menu.deleteBtn')}</button>
+                <button type="button" class="nes-btn is-success menu-game-btn" data-action="play" data-game-id="${game.id}">${I18nService.t("menu.playBtn")}</button>
+                <button type="button" class="nes-btn is-warning menu-game-btn" data-action="edit" data-game-id="${game.id}">${I18nService.t("menu.editBtn")}</button>
+                <button type="button" class="nes-btn ${game.isPublished ? "is-dark" : "is-primary"} menu-game-btn" data-action="publish" data-game-id="${game.id}">${game.isPublished ? I18nService.t("menu.unpublishBtn") : I18nService.t("menu.publishBtn")}</button>
+                <button type="button" class="nes-btn is-error menu-game-btn" data-action="delete" data-game-id="${game.id}">${I18nService.t("menu.deleteBtn")}</button>
             </div>
-        ` : '';
+        `
+			: "";
 
-        return `
+		return `
             <div class="nes-container is-dark menu-game-card" data-game-id="${game.id}" data-is-owner="${isOwner}">
                 <div class="menu-game-title">${game.name} ${statusBadge}${activePlayers}</div>
-                <div class="menu-game-desc">${game.description || I18nService.t('menu.noDescription')}</div>
+                <div class="menu-game-desc">${game.description || I18nService.t("menu.noDescription")}</div>
                 <div class="menu-game-levels">${levelPreviews}</div>
                 <div class="menu-game-meta">
-                    <span>${I18nService.t('menu.levelsCount', game.levels.length)}</span>
-                    <span>${isOwner ? '' : `${I18nService.t('menu.byCreator', game.creatorName)} • `}${I18nService.t('menu.playsCount', game.playCount || 0)}</span>
+                    <span>${I18nService.t("menu.levelsCount", game.levels.length)}</span>
+                    <span>${isOwner ? "" : `${I18nService.t("menu.byCreator", game.creatorName)} • `}${I18nService.t("menu.playsCount", game.playCount || 0)}</span>
                 </div>
                 ${ownerActions}
             </div>
         `;
-    }
+	}
 
-    private attachGameCardListeners(container: HTMLElement, isOwner: boolean) {
-        if (isOwner) {
-            // For owner's games, attach action button listeners
-            container.querySelectorAll('.menu-game-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    const action = (btn as HTMLElement).dataset.action;
-                    const gameId = (btn as HTMLElement).dataset.gameId;
-                    if (gameId && action) {
-                        this.handleGameAction(gameId, action);
-                    }
-                });
-            });
-        } else {
-            // For community games, clicking anywhere plays the game
-            container.querySelectorAll('.menu-game-card').forEach(card => {
-                card.addEventListener('click', () => {
-                    const gameId = (card as HTMLElement).dataset.gameId;
-                    if (gameId) {
-                        this.openGame(gameId, false);
-                    }
-                });
-            });
-        }
-    }
+	private attachGameCardListeners(container: HTMLElement, isOwner: boolean) {
+		if (isOwner) {
+			// For owner's games, attach action button listeners
+			container.querySelectorAll(".menu-game-btn").forEach((btn) => {
+				btn.addEventListener("click", (e) => {
+					e.stopPropagation();
+					const action = (btn as HTMLElement).dataset.action;
+					const gameId = (btn as HTMLElement).dataset.gameId;
+					if (gameId && action) {
+						this.handleGameAction(gameId, action);
+					}
+				});
+			});
+		} else {
+			// For community games, clicking anywhere plays the game
+			container.querySelectorAll(".menu-game-card").forEach((card) => {
+				card.addEventListener("click", () => {
+					const gameId = (card as HTMLElement).dataset.gameId;
+					if (gameId) {
+						this.openGame(gameId, false);
+					}
+				});
+			});
+		}
+	}
 
-    private async handleGameAction(gameId: string, action: string) {
-        const game = this.myGames.find(g => g.id === gameId);
-        if (!game) return;
+	private async handleGameAction(gameId: string, action: string) {
+		const game = this.myGames.find((g) => g.id === gameId);
+		if (!game) return;
 
-        switch (action) {
-            case 'play':
-                this.openGame(gameId, true);
-                break;
-            case 'edit':
-                this.editGame(gameId);
-                break;
-            case 'publish':
-                await this.togglePublish(gameId);
-                break;
-            case 'delete':
-                await this.deleteGame(gameId, game.name);
-                break;
-        }
-    }
+		switch (action) {
+			case "play":
+				this.openGame(gameId, true);
+				break;
+			case "edit":
+				this.editGame(gameId);
+				break;
+			case "publish":
+				await this.togglePublish(gameId);
+				break;
+			case "delete":
+				await this.deleteGame(gameId, game.name);
+				break;
+		}
+	}
 
-    private editGame(gameId: string) {
-        this.cleanup();
-        this.scene.start('GameCreateScene', { editGameId: gameId });
-    }
+	private editGame(gameId: string) {
+		this.cleanup();
+		this.scene.start("GameCreateScene", { editGameId: gameId });
+	}
 
-    private async togglePublish(gameId: string) {
-        try {
-            const isPublished = await GameService.togglePublish(gameId);
-            // Update local state
-            const game = this.myGames.find(g => g.id === gameId);
-            if (game) {
-                game.isPublished = isPublished;
-            }
-            // Re-render
-            this.renderMyGames();
-            await this.loadGames(); // Refresh published games list too
-        } catch (error: any) {
-            this.showToast('Failed to update publish status: ' + error.message, 'error');
-        }
-    }
+	private async togglePublish(gameId: string) {
+		try {
+			const isPublished = await GameService.togglePublish(gameId);
+			// Update local state
+			const game = this.myGames.find((g) => g.id === gameId);
+			if (game) {
+				game.isPublished = isPublished;
+			}
+			// Re-render
+			this.renderMyGames();
+			await this.loadGames(); // Refresh published games list too
+		} catch (error: any) {
+			this.showToast(
+				`Failed to update publish status: ${error.message}`,
+				"error",
+			);
+		}
+	}
 
-    private changeLanguage(lang: string) {
-        if (lang === 'en' || lang === 'jp' || lang === 'cn') {
-            I18nService.setLang(lang);
-            // Re-render the entire scene to update texts
-            this.cleanup();
-            this.scene.restart();
-        }
-    }
+	private changeLanguage(lang: string) {
+		if (lang === "en" || lang === "jp" || lang === "cn") {
+			I18nService.setLang(lang);
+			// Re-render the entire scene to update texts
+			this.cleanup();
+			this.scene.restart();
+		}
+	}
 
-    private async deleteGame(gameId: string, gameName: string) {
-        if (!confirm(`Are you sure you want to delete "${gameName}"? This cannot be undone.`)) {
-            return;
-        }
+	private async deleteGame(gameId: string, gameName: string) {
+		if (
+			!confirm(
+				`Are you sure you want to delete "${gameName}"? This cannot be undone.`,
+			)
+		) {
+			return;
+		}
 
-        try {
-            await GameService.deleteGame(gameId);
-            // Remove from local state
-            this.myGames = this.myGames.filter(g => g.id !== gameId);
-            // Re-render
-            this.renderMyGames();
-            this.showToast('Game deleted successfully', 'success');
-        } catch (error: any) {
-            this.showToast('Failed to delete game: ' + error.message, 'error');
-        }
-    }
+		try {
+			await GameService.deleteGame(gameId);
+			// Remove from local state
+			this.myGames = this.myGames.filter((g) => g.id !== gameId);
+			// Re-render
+			this.renderMyGames();
+			this.showToast("Game deleted successfully", "success");
+		} catch (error: any) {
+			this.showToast(`Failed to delete game: ${error.message}`, "error");
+		}
+	}
 
-    private openGame(gameId: string, isOwner: boolean) {
-        // For now, start playing the game
-        // TODO: If owner, show edit options
-        this.cleanup();
-        this.scene.start('Qix', { gameId });
-    }
+	private openGame(gameId: string, _isOwner: boolean) {
+		// For now, start playing the game
+		// TODO: If owner, show edit options
+		this.cleanup();
+		this.scene.start("Qix", { gameId });
+	}
 
-    private playClassic() {
-        this.cleanup();
-        this.scene.start('Qix');
-    }
+	private playClassic() {
+		this.cleanup();
+		this.scene.start("Qix");
+	}
 
-    private createGame() {
-        this.cleanup();
-        this.scene.start('GameCreateScene');
-    }
+	private createGame() {
+		this.cleanup();
+		this.scene.start("GameCreateScene");
+	}
 
-    private openLeaderboard() {
-        this.cleanup();
-        this.scene.start('LeaderboardScene');
-    }
+	private openLeaderboard() {
+		this.cleanup();
+		this.scene.start("LeaderboardScene");
+	}
 
-    private openStats() {
-        this.cleanup();
-        this.scene.start('StatsScene');
-    }
+	private openStats() {
+		this.cleanup();
+		this.scene.start("StatsScene");
+	}
 
-    private showDonationPopup() {
-        // Create overlay
-        const overlay = document.createElement('div');
-        overlay.id = 'donation-popup-overlay';
-        overlay.innerHTML = `
+	private showDonationPopup() {
+		// Create overlay
+		const overlay = document.createElement("div");
+		overlay.id = "donation-popup-overlay";
+		overlay.innerHTML = `
             <style>
                 #donation-popup-overlay {
                     position: fixed;
@@ -854,44 +907,49 @@ export class MenuScene extends Phaser.Scene {
             </div>
         `;
 
-        // Close on overlay click
-        overlay.addEventListener('click', (e) => {
-            if (e.target === overlay) {
-                overlay.remove();
-            }
-        });
+		// Close on overlay click
+		overlay.addEventListener("click", (e) => {
+			if (e.target === overlay) {
+				overlay.remove();
+			}
+		});
 
-        // Close on button click
-        overlay.querySelector('.donation-popup-close')?.addEventListener('click', () => {
-            overlay.remove();
-        });
+		// Close on button click
+		overlay
+			.querySelector(".donation-popup-close")
+			?.addEventListener("click", () => {
+				overlay.remove();
+			});
 
-        // Close on Escape key
-        const escHandler = (e: KeyboardEvent) => {
-            if (e.key === 'Escape') {
-                overlay.remove();
-                document.removeEventListener('keydown', escHandler);
-            }
-        };
-        document.addEventListener('keydown', escHandler);
+		// Close on Escape key
+		const escHandler = (e: KeyboardEvent) => {
+			if (e.key === "Escape") {
+				overlay.remove();
+				document.removeEventListener("keydown", escHandler);
+			}
+		};
+		document.addEventListener("keydown", escHandler);
 
-        document.body.appendChild(overlay);
-    }
+		document.body.appendChild(overlay);
+	}
 
-    private async showPurchasePopup() {
-        // First, check purchase status
-        let purchaseStatus: AuthService.PurchaseStatus | null = null;
-        try {
-            purchaseStatus = await AuthService.checkPurchaseStatus();
-        } catch (error: any) {
-            console.error('Failed to check purchase status:', error);
-            this.showToast('Failed to check purchase status. Please try again.', 'error');
-            return;
-        }
+	private async showPurchasePopup() {
+		// First, check purchase status
+		let purchaseStatus: AuthService.PurchaseStatus | null = null;
+		try {
+			purchaseStatus = await AuthService.checkPurchaseStatus();
+		} catch (error: any) {
+			console.error("Failed to check purchase status:", error);
+			this.showToast(
+				"Failed to check purchase status. Please try again.",
+				"error",
+			);
+			return;
+		}
 
-        const overlay = document.createElement('div');
-        overlay.className = 'donation-popup-overlay'; // Reuse donation popup styles
-        overlay.style.cssText = `
+		const overlay = document.createElement("div");
+		overlay.className = "donation-popup-overlay"; // Reuse donation popup styles
+		overlay.style.cssText = `
             position: fixed;
             top: 0;
             left: 0;
@@ -904,15 +962,16 @@ export class MenuScene extends Phaser.Scene {
             z-index: 2000;
         `;
 
-        // Price in SGD
-        const unitPriceSGD = 0.27;
-        let quantity = 1;
-        
-        // Check if remaining allowance is less than the cost of a single shield
-        const canAffordAtLeastOne = purchaseStatus.remainingAllowance >= unitPriceSGD;
-        const showPurchaseForm = purchaseStatus.canPurchase && canAffordAtLeastOne;
+		// Price in SGD
+		const unitPriceSGD = 0.27;
+		let quantity = 1;
 
-        overlay.innerHTML = `
+		// Check if remaining allowance is less than the cost of a single shield
+		const canAffordAtLeastOne =
+			purchaseStatus.remainingAllowance >= unitPriceSGD;
+		const showPurchaseForm = purchaseStatus.canPurchase && canAffordAtLeastOne;
+
+		overlay.innerHTML = `
             <style>
                 .purchase-form-group {
                     margin-bottom: 15px;
@@ -958,22 +1017,29 @@ export class MenuScene extends Phaser.Scene {
             </style>
             <div class="nes-container is-dark with-title donation-popup-content" style="width: 400px; max-width: 90%;">
                 <p class="title" style="color: #ff6b6b;">Purchase Shield</p>
-                ${!showPurchaseForm ? `
+                ${
+									!showPurchaseForm
+										? `
                 <div style="text-align: center; margin-bottom: 20px;">
                     <span style="font-size: 40px;">🚫</span>
-                    ${!purchaseStatus.canPurchase ? `
+                    ${
+											!purchaseStatus.canPurchase
+												? `
                     <p style="margin: 10px 0; font-size: 12px; color: #ff6b6b;">Monthly limit reached!</p>
-                    ` : `
+                    `
+												: `
                     <p style="margin: 10px 0; font-size: 12px; color: #ff6b6b;">Insufficient balance!</p>
                     <p style="font-size: 11px; color: #888;">Remaining: S$${purchaseStatus.remainingAllowance.toFixed(2)} (min S$${unitPriceSGD.toFixed(2)} needed)</p>
-                    `}
+                    `
+										}
                     <p style="font-size: 11px; color: #888;">You've spent S$${purchaseStatus.monthlySpent.toFixed(2)} this month.</p>
-                    <p style="font-size: 11px; color: #888;">Limit resets on: <span style="color: #ffd700;">${purchaseStatus.purchaseResetDate || 'N/A'}</span></p>
+                    <p style="font-size: 11px; color: #888;">Limit resets on: <span style="color: #ffd700;">${purchaseStatus.purchaseResetDate || "N/A"}</span></p>
                 </div>
                 <div style="display: flex; gap: 10px; justify-content: center; margin-top: 20px;">
                     <button type="button" class="nes-btn is-error purchase-cancel-btn">Close</button>
                 </div>
-                ` : `
+                `
+										: `
                 <div style="text-align: center; margin-bottom: 20px;">
                     <span style="font-size: 40px;">🛡️</span>
                     <p style="margin: 10px 0; font-size: 12px;">Protect yourself from one hit!</p>
@@ -998,50 +1064,55 @@ export class MenuScene extends Phaser.Scene {
                     <button type="button" class="nes-btn is-error purchase-cancel-btn">Cancel</button>
                     <button type="button" class="nes-btn is-success purchase-confirm-btn">Pay Now</button>
                 </div>
-                `}
+                `
+								}
             </div>
         `;
 
-        // Quantity logic
-        const updatePrice = () => {
-            const total = (quantity * unitPriceSGD).toFixed(2);
-            const priceEl = overlay.querySelector('#total-price');
-            const qtyEl = overlay.querySelector('#qty-val');
-            if (priceEl) priceEl.textContent = total;
-            if (qtyEl) qtyEl.textContent = quantity.toString();
-        };
+		// Quantity logic
+		const updatePrice = () => {
+			const total = (quantity * unitPriceSGD).toFixed(2);
+			const priceEl = overlay.querySelector("#total-price");
+			const qtyEl = overlay.querySelector("#qty-val");
+			if (priceEl) priceEl.textContent = total;
+			if (qtyEl) qtyEl.textContent = quantity.toString();
+		};
 
-        overlay.querySelector('#qty-minus')?.addEventListener('click', () => {
-            if (quantity > 1) {
-                quantity--;
-                updatePrice();
-            }
-        });
+		overlay.querySelector("#qty-minus")?.addEventListener("click", () => {
+			if (quantity > 1) {
+				quantity--;
+				updatePrice();
+			}
+		});
 
-        overlay.querySelector('#qty-plus')?.addEventListener('click', () => {
-            if (quantity < 99) {
-                quantity++;
-                updatePrice();
-            }
-        });
+		overlay.querySelector("#qty-plus")?.addEventListener("click", () => {
+			if (quantity < 99) {
+				quantity++;
+				updatePrice();
+			}
+		});
 
-        // Close on overlay click
-        overlay.addEventListener('click', (e) => {
-            if (e.target === overlay) {
-                overlay.remove();
-            }
-        });
+		// Close on overlay click
+		overlay.addEventListener("click", (e) => {
+			if (e.target === overlay) {
+				overlay.remove();
+			}
+		});
 
-        // Close on Cancel button click
-        overlay.querySelector('.purchase-cancel-btn')?.addEventListener('click', () => {
-            overlay.remove();
-        });
+		// Close on Cancel button click
+		overlay
+			.querySelector(".purchase-cancel-btn")
+			?.addEventListener("click", () => {
+				overlay.remove();
+			});
 
-        // Handle Purchase
-        overlay.querySelector('.purchase-confirm-btn')?.addEventListener('click', async () => {
-            // Show custom confirmation dialog
-            const confirmOverlay = document.createElement('div');
-            confirmOverlay.style.cssText = `
+		// Handle Purchase
+		overlay
+			.querySelector(".purchase-confirm-btn")
+			?.addEventListener("click", async () => {
+				// Show custom confirmation dialog
+				const confirmOverlay = document.createElement("div");
+				confirmOverlay.style.cssText = `
                 position: fixed;
                 top: 0;
                 left: 0;
@@ -1054,7 +1125,7 @@ export class MenuScene extends Phaser.Scene {
                 z-index: 2100;
             `;
 
-            confirmOverlay.innerHTML = `
+				confirmOverlay.innerHTML = `
                 <div class="nes-container is-dark with-title" style="background-color: #212529; min-width: 300px; padding: 20px;">
                     <p class="title" style="color: #f7d51d;">Confirm Purchase</p>
                     <div style="text-align: center; margin-bottom: 20px;">
@@ -1068,160 +1139,188 @@ export class MenuScene extends Phaser.Scene {
                 </div>
             `;
 
-            document.body.appendChild(confirmOverlay);
+				document.body.appendChild(confirmOverlay);
 
-            // Cancel handler
-            confirmOverlay.querySelector('.confirm-cancel-btn')?.addEventListener('click', () => {
-                confirmOverlay.remove();
-            });
+				// Cancel handler
+				confirmOverlay
+					.querySelector(".confirm-cancel-btn")
+					?.addEventListener("click", () => {
+						confirmOverlay.remove();
+					});
 
-            // Confirm handler
-            confirmOverlay.querySelector('.confirm-yes-btn')?.addEventListener('click', async () => {
-                confirmOverlay.remove();
-                
-                const btn = overlay.querySelector('.purchase-confirm-btn') as HTMLButtonElement;
-                const originalText = btn.textContent;
-                btn.textContent = 'Processing...';
-                btn.disabled = true;
-                btn.classList.remove('is-success');
-                btn.classList.add('is-disabled');
+				// Confirm handler
+				confirmOverlay
+					.querySelector(".confirm-yes-btn")
+					?.addEventListener("click", async () => {
+						confirmOverlay.remove();
 
-                try {
-                    // Create Razorpay Order
-                    const orderData = await AuthService.createRazorpayOrder(quantity);
-                    
-                    const options = {
-                        "key": config.razorpayKeyId,
-                        "amount": orderData.amount,
-                        "currency": orderData.currency,
-                        "name": "Peekachoo Shield",
-                        "description": `Purchase ${quantity} Shield(s)`,
-                        "order_id": orderData.id,
-                        "handler": async (response: any) => {
-                            try {
-                                const verifyResult = await AuthService.verifyRazorpayPayment({
-                                    razorpay_order_id: response.razorpay_order_id,
-                                    razorpay_payment_id: response.razorpay_payment_id,
-                                    razorpay_signature: response.razorpay_signature,
-                                    quantity: quantity
-                                });
-                                
-                                overlay.remove();
-                                this.showToast(`Purchase Successful! You now have ${verifyResult.shields} shields.`, 'success');
-                                
-                                // Update UI
-                                this.cleanup();
-                                this.createDOMUI();
-                                this.loadGames();
-                            } catch (error: any) {
-                                this.showToast('Payment Verification Failed: ' + error.message, 'error');
-                                btn.textContent = originalText;
-                                btn.disabled = false;
-                                btn.classList.add('is-success');
-                                btn.classList.remove('is-disabled');
-                            }
-                        },
-                        "prefill": {
-                            "name": AuthService.getUser()?.username || "Guest",
-                        },
-                        "theme": {
-                            "color": "#3399cc"
-                        },
-                        "modal": {
-                            "ondismiss": () => {
-                                btn.textContent = originalText;
-                                btn.disabled = false;
-                                btn.classList.add('is-success');
-                                btn.classList.remove('is-disabled');
-                            }
-                        }
-                    };
-                    
-                    const rzp1 = new (window as any).Razorpay(options);
-                    rzp1.on('payment.failed', (response: any) => {
-                        this.showToast('Payment Failed: ' + response.error.description, 'error');
-                        btn.textContent = originalText;
-                        btn.disabled = false;
-                        btn.classList.add('is-success');
-                        btn.classList.remove('is-disabled');
-                    });
-                    
-                    rzp1.open();
+						const btn = overlay.querySelector(
+							".purchase-confirm-btn",
+						) as HTMLButtonElement;
+						const originalText = btn.textContent;
+						btn.textContent = "Processing...";
+						btn.disabled = true;
+						btn.classList.remove("is-success");
+						btn.classList.add("is-disabled");
 
-                } catch (error: any) {
-                    btn.textContent = originalText;
-                    btn.disabled = false;
-                    btn.classList.add('is-success');
-                    btn.classList.remove('is-disabled');
-                    this.showToast('Order Creation Failed: ' + error.message, 'error');
-                }
-            });
-        });
+						try {
+							// Create Razorpay Order
+							const orderData = await AuthService.createRazorpayOrder(quantity);
 
-        // Close on Escape key
-        const escHandler = (e: KeyboardEvent) => {
-            if (e.key === 'Escape') {
-                overlay.remove();
-                document.removeEventListener('keydown', escHandler);
-            }
-        };
-        document.addEventListener('keydown', escHandler);
+							const options = {
+								key: config.razorpayKeyId,
+								amount: orderData.amount,
+								currency: orderData.currency,
+								name: "Peekachoo Shield",
+								description: `Purchase ${quantity} Shield(s)`,
+								order_id: orderData.id,
+								handler: async (response: any) => {
+									try {
+										const verifyResult =
+											await AuthService.verifyRazorpayPayment({
+												razorpay_order_id: response.razorpay_order_id,
+												razorpay_payment_id: response.razorpay_payment_id,
+												razorpay_signature: response.razorpay_signature,
+												quantity: quantity,
+											});
 
-        document.body.appendChild(overlay);
-    }
+										overlay.remove();
+										this.showToast(
+											`Purchase Successful! You now have ${verifyResult.shields} shields.`,
+											"success",
+										);
 
-    private logout() {
-        // Disconnect WebSocket
-        websocketService.disconnect();
+										// Update UI
+										this.cleanup();
+										this.createDOMUI();
+										this.loadGames();
+									} catch (error: any) {
+										this.showToast(
+											`Payment Verification Failed: ${error.message}`,
+											"error",
+										);
+										btn.textContent = originalText;
+										btn.disabled = false;
+										btn.classList.add("is-success");
+										btn.classList.remove("is-disabled");
+									}
+								},
+								prefill: {
+									name: AuthService.getUser()?.username || "Guest",
+								},
+								theme: {
+									color: "#3399cc",
+								},
+								modal: {
+									ondismiss: () => {
+										btn.textContent = originalText;
+										btn.disabled = false;
+										btn.classList.add("is-success");
+										btn.classList.remove("is-disabled");
+									},
+								},
+							};
 
-        AuthService.logout();
-        this.cleanup();
-        // Ensure game overlay is hidden when logging out
-        ImageOverlay.getInstance().fullReset();
-        ImageOverlay.getInstance().hide();
-        this.scene.start('LoginScene');
-    }
+							const rzp1 = new (window as any).Razorpay(options);
+							rzp1.on("payment.failed", (response: any) => {
+								this.showToast(
+									`Payment Failed: ${response.error.description}`,
+									"error",
+								);
+								btn.textContent = originalText;
+								btn.disabled = false;
+								btn.classList.add("is-success");
+								btn.classList.remove("is-disabled");
+							});
 
-    private cleanup() {
-        if (this.domContainer && this.domContainer.parentNode) {
-            this.domContainer.parentNode.removeChild(this.domContainer);
-        }
-        this.domContainer = null;
-        this.myGames = [];
-        this.publishedGames = [];
-    }
+							rzp1.open();
+						} catch (error: any) {
+							btn.textContent = originalText;
+							btn.disabled = false;
+							btn.classList.add("is-success");
+							btn.classList.remove("is-disabled");
+							this.showToast(
+								`Order Creation Failed: ${error.message}`,
+								"error",
+							);
+						}
+					});
+			});
 
-    shutdown() {
-        this.cleanup();
-    }
+		// Close on Escape key
+		const escHandler = (e: KeyboardEvent) => {
+			if (e.key === "Escape") {
+				overlay.remove();
+				document.removeEventListener("keydown", escHandler);
+			}
+		};
+		document.addEventListener("keydown", escHandler);
 
-    private showToast(message: string, type: 'success' | 'error' | 'info' | 'warning' = 'info') {
-        // Get or create toast container
-        let container = document.getElementById('menu-toast-container');
-        if (!container) {
-            container = document.createElement('div');
-            container.id = 'menu-toast-container';
-            container.className = 'menu-toast-container';
-            document.body.appendChild(container);
-        }
+		document.body.appendChild(overlay);
+	}
 
-        // Create toast element with NES style
-        const toast = document.createElement('div');
-        const balloonClass = type === 'success' ? 'is-success' : type === 'error' ? 'is-error' : type === 'warning' ? 'is-warning' : 'is-dark';
-        toast.className = `nes-balloon from-right ${balloonClass} menu-toast`;
-        toast.innerHTML = `<p>${message}</p>`;
-        container.appendChild(toast);
+	private logout() {
+		// Disconnect WebSocket
+		websocketService.disconnect();
 
-        // Auto remove after 3 seconds
-        setTimeout(() => {
-            toast.style.animation = 'menu-toast-slide-out 0.3s ease-in forwards';
-            setTimeout(() => {
-                toast.remove();
-                // Remove container if empty
-                if (container && container.children.length === 0) {
-                    container.remove();
-                }
-            }, 300);
-        }, 3000);
-    }
+		AuthService.logout();
+		this.cleanup();
+		// Ensure game overlay is hidden when logging out
+		ImageOverlay.getInstance().fullReset();
+		ImageOverlay.getInstance().hide();
+		this.scene.start("LoginScene");
+	}
+
+	private cleanup() {
+		if (this.domContainer?.parentNode) {
+			this.domContainer.parentNode.removeChild(this.domContainer);
+		}
+		this.domContainer = null;
+		this.myGames = [];
+		this.publishedGames = [];
+	}
+
+	shutdown() {
+		this.cleanup();
+	}
+
+	private showToast(
+		message: string,
+		type: "success" | "error" | "info" | "warning" = "info",
+	) {
+		// Get or create toast container
+		let container = document.getElementById("menu-toast-container");
+		if (!container) {
+			container = document.createElement("div");
+			container.id = "menu-toast-container";
+			container.className = "menu-toast-container";
+			document.body.appendChild(container);
+		}
+
+		// Create toast element with NES style
+		const toast = document.createElement("div");
+		const balloonClass =
+			type === "success"
+				? "is-success"
+				: type === "error"
+					? "is-error"
+					: type === "warning"
+						? "is-warning"
+						: "is-dark";
+		toast.className = `nes-balloon from-right ${balloonClass} menu-toast`;
+		toast.innerHTML = `<p>${message}</p>`;
+		container.appendChild(toast);
+
+		// Auto remove after 3 seconds
+		setTimeout(() => {
+			toast.style.animation = "menu-toast-slide-out 0.3s ease-in forwards";
+			setTimeout(() => {
+				toast.remove();
+				// Remove container if empty
+				if (container && container.children.length === 0) {
+					container.remove();
+				}
+			}, 300);
+		}, 3000);
+	}
 }

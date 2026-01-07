@@ -1,4 +1,4 @@
-require('jsdom-global')();
+require("jsdom-global")();
 // require("ts-node").register({
 //     project: "tsconfig.json",
 // });

@@ -1,411 +1,436 @@
 // Auth Service for Passkey (WebAuthn) Authentication
-import { config, logger } from '../config';
+import { config, logger } from "../config";
 
 const API_BASE = `${config.apiUrl}/auth`;
 const PAYMENT_API_BASE = `${config.apiUrl}/payment`;
 
 interface User {
-    id: string;
-    username: string;
-    displayName: string;
-    level?: number;
-    shields?: number;
+	id: string;
+	username: string;
+	displayName: string;
+	level?: number;
+	shields?: number;
 }
 
 interface AuthResponse {
-    verified: boolean;
-    token: string;
-    user: User;
+	verified: boolean;
+	token: string;
+	user: User;
 }
 
 // Store token in sessionStorage (unique per tab/window, so multiple users can play simultaneously)
 export function setToken(token: string): void {
-    logger.log('[Auth] Setting token:', token.substring(0, 20) + '...');
-    sessionStorage.setItem('peekachoo_token', token);
+	logger.log("[Auth] Setting token:", `${token.substring(0, 20)}...`);
+	sessionStorage.setItem("peekachoo_token", token);
 }
 
 export function getToken(): string | null {
-    const token = sessionStorage.getItem('peekachoo_token');
-    logger.log('[Auth] Getting token:', token ? token.substring(0, 20) + '...' : 'null');
-    return token;
+	const token = sessionStorage.getItem("peekachoo_token");
+	logger.log(
+		"[Auth] Getting token:",
+		token ? `${token.substring(0, 20)}...` : "null",
+	);
+	return token;
 }
 
 export function removeToken(): void {
-    logger.log('[Auth] Removing token');
-    sessionStorage.removeItem('peekachoo_token');
+	logger.log("[Auth] Removing token");
+	sessionStorage.removeItem("peekachoo_token");
 }
 
 export function setUser(user: User): void {
-    logger.log('[Auth] Setting user:', user.username);
-    sessionStorage.setItem('peekachoo_user', JSON.stringify(user));
+	logger.log("[Auth] Setting user:", user.username);
+	sessionStorage.setItem("peekachoo_user", JSON.stringify(user));
 }
 
 export function getUser(): User | null {
-    const userStr = sessionStorage.getItem('peekachoo_user');
-    const user = userStr ? JSON.parse(userStr) : null;
-    logger.log('[Auth] Getting user:', user?.username || 'null');
-    return user;
+	const userStr = sessionStorage.getItem("peekachoo_user");
+	const user = userStr ? JSON.parse(userStr) : null;
+	logger.log("[Auth] Getting user:", user?.username || "null");
+	return user;
 }
 
 export function removeUser(): void {
-    logger.log('[Auth] Removing user');
-    sessionStorage.removeItem('peekachoo_user');
+	logger.log("[Auth] Removing user");
+	sessionStorage.removeItem("peekachoo_user");
 }
 
 export function isLoggedIn(): boolean {
-    return !!getToken();
+	return !!getToken();
 }
 
 export function logout(): void {
-    logger.log('[Auth] LOGOUT called!');
-    removeToken();
-    removeUser();
+	logger.log("[Auth] LOGOUT called!");
+	removeToken();
+	removeUser();
 }
 
 // Check if username exists
 export async function checkUsername(username: string): Promise<boolean> {
-    const response = await fetch(`${API_BASE}/check-username/${encodeURIComponent(username)}`);
-    const data = await response.json();
-    return data.exists;
+	const response = await fetch(
+		`${API_BASE}/check-username/${encodeURIComponent(username)}`,
+	);
+	const data = await response.json();
+	return data.exists;
 }
 
 // Convert base64url to ArrayBuffer
 function base64urlToBuffer(base64url: string): ArrayBuffer {
-    const padding = '='.repeat((4 - base64url.length % 4) % 4);
-    const base64 = (base64url + padding).replace(/-/g, '+').replace(/_/g, '/');
-    const binary = atob(base64);
-    const bytes = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i++) {
-        bytes[i] = binary.charCodeAt(i);
-    }
-    return bytes.buffer;
+	const padding = "=".repeat((4 - (base64url.length % 4)) % 4);
+	const base64 = (base64url + padding).replace(/-/g, "+").replace(/_/g, "/");
+	const binary = atob(base64);
+	const bytes = new Uint8Array(binary.length);
+	for (let i = 0; i < binary.length; i++) {
+		bytes[i] = binary.charCodeAt(i);
+	}
+	return bytes.buffer;
 }
 
 // Convert ArrayBuffer to base64url
 function bufferToBase64url(buffer: ArrayBuffer): string {
-    const bytes = new Uint8Array(buffer);
-    let binary = '';
-    for (let i = 0; i < bytes.byteLength; i++) {
-        binary += String.fromCharCode(bytes[i]);
-    }
-    return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+	const bytes = new Uint8Array(buffer);
+	let binary = "";
+	for (let i = 0; i < bytes.byteLength; i++) {
+		binary += String.fromCharCode(bytes[i]);
+	}
+	return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "");
 }
 
 // Register new user with passkey
-export async function register(username: string, displayName?: string): Promise<AuthResponse> {
-    // Step 1: Get registration options
-    const startResponse = await fetch(`${API_BASE}/register/start`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, displayName: displayName || username })
-    });
+export async function register(
+	username: string,
+	displayName?: string,
+): Promise<AuthResponse> {
+	// Step 1: Get registration options
+	const startResponse = await fetch(`${API_BASE}/register/start`, {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify({ username, displayName: displayName || username }),
+	});
 
-    if (!startResponse.ok) {
-        const error = await startResponse.json();
-        throw new Error(error.error || 'Failed to start registration');
-    }
+	if (!startResponse.ok) {
+		const error = await startResponse.json();
+		throw new Error(error.error || "Failed to start registration");
+	}
 
-    const { options, challengeId, userId } = await startResponse.json();
+	const { options, challengeId, userId } = await startResponse.json();
 
-    // Step 2: Create credential with browser WebAuthn API
-    const publicKeyOptions: PublicKeyCredentialCreationOptions = {
-        challenge: base64urlToBuffer(options.challenge),
-        rp: {
-            name: options.rp.name,
-            id: options.rp.id
-        },
-        user: {
-            id: base64urlToBuffer(options.user.id),
-            name: options.user.name,
-            displayName: options.user.displayName
-        },
-        pubKeyCredParams: options.pubKeyCredParams,
-        timeout: options.timeout,
-        attestation: options.attestation,
-        authenticatorSelection: options.authenticatorSelection,
-        excludeCredentials: (options.excludeCredentials || []).map((cred: any) => ({
-            ...cred,
-            id: base64urlToBuffer(cred.id)
-        }))
-    };
+	// Step 2: Create credential with browser WebAuthn API
+	const publicKeyOptions: PublicKeyCredentialCreationOptions = {
+		challenge: base64urlToBuffer(options.challenge),
+		rp: {
+			name: options.rp.name,
+			id: options.rp.id,
+		},
+		user: {
+			id: base64urlToBuffer(options.user.id),
+			name: options.user.name,
+			displayName: options.user.displayName,
+		},
+		pubKeyCredParams: options.pubKeyCredParams,
+		timeout: options.timeout,
+		attestation: options.attestation,
+		authenticatorSelection: options.authenticatorSelection,
+		excludeCredentials: (options.excludeCredentials || []).map((cred: any) => ({
+			...cred,
+			id: base64urlToBuffer(cred.id),
+		})),
+	};
 
-    const credential = await navigator.credentials.create({
-        publicKey: publicKeyOptions
-    }) as PublicKeyCredential;
+	const credential = (await navigator.credentials.create({
+		publicKey: publicKeyOptions,
+	})) as PublicKeyCredential;
 
-    if (!credential) {
-        throw new Error('Failed to create credential');
-    }
+	if (!credential) {
+		throw new Error("Failed to create credential");
+	}
 
-    const attestationResponse = credential.response as AuthenticatorAttestationResponse;
+	const attestationResponse =
+		credential.response as AuthenticatorAttestationResponse;
 
-    // Step 3: Send credential to server
-    const completeResponse = await fetch(`${API_BASE}/register/complete`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            userId,
-            challengeId,
-            response: {
-                id: credential.id,
-                rawId: bufferToBase64url(credential.rawId),
-                type: credential.type,
-                response: {
-                    clientDataJSON: bufferToBase64url(attestationResponse.clientDataJSON),
-                    attestationObject: bufferToBase64url(attestationResponse.attestationObject),
-                    transports: attestationResponse.getTransports ? attestationResponse.getTransports() : []
-                },
-                clientExtensionResults: credential.getClientExtensionResults()
-            }
-        })
-    });
+	// Step 3: Send credential to server
+	const completeResponse = await fetch(`${API_BASE}/register/complete`, {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify({
+			userId,
+			challengeId,
+			response: {
+				id: credential.id,
+				rawId: bufferToBase64url(credential.rawId),
+				type: credential.type,
+				response: {
+					clientDataJSON: bufferToBase64url(attestationResponse.clientDataJSON),
+					attestationObject: bufferToBase64url(
+						attestationResponse.attestationObject,
+					),
+					transports: attestationResponse.getTransports
+						? attestationResponse.getTransports()
+						: [],
+				},
+				clientExtensionResults: credential.getClientExtensionResults(),
+			},
+		}),
+	});
 
-    if (!completeResponse.ok) {
-        const error = await completeResponse.json();
-        throw new Error(error.error || 'Failed to complete registration');
-    }
+	if (!completeResponse.ok) {
+		const error = await completeResponse.json();
+		throw new Error(error.error || "Failed to complete registration");
+	}
 
-    const result: AuthResponse = await completeResponse.json();
-    
-    // Store token and user
-    setToken(result.token);
-    setUser(result.user);
+	const result: AuthResponse = await completeResponse.json();
 
-    return result;
+	// Store token and user
+	setToken(result.token);
+	setUser(result.user);
+
+	return result;
 }
 
 // Login with passkey
 export async function login(username?: string): Promise<AuthResponse> {
-    // Step 1: Get authentication options
-    const startResponse = await fetch(`${API_BASE}/login/start`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username })
-    });
+	// Step 1: Get authentication options
+	const startResponse = await fetch(`${API_BASE}/login/start`, {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify({ username }),
+	});
 
-    if (!startResponse.ok) {
-        const error = await startResponse.json();
-        throw new Error(error.error || 'Failed to start login');
-    }
+	if (!startResponse.ok) {
+		const error = await startResponse.json();
+		throw new Error(error.error || "Failed to start login");
+	}
 
-    const { options, challengeId } = await startResponse.json();
+	const { options, challengeId } = await startResponse.json();
 
-    // Step 2: Get credential with browser WebAuthn API
-    const publicKeyOptions: PublicKeyCredentialRequestOptions = {
-        challenge: base64urlToBuffer(options.challenge),
-        timeout: options.timeout,
-        rpId: options.rpId,
-        allowCredentials: (options.allowCredentials || []).map((cred: any) => ({
-            ...cred,
-            id: base64urlToBuffer(cred.id)
-        })),
-        userVerification: options.userVerification
-    };
+	// Step 2: Get credential with browser WebAuthn API
+	const publicKeyOptions: PublicKeyCredentialRequestOptions = {
+		challenge: base64urlToBuffer(options.challenge),
+		timeout: options.timeout,
+		rpId: options.rpId,
+		allowCredentials: (options.allowCredentials || []).map((cred: any) => ({
+			...cred,
+			id: base64urlToBuffer(cred.id),
+		})),
+		userVerification: options.userVerification,
+	};
 
-    const credential = await navigator.credentials.get({
-        publicKey: publicKeyOptions
-    }) as PublicKeyCredential;
+	const credential = (await navigator.credentials.get({
+		publicKey: publicKeyOptions,
+	})) as PublicKeyCredential;
 
-    if (!credential) {
-        throw new Error('Failed to get credential');
-    }
+	if (!credential) {
+		throw new Error("Failed to get credential");
+	}
 
-    const assertionResponse = credential.response as AuthenticatorAssertionResponse;
+	const assertionResponse =
+		credential.response as AuthenticatorAssertionResponse;
 
-    // Step 3: Send assertion to server
-    const completeResponse = await fetch(`${API_BASE}/login/complete`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            challengeId,
-            response: {
-                id: credential.id,
-                rawId: bufferToBase64url(credential.rawId),
-                type: credential.type,
-                response: {
-                    clientDataJSON: bufferToBase64url(assertionResponse.clientDataJSON),
-                    authenticatorData: bufferToBase64url(assertionResponse.authenticatorData),
-                    signature: bufferToBase64url(assertionResponse.signature),
-                    userHandle: assertionResponse.userHandle ? bufferToBase64url(assertionResponse.userHandle) : null
-                },
-                clientExtensionResults: credential.getClientExtensionResults()
-            }
-        })
-    });
+	// Step 3: Send assertion to server
+	const completeResponse = await fetch(`${API_BASE}/login/complete`, {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify({
+			challengeId,
+			response: {
+				id: credential.id,
+				rawId: bufferToBase64url(credential.rawId),
+				type: credential.type,
+				response: {
+					clientDataJSON: bufferToBase64url(assertionResponse.clientDataJSON),
+					authenticatorData: bufferToBase64url(
+						assertionResponse.authenticatorData,
+					),
+					signature: bufferToBase64url(assertionResponse.signature),
+					userHandle: assertionResponse.userHandle
+						? bufferToBase64url(assertionResponse.userHandle)
+						: null,
+				},
+				clientExtensionResults: credential.getClientExtensionResults(),
+			},
+		}),
+	});
 
-    if (!completeResponse.ok) {
-        const error = await completeResponse.json();
-        throw new Error(error.error || 'Failed to complete login');
-    }
+	if (!completeResponse.ok) {
+		const error = await completeResponse.json();
+		throw new Error(error.error || "Failed to complete login");
+	}
 
-    const result: AuthResponse = await completeResponse.json();
-    
-    // Store token and user
-    setToken(result.token);
-    setUser(result.user);
+	const result: AuthResponse = await completeResponse.json();
 
-    return result;
+	// Store token and user
+	setToken(result.token);
+	setUser(result.user);
+
+	return result;
 }
 
 // Check if WebAuthn is supported
 export function isWebAuthnSupported(): boolean {
-    return !!(
-        window.PublicKeyCredential &&
-        typeof window.PublicKeyCredential === 'function'
-    );
+	return !!(
+		window.PublicKeyCredential &&
+		typeof window.PublicKeyCredential === "function"
+	);
 }
 
 // Get current user from server (validates token)
 export async function getCurrentUser(): Promise<User | null> {
-    const token = getToken();
-    if (!token) return null;
+	const token = getToken();
+	if (!token) return null;
 
-    try {
-        const response = await fetch(`${API_BASE}/me`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
+	try {
+		const response = await fetch(`${API_BASE}/me`, {
+			headers: { Authorization: `Bearer ${token}` },
+		});
 
-        if (!response.ok) {
-            logout();
-            return null;
-        }
+		if (!response.ok) {
+			logout();
+			return null;
+		}
 
-        const user = await response.json();
-        setUser(user);
-        return user;
-    } catch {
-        return null;
-    }
+		const user = await response.json();
+		setUser(user);
+		return user;
+	} catch {
+		return null;
+	}
 }
 
-export async function purchaseShield(quantity: number): Promise<{ success: boolean, shields: number }> {
-    const token = getToken();
-    if (!token) throw new Error('Not authenticated');
+export async function purchaseShield(
+	quantity: number,
+): Promise<{ success: boolean; shields: number }> {
+	const token = getToken();
+	if (!token) throw new Error("Not authenticated");
 
-    const response = await fetch(`${API_BASE}/purchase-shield`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ quantity })
-    });
+	const response = await fetch(`${API_BASE}/purchase-shield`, {
+		method: "POST",
+		headers: {
+			"Content-Type": "application/json",
+			Authorization: `Bearer ${token}`,
+		},
+		body: JSON.stringify({ quantity }),
+	});
 
-    if (!response.ok) {
-        throw new Error('Purchase failed');
-    }
+	if (!response.ok) {
+		throw new Error("Purchase failed");
+	}
 
-    const result = await response.json();
-    
-    // Update local user state
-    const user = getUser();
-    if (user) {
-        user.shields = result.shields;
-        setUser(user);
-    }
+	const result = await response.json();
 
-    return result;
+	// Update local user state
+	const user = getUser();
+	if (user) {
+		user.shields = result.shields;
+		setUser(user);
+	}
+
+	return result;
 }
 
-export async function consumeShield(): Promise<{ success: boolean, shields: number }> {
-    const token = getToken();
-    if (!token) throw new Error('Not authenticated');
+export async function consumeShield(): Promise<{
+	success: boolean;
+	shields: number;
+}> {
+	const token = getToken();
+	if (!token) throw new Error("Not authenticated");
 
-    const response = await fetch(`${API_BASE}/consume-shield`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-        }
-    });
+	const response = await fetch(`${API_BASE}/consume-shield`, {
+		method: "POST",
+		headers: {
+			"Content-Type": "application/json",
+			Authorization: `Bearer ${token}`,
+		},
+	});
 
-    if (!response.ok) {
-        throw new Error('Failed to consume shield');
-    }
+	if (!response.ok) {
+		throw new Error("Failed to consume shield");
+	}
 
-    const result = await response.json();
-    
-    // Update local user state
-    const user = getUser();
-    if (user) {
-        user.shields = result.shields;
-        setUser(user);
-    }
+	const result = await response.json();
 
-    return result;
+	// Update local user state
+	const user = getUser();
+	if (user) {
+		user.shields = result.shields;
+		setUser(user);
+	}
+
+	return result;
 }
 
 export async function createRazorpayOrder(quantity: number): Promise<any> {
-    const token = getToken();
-    if (!token) throw new Error('Not authenticated');
+	const token = getToken();
+	if (!token) throw new Error("Not authenticated");
 
-    const response = await fetch(`${PAYMENT_API_BASE}/create-order`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ quantity })
-    });
+	const response = await fetch(`${PAYMENT_API_BASE}/create-order`, {
+		method: "POST",
+		headers: {
+			"Content-Type": "application/json",
+			Authorization: `Bearer ${token}`,
+		},
+		body: JSON.stringify({ quantity }),
+	});
 
-    if (!response.ok) {
-        throw new Error('Failed to create order');
-    }
+	if (!response.ok) {
+		throw new Error("Failed to create order");
+	}
 
-    return response.json();
+	return response.json();
 }
 
-export async function verifyRazorpayPayment(paymentData: any): Promise<{ success: boolean, shields: number }> {
-    const token = getToken();
-    if (!token) throw new Error('Not authenticated');
+export async function verifyRazorpayPayment(
+	paymentData: any,
+): Promise<{ success: boolean; shields: number }> {
+	const token = getToken();
+	if (!token) throw new Error("Not authenticated");
 
-    const response = await fetch(`${PAYMENT_API_BASE}/verify-payment`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(paymentData)
-    });
+	const response = await fetch(`${PAYMENT_API_BASE}/verify-payment`, {
+		method: "POST",
+		headers: {
+			"Content-Type": "application/json",
+			Authorization: `Bearer ${token}`,
+		},
+		body: JSON.stringify(paymentData),
+	});
 
-    if (!response.ok) {
-         throw new Error('Payment verification failed');
-    }
+	if (!response.ok) {
+		throw new Error("Payment verification failed");
+	}
 
-    const result = await response.json();
+	const result = await response.json();
 
-    // Update local user state
-    const user = getUser();
-    if (user && result.success) {
-        user.shields = result.shields;
-        setUser(user);
-    }
-    
-    return result;
+	// Update local user state
+	const user = getUser();
+	if (user && result.success) {
+		user.shields = result.shields;
+		setUser(user);
+	}
+
+	return result;
 }
 
 export interface PurchaseStatus {
-    canPurchase: boolean;
-    monthlySpent: number;
-    remainingAllowance: number;
-    purchaseResetDate: string | null;
+	canPurchase: boolean;
+	monthlySpent: number;
+	remainingAllowance: number;
+	purchaseResetDate: string | null;
 }
 
 export async function checkPurchaseStatus(): Promise<PurchaseStatus> {
-    const token = getToken();
-    if (!token) throw new Error('Not authenticated');
+	const token = getToken();
+	if (!token) throw new Error("Not authenticated");
 
-    const response = await fetch(`${PAYMENT_API_BASE}/purchase-status`, {
-        method: 'GET',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-        }
-    });
+	const response = await fetch(`${PAYMENT_API_BASE}/purchase-status`, {
+		method: "GET",
+		headers: {
+			"Content-Type": "application/json",
+			Authorization: `Bearer ${token}`,
+		},
+	});
 
-    if (!response.ok) {
-        throw new Error('Failed to check purchase status');
-    }
+	if (!response.ok) {
+		throw new Error("Failed to check purchase status");
+	}
 
-    return response.json();
+	return response.json();
 }

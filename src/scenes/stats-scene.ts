@@ -1,43 +1,49 @@
-import 'phaser';
-import { StatsService, PlayerStats, PlayerStatsResponse, RecentGame } from '../services/stats-service';
-import { AchievementsService, AchievementsResponse } from '../services/achievements-service';
-import { I18nService } from '../services/i18n-service';
+import "phaser";
+import {
+	type AchievementsResponse,
+	AchievementsService,
+} from "../services/achievements-service";
+import { I18nService } from "../services/i18n-service";
+import {
+	type PlayerStatsResponse,
+	StatsService,
+} from "../services/stats-service";
 
-type StatsTab = 'overview' | 'achievements' | 'history' | 'collection';
+type StatsTab = "overview" | "achievements" | "history" | "collection";
 
 export class StatsScene extends Phaser.Scene {
-    private domContainer: HTMLDivElement | null = null;
-    private stats: PlayerStatsResponse | null = null;
-    private achievements: AchievementsResponse | null = null;
-    private currentTab: StatsTab = 'overview';
-    private loading: boolean = false;
+	private domContainer: HTMLDivElement | null = null;
+	private stats: PlayerStatsResponse | null = null;
+	private achievements: AchievementsResponse | null = null;
+	private currentTab: StatsTab = "overview";
+	private loading: boolean = false;
 
-    // Pagination state for history
-    private historyPage: number = 0;
-    private historyTotalPages: number = 1;
-    private historyPageSize: number = 30;
+	// Pagination state for history
+	private historyPage: number = 0;
+	private historyTotalPages: number = 1;
+	private historyPageSize: number = 30;
 
-    // Pagination state for collection
-    private collectionPage: number = 0;
-    private collectionTotalPages: number = 1;
-    private collectionPageSize: number = 30;
+	// Pagination state for collection
+	private collectionPage: number = 0;
+	private collectionTotalPages: number = 1;
+	private collectionPageSize: number = 30;
 
-    constructor() {
-        super({ key: 'StatsScene' });
-    }
+	constructor() {
+		super({ key: "StatsScene" });
+	}
 
-    create() {
-        this.stats = null;
-        this.achievements = null;
-        this.currentTab = 'overview';
-        this.createDOMUI();
-        this.loadData();
-    }
+	create() {
+		this.stats = null;
+		this.achievements = null;
+		this.currentTab = "overview";
+		this.createDOMUI();
+		this.loadData();
+	}
 
-    private createDOMUI() {
-        this.domContainer = document.createElement('div');
-        this.domContainer.id = 'stats-container';
-        this.domContainer.innerHTML = `
+	private createDOMUI() {
+		this.domContainer = document.createElement("div");
+		this.domContainer.id = "stats-container";
+		this.domContainer.innerHTML = `
             <style>
                 #stats-container {
                     position: fixed;
@@ -655,181 +661,184 @@ export class StatsScene extends Phaser.Scene {
 
             <div class="stats-panel nes-container is-dark">
                 <div class="stats-header">
-                    <h2 class="stats-title">📊 ${I18nService.t('stats.title')}</h2>
+                    <h2 class="stats-title">📊 ${I18nService.t("stats.title")}</h2>
                     <button class="stats-close" id="stats-close">✕</button>
                 </div>
 
                 <div class="stats-tabs">
-                    <button class="stats-tab active" data-tab="overview">${I18nService.t('stats.overview')}</button>
-                    <button class="stats-tab" data-tab="achievements">${I18nService.t('stats.achievements')}</button>
-                    <button class="stats-tab" data-tab="history">${I18nService.t('stats.history')}</button>
-                    <button class="stats-tab" data-tab="collection">${I18nService.t('stats.collection')}</button>
+                    <button class="stats-tab active" data-tab="overview">${I18nService.t("stats.overview")}</button>
+                    <button class="stats-tab" data-tab="achievements">${I18nService.t("stats.achievements")}</button>
+                    <button class="stats-tab" data-tab="history">${I18nService.t("stats.history")}</button>
+                    <button class="stats-tab" data-tab="collection">${I18nService.t("stats.collection")}</button>
                 </div>
 
                 <div class="stats-content" id="stats-content">
-                    <div class="stats-loading">${I18nService.t('stats.loading')}</div>
+                    <div class="stats-loading">${I18nService.t("stats.loading")}</div>
                 </div>
             </div>
         `;
-        document.body.appendChild(this.domContainer);
+		document.body.appendChild(this.domContainer);
 
-        // Event listeners
-        document.getElementById('stats-close')?.addEventListener('click', () => this.close());
+		// Event listeners
+		document
+			.getElementById("stats-close")
+			?.addEventListener("click", () => this.close());
 
-        // Tab listeners
-        this.domContainer.querySelectorAll('.stats-tab').forEach(tab => {
-            tab.addEventListener('click', () => {
-                const tabName = (tab as HTMLElement).dataset.tab as StatsTab;
-                this.switchTab(tabName);
-            });
-        });
-    }
+		// Tab listeners
+		this.domContainer.querySelectorAll(".stats-tab").forEach((tab) => {
+			tab.addEventListener("click", () => {
+				const tabName = (tab as HTMLElement).dataset.tab as StatsTab;
+				this.switchTab(tabName);
+			});
+		});
+	}
 
-    private async loadData() {
-        if (this.loading) return;
+	private async loadData() {
+		if (this.loading) return;
 
-        this.loading = true;
-        this.showLoading();
+		this.loading = true;
+		this.showLoading();
 
-        try {
-            const [statsResult, achievementsResult] = await Promise.all([
-                StatsService.getMyStats(),
-                AchievementsService.getAchievements()
-            ]);
+		try {
+			const [statsResult, achievementsResult] = await Promise.all([
+				StatsService.getMyStats(),
+				AchievementsService.getAchievements(),
+			]);
 
-            this.stats = statsResult;
-            this.achievements = achievementsResult;
+			this.stats = statsResult;
+			this.achievements = achievementsResult;
 
-            this.renderContent();
-        } catch (error) {
-            console.error('[StatsScene] Failed to load data:', error);
-            this.showError();
-        } finally {
-            this.loading = false;
-        }
-    }
+			this.renderContent();
+		} catch (error) {
+			console.error("[StatsScene] Failed to load data:", error);
+			this.showError();
+		} finally {
+			this.loading = false;
+		}
+	}
 
-    private showLoading() {
-        const container = document.getElementById('stats-content');
-        if (container) {
-            container.innerHTML = `<div class="stats-loading">${I18nService.t('stats.loading')}</div>`;
-        }
-    }
+	private showLoading() {
+		const container = document.getElementById("stats-content");
+		if (container) {
+			container.innerHTML = `<div class="stats-loading">${I18nService.t("stats.loading")}</div>`;
+		}
+	}
 
-    private showError() {
-        const container = document.getElementById('stats-content');
-        if (container) {
-            container.innerHTML = `<div class="stats-error">${I18nService.t('stats.error')}</div>`;
-        }
-    }
+	private showError() {
+		const container = document.getElementById("stats-content");
+		if (container) {
+			container.innerHTML = `<div class="stats-error">${I18nService.t("stats.error")}</div>`;
+		}
+	}
 
-    private renderContent() {
-        switch (this.currentTab) {
-            case 'overview':
-                this.renderOverview();
-                break;
-            case 'achievements':
-                this.renderAchievements();
-                break;
-            case 'history':
-                this.renderHistory();
-                break;
-            case 'collection':
-                this.renderCollection();
-                break;
-        }
-    }
+	private renderContent() {
+		switch (this.currentTab) {
+			case "overview":
+				this.renderOverview();
+				break;
+			case "achievements":
+				this.renderAchievements();
+				break;
+			case "history":
+				this.renderHistory();
+				break;
+			case "collection":
+				this.renderCollection();
+				break;
+		}
+	}
 
-    private renderOverview() {
-        const container = document.getElementById('stats-content');
-        if (!container || !this.stats) return;
+	private renderOverview() {
+		const container = document.getElementById("stats-content");
+		if (!container || !this.stats) return;
 
-        const { stats, rankings, user } = this.stats;
-        const skillBreakdown = StatsService.calculateSkillBreakdown(stats);
+		const { stats, rankings, user } = this.stats;
+		const _skillBreakdown = StatsService.calculateSkillBreakdown(stats);
 
-        container.innerHTML = `
+		container.innerHTML = `
             <div class="stats-overview">
                 <div class="stats-card">
-                    <div class="stats-card-title">${I18nService.t('stats.globalRank')}</div>
+                    <div class="stats-card-title">${I18nService.t("stats.globalRank")}</div>
                     <div class="stats-rank-card">
-                        <div class="stats-rank-number">#${rankings.global.rank || '—'}</div>
+                        <div class="stats-rank-number">#${rankings.global.rank || "—"}</div>
                         <div class="stats-rank-details">
-                            <div class="stats-percentile">${I18nService.t('stats.topPercent', rankings.global.percentile.toFixed(1))}</div>
-                            <div class="stats-card-subtitle">${I18nService.t('stats.ofPlayers', rankings.global.total.toLocaleString())}</div>
+                            <div class="stats-percentile">${I18nService.t("stats.topPercent", rankings.global.percentile.toFixed(1))}</div>
+                            <div class="stats-card-subtitle">${I18nService.t("stats.ofPlayers", rankings.global.total.toLocaleString())}</div>
                         </div>
                     </div>
                 </div>
 
                 <div class="stats-card">
-                    <div class="stats-card-title">${I18nService.t('stats.totalScore')}</div>
+                    <div class="stats-card-title">${I18nService.t("stats.totalScore")}</div>
                     <div class="stats-card-value">${this.formatNumber(stats.totalScoreAllTime)}</div>
-                    <div class="stats-card-subtitle">${I18nService.t('stats.bestGame', this.formatNumber(stats.bestSingleGameScore))}</div>
+                    <div class="stats-card-subtitle">${I18nService.t("stats.bestGame", this.formatNumber(stats.bestSingleGameScore))}</div>
                 </div>
 
                 <div class="stats-card">
-                    <div class="stats-card-title">${I18nService.t('stats.highestLevel')}</div>
+                    <div class="stats-card-title">${I18nService.t("stats.highestLevel")}</div>
                     <div class="stats-card-value">${stats.highestLevelReached}</div>
-                    <div class="stats-card-subtitle">${I18nService.t('stats.levelsCompleted', stats.totalLevelsCompleted)}</div>
+                    <div class="stats-card-subtitle">${I18nService.t("stats.levelsCompleted", stats.totalLevelsCompleted)}</div>
                 </div>
 
                 <div class="stats-card">
-                    <div class="stats-card-title">${I18nService.t('stats.bestStreak')}</div>
+                    <div class="stats-card-title">${I18nService.t("stats.bestStreak")}</div>
                     <div class="stats-card-value">🔥 ${stats.bestStreak}</div>
-                    <div class="stats-card-subtitle">${I18nService.t('stats.currentStreak', stats.currentStreak)}</div>
+                    <div class="stats-card-subtitle">${I18nService.t("stats.currentStreak", stats.currentStreak)}</div>
                 </div>
 
                 <div class="stats-card">
-                    <div class="stats-card-title">${I18nService.t('stats.gamesPlayedTitle')}</div>
+                    <div class="stats-card-title">${I18nService.t("stats.gamesPlayedTitle")}</div>
                     <div class="stats-card-value">${stats.totalGamesPlayed}</div>
-                    <div class="stats-card-subtitle">${I18nService.t('stats.avgScore', this.formatNumber(stats.averageScorePerGame))}</div>
+                    <div class="stats-card-subtitle">${I18nService.t("stats.avgScore", this.formatNumber(stats.averageScorePerGame))}</div>
                 </div>
 
                 <div class="stats-card">
-                    <div class="stats-card-title">${I18nService.t('stats.playTime')}</div>
+                    <div class="stats-card-title">${I18nService.t("stats.playTime")}</div>
                     <div class="stats-card-value">${StatsService.formatPlayTime(stats.totalPlayTimeSeconds)}</div>
-                    <div class="stats-card-subtitle">${I18nService.t('stats.since', this.formatDate(stats.firstPlayedAt))}</div>
+                    <div class="stats-card-subtitle">${I18nService.t("stats.since", this.formatDate(stats.firstPlayedAt))}</div>
                 </div>
 
                 <div class="stats-card" style="grid-column: span 2;">
-                    <div class="stats-card-title">${I18nService.t('stats.performance')}</div>
+                    <div class="stats-card-title">${I18nService.t("stats.performance")}</div>
                     <div class="stats-grid">
                         <div class="stats-grid-item">
-                            <span class="stats-grid-label">${I18nService.t('stats.territoryAvg')}</span>
+                            <span class="stats-grid-label">${I18nService.t("stats.territoryAvg")}</span>
                             <span class="stats-grid-value">${(stats.averageCoverage * 100).toFixed(1)}%</span>
                         </div>
                         <div class="stats-grid-item">
-                            <span class="stats-grid-label">${I18nService.t('stats.bestCoverage')}</span>
+                            <span class="stats-grid-label">${I18nService.t("stats.bestCoverage")}</span>
                             <span class="stats-grid-value">${(stats.bestCoverage * 100).toFixed(1)}%</span>
                         </div>
                         <div class="stats-grid-item">
-                            <span class="stats-grid-label">${I18nService.t('stats.quizAccuracy')}</span>
+                            <span class="stats-grid-label">${I18nService.t("stats.quizAccuracy")}</span>
                             <span class="stats-grid-value">${(stats.quizAccuracy * 100).toFixed(1)}%</span>
                         </div>
                         <div class="stats-grid-item">
-                            <span class="stats-grid-label">${I18nService.t('stats.fastestLevel')}</span>
-                            <span class="stats-grid-value">${stats.fastestLevelSeconds ? stats.fastestLevelSeconds + 's' : '—'}</span>
+                            <span class="stats-grid-label">${I18nService.t("stats.fastestLevel")}</span>
+                            <span class="stats-grid-value">${stats.fastestLevelSeconds ? `${stats.fastestLevelSeconds}s` : "—"}</span>
                         </div>
                         <div class="stats-grid-item">
-                            <span class="stats-grid-label">${I18nService.t('stats.pokemonRevealed')}</span>
+                            <span class="stats-grid-label">${I18nService.t("stats.pokemonRevealed")}</span>
                             <span class="stats-grid-value">${stats.uniquePokemonRevealed}/${stats.totalPokemon}</span>
                         </div>
                         <div class="stats-grid-item">
-                            <span class="stats-grid-label">${I18nService.t('stats.totalTerritory')}</span>
+                            <span class="stats-grid-label">${I18nService.t("stats.totalTerritory")}</span>
                             <span class="stats-grid-value">${this.formatNumber(stats.totalTerritoryClaimed)}%</span>
                         </div>
                     </div>
                 </div>
             </div>
         `;
-    }
+	}
 
-    private renderAchievements() {
-        const container = document.getElementById('stats-content');
-        if (!container || !this.achievements) return;
+	private renderAchievements() {
+		const container = document.getElementById("stats-content");
+		if (!container || !this.achievements) return;
 
-        const { unlocked, locked, totalPoints, maxPoints, completionPercentage } = this.achievements;
+		const { unlocked, locked, totalPoints, maxPoints, completionPercentage } =
+			this.achievements;
 
-        container.innerHTML = `
+		container.innerHTML = `
             <div class="achievements-summary">
                 <div class="achievements-progress">
                     <div style="font-size: 11px; color: #888;">
@@ -845,21 +854,22 @@ export class StatsScene extends Phaser.Scene {
             </div>
 
             <div class="achievements-list">
-                ${unlocked.map(a => this.renderAchievementItem(a, true)).join('')}
-                ${locked.map(a => this.renderAchievementItem(a, false)).join('')}
+                ${unlocked.map((a) => this.renderAchievementItem(a, true)).join("")}
+                ${locked.map((a) => this.renderAchievementItem(a, false)).join("")}
             </div>
         `;
-    }
+	}
 
-    private renderAchievementItem(achievement: any, isUnlocked: boolean): string {
-        const progressBar = !isUnlocked && achievement.progress
-            ? `<div class="achievement-progress">
+	private renderAchievementItem(achievement: any, isUnlocked: boolean): string {
+		const progressBar =
+			!isUnlocked && achievement.progress
+				? `<div class="achievement-progress">
                    <div class="achievement-progress-fill" style="width: ${achievement.progress.percentage}%"></div>
                </div>`
-            : '';
+				: "";
 
-        return `
-            <div class="achievement-item ${isUnlocked ? 'unlocked' : 'locked'}">
+		return `
+            <div class="achievement-item ${isUnlocked ? "unlocked" : "locked"}">
                 <div class="achievement-icon">${achievement.icon}</div>
                 <div class="achievement-info">
                     <div class="achievement-name">${achievement.name}</div>
@@ -869,67 +879,82 @@ export class StatsScene extends Phaser.Scene {
                 <div class="achievement-points">${achievement.points}pts</div>
             </div>
         `;
-    }
+	}
 
-    private async renderHistory() {
-        const container = document.getElementById('stats-content');
-        if (!container) return;
+	private async renderHistory() {
+		const container = document.getElementById("stats-content");
+		if (!container) return;
 
-        container.innerHTML = '<div class="stats-loading">Loading history...</div>';
+		container.innerHTML = '<div class="stats-loading">Loading history...</div>';
 
-        try {
-            const result = await StatsService.getGameHistory({
-                limit: this.historyPageSize,
-                offset: this.historyPage * this.historyPageSize
-            });
+		try {
+			const result = await StatsService.getGameHistory({
+				limit: this.historyPageSize,
+				offset: this.historyPage * this.historyPageSize,
+			});
 
-            this.historyTotalPages = Math.max(1, Math.ceil(result.pagination.total / this.historyPageSize));
+			this.historyTotalPages = Math.max(
+				1,
+				Math.ceil(result.pagination.total / this.historyPageSize),
+			);
 
-            if (result.history.length === 0 && this.historyPage === 0) {
-                container.innerHTML = '<div class="stats-error">No games played yet</div>';
-                return;
-            }
+			if (result.history.length === 0 && this.historyPage === 0) {
+				container.innerHTML =
+					'<div class="stats-error">No games played yet</div>';
+				return;
+			}
 
-            container.innerHTML = `
+			container.innerHTML = `
                 <div class="history-list">
-                    ${result.history.map(game => this.renderHistoryItem(game)).join('')}
+                    ${result.history.map((game) => this.renderHistoryItem(game)).join("")}
                 </div>
                 <div class="stats-pagination">
-                    <button class="nes-btn stats-page-btn" id="history-prev" ${this.historyPage === 0 ? 'disabled' : ''}>< PREV</button>
+                    <button class="nes-btn stats-page-btn" id="history-prev" ${this.historyPage === 0 ? "disabled" : ""}>< PREV</button>
                     <span class="stats-page-info">Page ${this.historyPage + 1} of ${this.historyTotalPages}</span>
-                    <button class="nes-btn stats-page-btn" id="history-next" ${this.historyPage >= this.historyTotalPages - 1 ? 'disabled' : ''}>NEXT ></button>
+                    <button class="nes-btn stats-page-btn" id="history-next" ${this.historyPage >= this.historyTotalPages - 1 ? "disabled" : ""}>NEXT ></button>
                 </div>
             `;
 
-            // Add pagination event listeners
-            document.getElementById('history-prev')?.addEventListener('click', () => this.prevHistoryPage());
-            document.getElementById('history-next')?.addEventListener('click', () => this.nextHistoryPage());
-        } catch (error) {
-            console.error('[StatsScene] Failed to load history:', error);
-            container.innerHTML = '<div class="stats-error">Failed to load history</div>';
-        }
-    }
+			// Add pagination event listeners
+			document
+				.getElementById("history-prev")
+				?.addEventListener("click", () => this.prevHistoryPage());
+			document
+				.getElementById("history-next")
+				?.addEventListener("click", () => this.nextHistoryPage());
+		} catch (error) {
+			console.error("[StatsScene] Failed to load history:", error);
+			container.innerHTML =
+				'<div class="stats-error">Failed to load history</div>';
+		}
+	}
 
-    private prevHistoryPage() {
-        if (this.historyPage > 0) {
-            this.historyPage--;
-            this.renderHistory();
-        }
-    }
+	private prevHistoryPage() {
+		if (this.historyPage > 0) {
+			this.historyPage--;
+			this.renderHistory();
+		}
+	}
 
-    private nextHistoryPage() {
-        if (this.historyPage < this.historyTotalPages - 1) {
-            this.historyPage++;
-            this.renderHistory();
-        }
-    }
+	private nextHistoryPage() {
+		if (this.historyPage < this.historyTotalPages - 1) {
+			this.historyPage++;
+			this.renderHistory();
+		}
+	}
 
-    private renderHistoryItem(game: any): string {
-        const date = new Date(game.playedAt);
-        const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-        const timeStr = date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+	private renderHistoryItem(game: any): string {
+		const date = new Date(game.playedAt);
+		const dateStr = date.toLocaleDateString("en-US", {
+			month: "short",
+			day: "numeric",
+		});
+		const timeStr = date.toLocaleTimeString("en-US", {
+			hour: "2-digit",
+			minute: "2-digit",
+		});
 
-        return `
+		return `
             <div class="history-item">
                 <div class="history-date">
                     <div>${dateStr}</div>
@@ -939,45 +964,55 @@ export class StatsScene extends Phaser.Scene {
                     <div class="history-score">${this.formatNumber(game.totalScore)} pts</div>
                     <div class="history-levels">
                         Level ${game.highestLevel} · ${game.levelsCompleted} levels
-                        ${game.gameName ? ` · ${game.gameName}` : ''}
+                        ${game.gameName ? ` · ${game.gameName}` : ""}
                     </div>
                 </div>
                 <div class="history-duration">${StatsService.formatPlayTime(game.duration)}</div>
             </div>
         `;
-    }
+	}
 
-    private async renderCollection() {
-        const container = document.getElementById('stats-content');
-        if (!container) return;
+	private async renderCollection() {
+		const container = document.getElementById("stats-content");
+		if (!container) return;
 
-        container.innerHTML = '<div class="stats-loading">Loading collection...</div>';
+		container.innerHTML =
+			'<div class="stats-loading">Loading collection...</div>';
 
-        try {
-            const result = await StatsService.getCollection({
-                filter: 'all',
-                sortBy: 'id',
-                limit: this.collectionPageSize,
-                offset: this.collectionPage * this.collectionPageSize
-            });
+		try {
+			const result = await StatsService.getCollection({
+				filter: "all",
+				sortBy: "id",
+				limit: this.collectionPageSize,
+				offset: this.collectionPage * this.collectionPageSize,
+			});
 
-            this.collectionTotalPages = Math.max(1, Math.ceil(result.summary.total / this.collectionPageSize));
+			this.collectionTotalPages = Math.max(
+				1,
+				Math.ceil(result.summary.total / this.collectionPageSize),
+			);
 
-            const startNum = this.collectionPage * this.collectionPageSize + 1;
-            const endNum = Math.min((this.collectionPage + 1) * this.collectionPageSize, result.summary.total);
+			const startNum = this.collectionPage * this.collectionPageSize + 1;
+			const endNum = Math.min(
+				(this.collectionPage + 1) * this.collectionPageSize,
+				result.summary.total,
+			);
 
-            // Show recently revealed section on first page
-            const recentlyRevealedSection = this.collectionPage === 0 && result.recentlyRevealed?.length > 0 ? `
+			// Show recently revealed section on first page
+			const recentlyRevealedSection =
+				this.collectionPage === 0 && result.recentlyRevealed?.length > 0
+					? `
                 <div style="margin-bottom: 20px;">
                     <div style="font-size: 11px; color: #92cc41; margin-bottom: 10px;">Recently Revealed</div>
                     <div class="collection-grid" style="margin-bottom: 15px;">
-                        ${result.recentlyRevealed.map(p => this.renderCollectionItem({ ...p, isRevealed: true })).join('')}
+                        ${result.recentlyRevealed.map((p) => this.renderCollectionItem({ ...p, isRevealed: true })).join("")}
                     </div>
                     <div style="border-bottom: 1px solid #333; margin-bottom: 15px;"></div>
                 </div>
-            ` : '';
+            `
+					: "";
 
-            container.innerHTML = `
+			container.innerHTML = `
                 <div class="collection-summary">
                     <div>
                         <div style="font-size: 10px; color: #888;">Pokemon Revealed</div>
@@ -996,93 +1031,102 @@ export class StatsScene extends Phaser.Scene {
                 </div>
 
                 <div class="collection-grid">
-                    ${result.pokemon.map(p => this.renderCollectionItem(p)).join('')}
+                    ${result.pokemon.map((p) => this.renderCollectionItem(p)).join("")}
                 </div>
 
                 <div class="stats-pagination">
-                    <button class="nes-btn stats-page-btn" id="collection-prev" ${this.collectionPage === 0 ? 'disabled' : ''}>< PREV</button>
+                    <button class="nes-btn stats-page-btn" id="collection-prev" ${this.collectionPage === 0 ? "disabled" : ""}>< PREV</button>
                     <span class="stats-page-info">Page ${this.collectionPage + 1} of ${this.collectionTotalPages}</span>
-                    <button class="nes-btn stats-page-btn" id="collection-next" ${this.collectionPage >= this.collectionTotalPages - 1 ? 'disabled' : ''}>NEXT ></button>
+                    <button class="nes-btn stats-page-btn" id="collection-next" ${this.collectionPage >= this.collectionTotalPages - 1 ? "disabled" : ""}>NEXT ></button>
                 </div>
             `;
 
-            // Add pagination event listeners
-            document.getElementById('collection-prev')?.addEventListener('click', () => this.prevCollectionPage());
-            document.getElementById('collection-next')?.addEventListener('click', () => this.nextCollectionPage());
-        } catch (error) {
-            console.error('[StatsScene] Failed to load collection:', error);
-            container.innerHTML = '<div class="stats-error">Failed to load collection</div>';
-        }
-    }
+			// Add pagination event listeners
+			document
+				.getElementById("collection-prev")
+				?.addEventListener("click", () => this.prevCollectionPage());
+			document
+				.getElementById("collection-next")
+				?.addEventListener("click", () => this.nextCollectionPage());
+		} catch (error) {
+			console.error("[StatsScene] Failed to load collection:", error);
+			container.innerHTML =
+				'<div class="stats-error">Failed to load collection</div>';
+		}
+	}
 
-    private prevCollectionPage() {
-        if (this.collectionPage > 0) {
-            this.collectionPage--;
-            this.renderCollection();
-        }
-    }
+	private prevCollectionPage() {
+		if (this.collectionPage > 0) {
+			this.collectionPage--;
+			this.renderCollection();
+		}
+	}
 
-    private nextCollectionPage() {
-        if (this.collectionPage < this.collectionTotalPages - 1) {
-            this.collectionPage++;
-            this.renderCollection();
-        }
-    }
+	private nextCollectionPage() {
+		if (this.collectionPage < this.collectionTotalPages - 1) {
+			this.collectionPage++;
+			this.renderCollection();
+		}
+	}
 
-    private renderCollectionItem(pokemon: any): string {
-        const revealed = pokemon.isRevealed;
-        const sprite = revealed && pokemon.spriteUrl
-            ? `<img class="collection-sprite" src="${pokemon.spriteUrl}" alt="${pokemon.name}" />`
-            : '?';
+	private renderCollectionItem(pokemon: any): string {
+		const revealed = pokemon.isRevealed;
+		const sprite =
+			revealed && pokemon.spriteUrl
+				? `<img class="collection-sprite" src="${pokemon.spriteUrl}" alt="${pokemon.name}" />`
+				: "?";
 
-        return `
-            <div class="collection-item ${revealed ? 'revealed' : 'hidden'}" title="${revealed ? pokemon.name : '???'}">
+		return `
+            <div class="collection-item ${revealed ? "revealed" : "hidden"}" title="${revealed ? pokemon.name : "???"}">
                 ${sprite}
                 <span class="collection-id">#${pokemon.id}</span>
             </div>
         `;
-    }
+	}
 
-    private switchTab(tab: StatsTab) {
-        if (tab === this.currentTab) return;
+	private switchTab(tab: StatsTab) {
+		if (tab === this.currentTab) return;
 
-        // Update tabs UI
-        this.domContainer?.querySelectorAll('.stats-tab').forEach(t => {
-            t.classList.toggle('active', (t as HTMLElement).dataset.tab === tab);
-        });
+		// Update tabs UI
+		this.domContainer?.querySelectorAll(".stats-tab").forEach((t) => {
+			t.classList.toggle("active", (t as HTMLElement).dataset.tab === tab);
+		});
 
-        this.currentTab = tab;
-        this.renderContent();
-    }
+		this.currentTab = tab;
+		this.renderContent();
+	}
 
-    private formatNumber(num: number): string {
-        if (num >= 1000000) {
-            return (num / 1000000).toFixed(1) + 'M';
-        } else if (num >= 1000) {
-            return (num / 1000).toFixed(1) + 'K';
-        }
-        return num.toLocaleString();
-    }
+	private formatNumber(num: number): string {
+		if (num >= 1000000) {
+			return `${(num / 1000000).toFixed(1)}M`;
+		} else if (num >= 1000) {
+			return `${(num / 1000).toFixed(1)}K`;
+		}
+		return num.toLocaleString();
+	}
 
-    private formatDate(dateStr: string | null): string {
-        if (!dateStr) return 'N/A';
-        const date = new Date(dateStr);
-        return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
-    }
+	private formatDate(dateStr: string | null): string {
+		if (!dateStr) return "N/A";
+		const date = new Date(dateStr);
+		return date.toLocaleDateString("en-US", {
+			month: "short",
+			year: "numeric",
+		});
+	}
 
-    private close() {
-        this.cleanup();
-        this.scene.start('MenuScene');
-    }
+	private close() {
+		this.cleanup();
+		this.scene.start("MenuScene");
+	}
 
-    private cleanup() {
-        if (this.domContainer && this.domContainer.parentNode) {
-            this.domContainer.parentNode.removeChild(this.domContainer);
-        }
-        this.domContainer = null;
-    }
+	private cleanup() {
+		if (this.domContainer?.parentNode) {
+			this.domContainer.parentNode.removeChild(this.domContainer);
+		}
+		this.domContainer = null;
+	}
 
-    shutdown() {
-        this.cleanup();
-    }
+	shutdown() {
+		this.cleanup();
+	}
 }

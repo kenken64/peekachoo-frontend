@@ -1,26 +1,32 @@
+import { logger } from "../config";
+import { I18nService } from "./i18n-service";
 import {
-    websocketService,
-    RankChangeEvent,
-    AchievementUnlockedEvent,
-    PokemonRevealedEvent,
-    StreakMilestoneEvent,
-    LeaderboardUpdateEvent
-} from './websocket-service';
-import { logger } from '../config';
-import { I18nService } from './i18n-service';
+	type AchievementUnlockedEvent,
+	type LeaderboardUpdateEvent,
+	type PokemonRevealedEvent,
+	type RankChangeEvent,
+	type StreakMilestoneEvent,
+	websocketService,
+} from "./websocket-service";
 
 /**
  * Notification types
  */
-type NotificationType = 'success' | 'info' | 'warning' | 'error' | 'achievement' | 'rank';
+type NotificationType =
+	| "success"
+	| "info"
+	| "warning"
+	| "error"
+	| "achievement"
+	| "rank";
 
 interface Notification {
-    id: string;
-    type: NotificationType;
-    title: string;
-    message: string;
-    icon?: string;
-    duration?: number;
+	id: string;
+	type: NotificationType;
+	title: string;
+	message: string;
+	icon?: string;
+	duration?: number;
 }
 
 /**
@@ -28,37 +34,37 @@ interface Notification {
  * Handles displaying real-time notifications from WebSocket events
  */
 class NotificationManager {
-    private container: HTMLDivElement | null = null;
-    private notifications: Map<string, HTMLDivElement> = new Map();
-    private notificationCount: number = 0;
-    private initialized: boolean = false;
+	private container: HTMLDivElement | null = null;
+	private notifications: Map<string, HTMLDivElement> = new Map();
+	private notificationCount: number = 0;
+	private initialized: boolean = false;
 
-    /**
-     * Initialize the notification manager
-     */
-    initialize(): void {
-        if (this.initialized) return;
+	/**
+	 * Initialize the notification manager
+	 */
+	initialize(): void {
+		if (this.initialized) return;
 
-        this.createContainer();
-        this.setupWebSocketListeners();
-        this.initialized = true;
+		this.createContainer();
+		this.setupWebSocketListeners();
+		this.initialized = true;
 
-        logger.log('[NotificationManager] Initialized');
-    }
+		logger.log("[NotificationManager] Initialized");
+	}
 
-    /**
-     * Create the notification container
-     */
-    private createContainer(): void {
-        // Remove existing container if present
-        const existing = document.getElementById('notification-container');
-        if (existing) {
-            existing.remove();
-        }
+	/**
+	 * Create the notification container
+	 */
+	private createContainer(): void {
+		// Remove existing container if present
+		const existing = document.getElementById("notification-container");
+		if (existing) {
+			existing.remove();
+		}
 
-        this.container = document.createElement('div');
-        this.container.id = 'notification-container';
-        this.container.innerHTML = `
+		this.container = document.createElement("div");
+		this.container.id = "notification-container";
+		this.container.innerHTML = `
             <style>
                 #notification-container {
                     position: fixed;
@@ -313,239 +319,272 @@ class NotificationManager {
                 }
             </style>
         `;
-        document.body.appendChild(this.container);
-    }
+		document.body.appendChild(this.container);
+	}
 
-    /**
-     * Setup WebSocket event listeners
-     */
-    private setupWebSocketListeners(): void {
-        // Connection status
-        websocketService.on('connected', () => {
-            this.updateConnectionStatus('connecting');
-        });
+	/**
+	 * Setup WebSocket event listeners
+	 */
+	private setupWebSocketListeners(): void {
+		// Connection status
+		websocketService.on("connected", () => {
+			this.updateConnectionStatus("connecting");
+		});
 
-        websocketService.on('auth_success', () => {
-            this.updateConnectionStatus('connected');
-        });
+		websocketService.on("auth_success", () => {
+			this.updateConnectionStatus("connected");
+		});
 
-        websocketService.on('disconnected', () => {
-            this.updateConnectionStatus('disconnected');
-        });
+		websocketService.on("disconnected", () => {
+			this.updateConnectionStatus("disconnected");
+		});
 
-        // Rank change notifications
-        websocketService.on('rank_change', (data: RankChangeEvent) => {
-            if (data.change > 0) {
-                this.show({
-                    id: `rank-${Date.now()}`,
-                    type: 'rank',
-                    title: I18nService.t('notify.rankUp'),
-                    message: I18nService.t('notify.rankUpMsg', data.change, data.change > 1 ? 's' : '', data.newRank),
-                    icon: '📈',
-                    duration: 5000
-                });
-            } else if (data.change < 0) {
-                this.show({
-                    id: `rank-${Date.now()}`,
-                    type: 'info',
-                    title: I18nService.t('notify.rankChanged'),
-                    message: I18nService.t('notify.rankChangedMsg', data.newRank),
-                    icon: '📊',
-                    duration: 4000
-                });
-            }
-        });
+		// Rank change notifications
+		websocketService.on("rank_change", (data: RankChangeEvent) => {
+			if (data.change > 0) {
+				this.show({
+					id: `rank-${Date.now()}`,
+					type: "rank",
+					title: I18nService.t("notify.rankUp"),
+					message: I18nService.t(
+						"notify.rankUpMsg",
+						data.change,
+						data.change > 1 ? "s" : "",
+						data.newRank,
+					),
+					icon: "📈",
+					duration: 5000,
+				});
+			} else if (data.change < 0) {
+				this.show({
+					id: `rank-${Date.now()}`,
+					type: "info",
+					title: I18nService.t("notify.rankChanged"),
+					message: I18nService.t("notify.rankChangedMsg", data.newRank),
+					icon: "📊",
+					duration: 4000,
+				});
+			}
+		});
 
-        // Achievement notifications (via WebSocket, in addition to score response)
-        websocketService.on('achievement_unlocked', (data: AchievementUnlockedEvent) => {
-            this.show({
-                id: `achievement-${data.id}`,
-                type: 'achievement',
-                title: I18nService.t('notify.achievement'),
-                message: `${data.icon} ${data.name}\n${data.description}`,
-                icon: '🏆',
-                duration: 6000
-            });
-        });
+		// Achievement notifications (via WebSocket, in addition to score response)
+		websocketService.on(
+			"achievement_unlocked",
+			(data: AchievementUnlockedEvent) => {
+				this.show({
+					id: `achievement-${data.id}`,
+					type: "achievement",
+					title: I18nService.t("notify.achievement"),
+					message: `${data.icon} ${data.name}\n${data.description}`,
+					icon: "🏆",
+					duration: 6000,
+				});
+			},
+		);
 
-        // Pokemon reveal notifications
-        websocketService.on('pokemon_revealed', (data: PokemonRevealedEvent) => {
-            if (data.pokemon) {
-                // Use Japanese name if available and language is JP
-                const pokemonName = (I18nService.getLang() === 'jp' && (data.pokemon as any).name_jp) 
-                    ? (data.pokemon as any).name_jp 
-                    : data.pokemon.name;
+		// Pokemon reveal notifications
+		websocketService.on("pokemon_revealed", (data: PokemonRevealedEvent) => {
+			if (data.pokemon) {
+				// Use Japanese name if available and language is JP
+				const pokemonName =
+					I18nService.getLang() === "jp" && (data.pokemon as any).name_jp
+						? (data.pokemon as any).name_jp
+						: data.pokemon.name;
 
-                this.show({
-                    id: `pokemon-${data.pokemon.id}`,
-                    type: 'success',
-                    title: I18nService.t('notify.newPokemon'),
-                    message: I18nService.t('notify.newPokemonMsg', pokemonName, data.collectionProgress.count, data.collectionProgress.total),
-                    icon: '🎉',
-                    duration: 5000
-                });
-            }
-        });
+				this.show({
+					id: `pokemon-${data.pokemon.id}`,
+					type: "success",
+					title: I18nService.t("notify.newPokemon"),
+					message: I18nService.t(
+						"notify.newPokemonMsg",
+						pokemonName,
+						data.collectionProgress.count,
+						data.collectionProgress.total,
+					),
+					icon: "🎉",
+					duration: 5000,
+				});
+			}
+		});
 
-        // Streak milestone notifications
-        websocketService.on('streak_milestone', (data: StreakMilestoneEvent) => {
-            this.show({
-                id: `streak-${data.streak}`,
-                type: 'achievement',
-                title: I18nService.t('notify.streak', data.streak),
-                message: I18nService.t('notify.streakMsg', data.bonus),
-                icon: '🔥',
-                duration: 4000
-            });
-        });
+		// Streak milestone notifications
+		websocketService.on("streak_milestone", (data: StreakMilestoneEvent) => {
+			this.show({
+				id: `streak-${data.streak}`,
+				type: "achievement",
+				title: I18nService.t("notify.streak", data.streak),
+				message: I18nService.t("notify.streakMsg", data.bonus),
+				icon: "🔥",
+				duration: 4000,
+			});
+		});
 
-        // Leaderboard updates (other players)
-        websocketService.on('leaderboard_update', (data: LeaderboardUpdateEvent) => {
-            if (data.rank <= 10) {
-                this.show({
-                    id: `leaderboard-${Date.now()}`,
-                    type: 'info',
-                    title: I18nService.t('notify.leaderboardUpdate'),
-                    message: I18nService.t('notify.leaderboardUpdateMsg', data.displayName, data.score.toLocaleString(), data.level),
-                    icon: '🏅',
-                    duration: 4000
-                });
-            }
-        });
+		// Leaderboard updates (other players)
+		websocketService.on(
+			"leaderboard_update",
+			(data: LeaderboardUpdateEvent) => {
+				if (data.rank <= 10) {
+					this.show({
+						id: `leaderboard-${Date.now()}`,
+						type: "info",
+						title: I18nService.t("notify.leaderboardUpdate"),
+						message: I18nService.t(
+							"notify.leaderboardUpdateMsg",
+							data.displayName,
+							data.score.toLocaleString(),
+							data.level,
+						),
+						icon: "🏅",
+						duration: 4000,
+					});
+				}
+			},
+		);
 
-        // Top rank changes
-        websocketService.on('top_rank_change', (data: any) => {
-            this.show({
-                id: `top-rank-${Date.now()}`,
-                type: 'info',
-                title: I18nService.t('notify.topRankUpdate'),
-                message: I18nService.t('notify.topRankUpdateMsg', data.displayName, data.newRank),
-                icon: '👑',
-                duration: 4000
-            });
-        });
-    }
+		// Top rank changes
+		websocketService.on("top_rank_change", (data: any) => {
+			this.show({
+				id: `top-rank-${Date.now()}`,
+				type: "info",
+				title: I18nService.t("notify.topRankUpdate"),
+				message: I18nService.t(
+					"notify.topRankUpdateMsg",
+					data.displayName,
+					data.newRank,
+				),
+				icon: "👑",
+				duration: 4000,
+			});
+		});
+	}
 
-    /**
-     * Show a notification
-     */
-    show(notification: Notification): void {
-        if (!this.container) {
-            this.createContainer();
-        }
+	/**
+	 * Show a notification
+	 */
+	show(notification: Notification): void {
+		if (!this.container) {
+			this.createContainer();
+		}
 
-        // Create notification element
-        const el = document.createElement('div');
-        el.className = `live-notification ${notification.type}`;
-        el.innerHTML = `
-            ${notification.icon ? `<div class="notification-icon">${notification.icon}</div>` : ''}
+		// Create notification element
+		const el = document.createElement("div");
+		el.className = `live-notification ${notification.type}`;
+		el.innerHTML = `
+            ${notification.icon ? `<div class="notification-icon">${notification.icon}</div>` : ""}
             <div class="notification-content">
                 <div class="notification-title">${notification.title}</div>
-                <div class="notification-message">${notification.message.replace(/\n/g, '<br>')}</div>
+                <div class="notification-message">${notification.message.replace(/\n/g, "<br>")}</div>
             </div>
             <button class="notification-close">&times;</button>
         `;
 
-        // Add close handler
-        const closeBtn = el.querySelector('.notification-close');
-        closeBtn?.addEventListener('click', () => this.hide(notification.id));
+		// Add close handler
+		const closeBtn = el.querySelector(".notification-close");
+		closeBtn?.addEventListener("click", () => this.hide(notification.id));
 
-        // Add to container
-        this.container!.appendChild(el);
-        this.notifications.set(notification.id, el);
+		// Add to container
+		this.container?.appendChild(el);
+		this.notifications.set(notification.id, el);
 
-        // Auto-hide after duration
-        const duration = notification.duration || 5000;
-        setTimeout(() => {
-            this.hide(notification.id);
-        }, duration);
+		// Auto-hide after duration
+		const duration = notification.duration || 5000;
+		setTimeout(() => {
+			this.hide(notification.id);
+		}, duration);
 
-        // Limit max notifications
-        if (this.notifications.size > 5) {
-            const oldest = this.notifications.keys().next().value;
-            if (oldest) {
-                this.hide(oldest);
-            }
-        }
-    }
+		// Limit max notifications
+		if (this.notifications.size > 5) {
+			const oldest = this.notifications.keys().next().value;
+			if (oldest) {
+				this.hide(oldest);
+			}
+		}
+	}
 
-    /**
-     * Hide a notification
-     */
-    hide(id: string): void {
-        const el = this.notifications.get(id);
-        if (el) {
-            el.classList.add('hiding');
-            setTimeout(() => {
-                el.remove();
-                this.notifications.delete(id);
-            }, 300);
-        }
-    }
+	/**
+	 * Hide a notification
+	 */
+	hide(id: string): void {
+		const el = this.notifications.get(id);
+		if (el) {
+			el.classList.add("hiding");
+			setTimeout(() => {
+				el.remove();
+				this.notifications.delete(id);
+			}, 300);
+		}
+	}
 
-    /**
-     * Update connection status indicator
-     */
-    private updateConnectionStatus(status: 'connected' | 'disconnected' | 'connecting'): void {
-        let indicator = document.getElementById('ws-status-indicator');
+	/**
+	 * Update connection status indicator
+	 */
+	private updateConnectionStatus(
+		status: "connected" | "disconnected" | "connecting",
+	): void {
+		let indicator = document.getElementById("ws-status-indicator");
 
-        if (!indicator) {
-            indicator = document.createElement('div');
-            indicator.id = 'ws-status-indicator';
-            indicator.className = 'ws-status';
-            document.body.appendChild(indicator);
-        }
+		if (!indicator) {
+			indicator = document.createElement("div");
+			indicator.id = "ws-status-indicator";
+			indicator.className = "ws-status";
+			document.body.appendChild(indicator);
+		}
 
-        indicator.className = `ws-status ${status}`;
+		indicator.className = `ws-status ${status}`;
 
-        const statusText = {
-            connected: I18nService.t('notify.connected'),
-            disconnected: I18nService.t('notify.disconnected'),
-            connecting: I18nService.t('notify.connecting')
-        };
+		const statusText = {
+			connected: I18nService.t("notify.connected"),
+			disconnected: I18nService.t("notify.disconnected"),
+			connecting: I18nService.t("notify.connecting"),
+		};
 
-        indicator.innerHTML = `
+		indicator.innerHTML = `
             <span class="ws-status-dot"></span>
             <span>${statusText[status]}</span>
         `;
 
-        // Auto-hide connected status after 3 seconds
-        if (status === 'connected') {
-            setTimeout(() => {
-                indicator?.classList.add('hiding');
-                setTimeout(() => {
-                    indicator?.remove();
-                }, 300);
-            }, 3000);
-        }
-    }
+		// Auto-hide connected status after 3 seconds
+		if (status === "connected") {
+			setTimeout(() => {
+				indicator?.classList.add("hiding");
+				setTimeout(() => {
+					indicator?.remove();
+				}, 300);
+			}, 3000);
+		}
+	}
 
-    /**
-     * Manually show a custom notification
-     */
-    notify(title: string, message: string, type: NotificationType = 'info', icon?: string): void {
-        this.notificationCount++;
-        this.show({
-            id: `custom-${this.notificationCount}`,
-            type,
-            title,
-            message,
-            icon,
-            duration: 5000
-        });
-    }
+	/**
+	 * Manually show a custom notification
+	 */
+	notify(
+		title: string,
+		message: string,
+		type: NotificationType = "info",
+		icon?: string,
+	): void {
+		this.notificationCount++;
+		this.show({
+			id: `custom-${this.notificationCount}`,
+			type,
+			title,
+			message,
+			icon,
+			duration: 5000,
+		});
+	}
 
-    /**
-     * Cleanup
-     */
-    destroy(): void {
-        if (this.container) {
-            this.container.remove();
-            this.container = null;
-        }
-        this.notifications.clear();
-        this.initialized = false;
-    }
+	/**
+	 * Cleanup
+	 */
+	destroy(): void {
+		if (this.container) {
+			this.container.remove();
+			this.container = null;
+		}
+		this.notifications.clear();
+		this.initialized = false;
+	}
 }
 
 // Export singleton instance
