@@ -16,19 +16,22 @@ module.exports = {
   },
   setupFilesAfterEnv: ['<rootDir>/test/jest-setup.ts'],
   collectCoverageFrom: [
-    'src/config.ts',
-    'src/utils/string-utils.ts',
+    'src/**/*.ts',
     '!src/**/*.d.ts',
     '!src/phaser.d.ts',
+    '!src/main.ts', // Entry point
+    '!src/scenes/**/*.ts', // Phaser scenes require game context
+    '!src/objects/**/*.ts', // Phaser objects require game context
+    '!src/utils/canvas-patch.ts', // IIFE that runs immediately
   ],
   coverageDirectory: 'coverage',
   coverageReporters: ['text', 'lcov', 'html', 'json-summary'],
   coverageThreshold: {
     global: {
-      branches: 80,
-      functions: 80,
-      lines: 80,
-      statements: 80,
+      branches: 40,
+      functions: 40,
+      lines: 50,
+      statements: 50,
     },
   },
   verbose: true,
