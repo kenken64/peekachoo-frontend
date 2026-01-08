@@ -149,7 +149,11 @@ test.describe("Peekachoo Game Frontend", () => {
 			page.on("requestfailed", (request) => {
 				const url = request.url();
 				// Only track JS and critical asset failures
-				if (url.endsWith(".js") || url.includes("/assets/")) {
+				// Exclude env-config.js which is optional
+				if (
+					(url.endsWith(".js") || url.includes("/assets/")) &&
+					!url.includes("env-config.js")
+				) {
 					failedRequests.push(url);
 				}
 			});
